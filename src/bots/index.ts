@@ -4,6 +4,8 @@
  * All bots check isDryRun() before writing.
  */
 
+export { contactBot } from './contact';
+export { scorerBot } from './scorer';
 export { stageBot } from './stage';
 export { taskBot } from './task';
 export { noteBot } from './note';

@@ -10,7 +10,7 @@ import { GunnerEvent, emit } from '../core/event-bus';
 import { auditLog } from '../core/audit';
 import { isEnabled } from '../core/toggles';
 import { fieldBot } from '../bots/field';
-import { scoreLead } from '../intelligence/lead-scorer';
+import { scorerBot } from '../bots/scorer';
 
 const AGENT_ID = 'lead-scorer';
 
@@ -20,7 +20,7 @@ export async function runLeadScorer(event: GunnerEvent): Promise<void> {
   const { contactId, opportunityId, tenantId, contact } = event;
   const start = Date.now();
 
-  const score = await scoreLead((contact as Record<string, any>) ?? {});
+  const score = await scorerBot((contact as Record<string, any>) ?? {});
 
   await fieldBot(contactId, { lead_tier: score.tier, lead_score: score.score });
 

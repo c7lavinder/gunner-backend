@@ -9,7 +9,7 @@
 import { GunnerEvent, emit } from '../core/event-bus';
 import { auditLog } from '../core/audit';
 import { isEnabled } from '../core/toggles';
-import { ghlGet } from '../integrations/ghl/client';
+import { contactBot } from '../bots/contact';
 
 const AGENT_ID = 'new-lead-pipeline';
 
@@ -19,8 +19,7 @@ export async function runNewLeadPipeline(event: GunnerEvent): Promise<void> {
   const { contactId, opportunityId, tenantId } = event;
   const start = Date.now();
 
-  const res = await ghlGet<any>(`/contacts/${contactId}`);
-  const contact = res?.contact ?? res;
+  const contact = await contactBot(contactId);
 
   await emit({
     kind: 'lead.new',
