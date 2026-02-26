@@ -17,32 +17,26 @@ export function getTriggers(): TriggerConfig[] {
   const config = getConfig();
 
   return [
-    // New lead enters Sales Process → new-lead-pipeline
-    {
-      event: 'opportunity.created',
-      agentId: 'new-lead-pipeline',
-      condition: (e) => e.stageId === config.stages.newLead,
-    },
+    // ── New Lead Chain ─────────────────────────────────────────────────────
+    // Step 1: GHL fires opportunity.created → new-lead-pipeline detects it
+    { event: 'opportunity.created', agentId: 'new-lead-pipeline',
+      condition: (e) => e.stageId === config.stages.newLead },
 
-    // Stage changes → stage-change-router (decides what happens next)
-    {
-      event: 'opportunity.stage_changed',
-      agentId: 'stage-change-router',
-    },
+    // Step 2: new-lead-pipeline emits lead.new → lead-scorer scores it
+    { event: 'lead.new', agentId: 'lead-scorer' },
 
-    // Inbound message from lead → response-agent
-    {
-      event: 'inbound.message',
-      agentId: 'response-agent',
-    },
+    // Step 3: lead-scorer emits lead.scored → tagger, noter, task-creator all fire independently
+    { event: 'lead.scored', agentId: 'lead-tagger' },
+    { event: 'lead.scored', agentId: 'lead-noter' },
+    { event: 'lead.scored', agentId: 'lead-task-creator' },
 
-    // LM call completed → lm-assistant
-    {
-      event: 'call.completed',
-      agentId: 'lm-assistant',
-    },
+    // ── Stage Changes ──────────────────────────────────────────────────────
+    { event: 'opportunity.stage_changed', agentId: 'stage-change-router' },
 
-    // Add more triggers here as agents are built.
-    // Format: { event, agentId, condition? }
+    // ── Inbound Messages ───────────────────────────────────────────────────
+    { event: 'inbound.message', agentId: 'response-agent' },
+
+    // ── Calls ──────────────────────────────────────────────────────────────
+    { event: 'call.completed', agentId: 'lm-assistant' },
   ];
 }

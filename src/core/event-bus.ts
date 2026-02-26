@@ -9,7 +9,9 @@ export type EventKind =
   | 'opportunity.stage_changed'
   | 'inbound.message'
   | 'call.completed'
-  | 'call.inbound';
+  | 'call.inbound'
+  | 'lead.new'       // new lead detected and contact data fetched — downstream agents fire here
+  | 'lead.scored';   // lead has been scored — tagging/noting/tasking fire here
 
 export interface GunnerEvent {
   kind: EventKind;
@@ -20,6 +22,8 @@ export interface GunnerEvent {
   stageName?: string;
   callId?: string;
   messageId?: string;
+  contact?: Record<string, unknown>; // populated by new-lead-pipeline for downstream agents
+  score?: { tier: 'HOT' | 'WARM'; score: number; factors: Array<{ name: string; passed: boolean; reason: string }> };
   raw?: Record<string, unknown>;
   receivedAt: number;
 }
