@@ -5,6 +5,7 @@
 
 import fetch from 'node-fetch';
 import { throttle } from '../../core/throttle';
+import { getValidAccessToken } from './oauth-store';
 
 const BASE = 'https://services.leadconnectorhq.com';
 
@@ -16,10 +17,13 @@ export function configureGHL(token: string, locationId: string) {
   _locationId = locationId;
 }
 
-function headers() {
-  if (!_token) throw new Error('GHL client not configured — call configureGHL() first');
+async function headers() {
+  // Prefer OAuth token, fall back to PIT token
+  const oauthToken = await getValidAccessToken();
+  const token = oauthToken ?? _token;
+  if (!token) throw new Error('GHL client not configured — call configureGHL() or complete OAuth first');
   return {
-    Authorization: `Bearer ${_token}`,
+    Authorization: `Bearer ${token}`,
     'Content-Type': 'application/json',
     Version: '2021-07-28',
   };
@@ -29,7 +33,7 @@ export async function ghlGet<T>(path: string, params?: Record<string, string>): 
   return throttle(async () => {
     const url = new URL(`${BASE}${path}`);
     if (params) Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
-    const res = await fetch(url.toString(), { headers: headers() });
+    const res = await fetch(url.toString(), { headers: await headers() });
     if (!res.ok) throw new Error(`GHL GET ${path} → ${res.status}: ${await res.text()}`);
     return res.json() as Promise<T>;
   });
@@ -39,7 +43,7 @@ export async function ghlPost<T>(path: string, body: unknown): Promise<T> {
   return throttle(async () => {
     const res = await fetch(`${BASE}${path}`, {
       method: 'POST',
-      headers: headers(),
+      headers: await headers(),
       body: JSON.stringify(body),
     });
     if (!res.ok) throw new Error(`GHL POST ${path} → ${res.status}: ${await res.text()}`);
@@ -51,7 +55,7 @@ export async function ghlPut<T>(path: string, body: unknown): Promise<T> {
   return throttle(async () => {
     const res = await fetch(`${BASE}${path}`, {
       method: 'PUT',
-      headers: headers(),
+      headers: await headers(),
       body: JSON.stringify(body),
     });
     if (!res.ok) throw new Error(`GHL PUT ${path} → ${res.status}: ${await res.text()}`);

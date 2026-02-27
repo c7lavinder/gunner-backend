@@ -11,6 +11,7 @@ import controlRouter from './api/control';
 import auditRouter from './api/audit';
 import webhookRouter from './api/webhooks';
 import intelligenceRouter from './api/intelligence';
+import setupRouter from './api/setup';
 import { startIntelligencePoller } from './agents/intelligence-poller';
 import { startIntelligenceResearcher } from './agents/intelligence-researcher';
 
@@ -37,6 +38,7 @@ async function main() {
   app.use('/api/audit', auditRouter);
   app.use('/webhooks', webhookRouter);
   app.use('/api/intelligence', intelligenceRouter);
+  app.use('/setup', setupRouter);
 
   const port = Number(process.env.PORT ?? 3000);
   app.listen(port, () => console.log(`[server] listening on port ${port}`));
