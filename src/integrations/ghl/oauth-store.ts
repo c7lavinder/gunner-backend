@@ -1,5 +1,7 @@
 /**
- * OAuth Token Store — persists GHL OAuth tokens to disk.
+ * OAuth Token Store — persists GHL OAuth tokens.
+ * Primary: OAUTH_TOKENS env var (survives Railway deploys)
+ * Fallback: disk file (for local dev)
  * Auto-refreshes expired tokens.
  */
 
@@ -8,6 +10,12 @@ import path from 'path';
 import fetch from 'node-fetch';
 
 const TOKEN_FILE = path.join(process.cwd(), 'data', 'oauth-tokens.json');
+
+// Railway API for persisting env vars across deploys
+const RAILWAY_TOKEN = process.env.RAILWAY_TOKEN || '';
+const RAILWAY_PROJECT_ID = process.env.RAILWAY_PROJECT_ID || 'f379b683-e34d-4e0e-a91a-f64d0ab499ea';
+const RAILWAY_SERVICE_ID = process.env.RAILWAY_SERVICE_ID || '';
+const RAILWAY_ENV_ID = process.env.RAILWAY_ENVIRONMENT_ID || '';
 
 interface OAuthTokens {
   access_token: string;
@@ -22,6 +30,15 @@ function ensureDataDir(): void {
 }
 
 export function loadTokens(): OAuthTokens | null {
+  // 1. Try env var first (survives deploys)
+  const envTokens = process.env.OAUTH_TOKENS;
+  if (envTokens) {
+    try {
+      return JSON.parse(envTokens) as OAuthTokens;
+    } catch { /* fall through */ }
+  }
+
+  // 2. Fallback to disk
   try {
     if (!fs.existsSync(TOKEN_FILE)) return null;
     return JSON.parse(fs.readFileSync(TOKEN_FILE, 'utf-8')) as OAuthTokens;
@@ -31,9 +48,67 @@ export function loadTokens(): OAuthTokens | null {
 }
 
 export function saveTokens(tokens: OAuthTokens): void {
-  ensureDataDir();
-  fs.writeFileSync(TOKEN_FILE, JSON.stringify(tokens, null, 2));
+  const json = JSON.stringify(tokens);
+
+  // Always update in-memory env for current process
+  process.env.OAUTH_TOKENS = json;
+
+  // Persist to disk (local dev / current container)
+  try {
+    ensureDataDir();
+    fs.writeFileSync(TOKEN_FILE, JSON.stringify(tokens, null, 2));
+  } catch (err) {
+    console.error('[oauth-store] disk write failed (non-fatal):', err);
+  }
+
+  // Persist to Railway env var (survives deploys)
+  persistToRailway(json).catch(err =>
+    console.error('[oauth-store] Railway persist failed (non-fatal):', err)
+  );
+
   console.log('[oauth-store] tokens saved');
+}
+
+async function persistToRailway(tokensJson: string): Promise<void> {
+  if (!RAILWAY_TOKEN || !RAILWAY_SERVICE_ID || !RAILWAY_ENV_ID) {
+    return; // not on Railway or not configured
+  }
+
+  const query = `
+    mutation($input: VariableCollectionUpsertInput!) {
+      variableCollectionUpsert(input: $input)
+    }
+  `;
+
+  const res = await fetch('https://backboard.railway.app/graphql/v2', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${RAILWAY_TOKEN}`,
+    },
+    body: JSON.stringify({
+      query,
+      variables: {
+        input: {
+          projectId: RAILWAY_PROJECT_ID,
+          serviceId: RAILWAY_SERVICE_ID,
+          environmentId: RAILWAY_ENV_ID,
+          variables: { OAUTH_TOKENS: tokensJson },
+        },
+      },
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Railway API ${res.status}: ${await res.text()}`);
+  }
+
+  const data = await res.json() as any;
+  if (data.errors) {
+    throw new Error(`Railway GraphQL: ${JSON.stringify(data.errors)}`);
+  }
+
+  console.log('[oauth-store] persisted to Railway env var');
 }
 
 export async function getValidAccessToken(): Promise<string | null> {
