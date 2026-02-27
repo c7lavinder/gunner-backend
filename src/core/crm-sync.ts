@@ -6,7 +6,7 @@
 
 import { emit } from './event-bus';
 import { ghlGet, getLocationId } from '../integrations/ghl/client';
-import { getConfig } from '../playbook/config';
+import { getConfig, stageId, pipelineId } from '../playbook/config';
 
 const POLL_INTERVAL_MS = Number(process.env.CRM_SYNC_INTERVAL_MS ?? 60_000);
 const IDEMPOTENCY_WINDOW_MS = Number(process.env.IDEMPOTENCY_WINDOW_MS ?? 86_400_000); // 24h
@@ -28,9 +28,8 @@ function markProcessed(id: string) {
 }
 
 async function scanNewLeads() {
-  const config = getConfig();
   const locationId = getLocationId();
-  const newLeadStageId = config.stageId('newLead');
+  const newLeadStageId = stageId('newLead');
 
   let page = 0;
   let lastId: string | undefined;
@@ -39,7 +38,7 @@ async function scanNewLeads() {
   while (page < MAX_PAGES) {
     const params: Record<string, string> = {
       location_id: locationId,
-      pipeline_id: config.pipelineId('salesProcess'),
+      pipeline_id: pipelineId('salesProcess'),
       limit: '100',
     };
     if (lastId) params.startAfterId = lastId;
@@ -96,13 +95,12 @@ export async function forceSync(contactId?: string, opportunityId?: string) {
   if (contactId && opportunityId) {
     // Clear idempotency for this specific lead and re-emit
     processed.delete(opportunityId);
-    const config = getConfig();
     await emit({
       kind: 'opportunity.created',
       tenantId: 'default',
       contactId,
       opportunityId,
-      stageId: config.stageId('newLead'),
+      stageId: stageId('newLead'),
       stageName: 'newLead',
       receivedAt: Date.now(),
     });

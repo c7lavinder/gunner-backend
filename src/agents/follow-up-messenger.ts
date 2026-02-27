@@ -1,0 +1,119 @@
+/**
+ * Follow-Up Messenger
+ *
+ * Fires on: dispatched by follow-up-organizer
+ * Does: crafts AI re-engagement SMS based on history, motivation, bucket, time elapsed.
+ * Sends: via smsBot (which handles DRY_RUN).
+ * Tones: check-in | time-sensitive | empathetic | rekindle | final-touch
+ */
+
+import { auditLog } from '../core/audit';
+import { isEnabled } from '../core/toggles';
+import { smsBot, contactBot, fieldBot } from '../bots';
+
+const AGENT_ID = 'follow-up-messenger';
+
+type Tone = 'check-in' | 'time-sensitive' | 'empathetic' | 'rekindle' | 'final-touch';
+
+export interface FollowUpMessageRequest {
+  tenantId: string;
+  contactId: string;
+  bucketName: string;
+  touchNumber: number;
+  daysSinceLastTouch: number;
+}
+
+/**
+ * Tone selection — driven by bucket position and touch number.
+ */
+function selectTone(bucketName: string, touchNumber: number, daysSinceLastTouch: number): Tone {
+  // Final bucket, high touch count → final-touch
+  if (bucketName.includes('1-year') && touchNumber >= 3) return 'final-touch';
+  // Long gap → rekindle
+  if (daysSinceLastTouch > 90) return 'rekindle';
+  // First touch in any bucket → check-in
+  if (touchNumber === 1) return 'check-in';
+  // Second touch → empathetic
+  if (touchNumber === 2) return 'empathetic';
+  // Otherwise → time-sensitive
+  return 'time-sensitive';
+}
+
+/**
+ * AI prompt builder for SMS generation.
+ */
+function buildPrompt(
+  contact: Record<string, unknown>,
+  tone: Tone,
+  bucketName: string,
+  daysSinceLastTouch: number
+): string {
+  const name = (contact.firstName as string) || 'there';
+  const motivation = (contact.customFields as Record<string, string>)?.motivation || 'unknown';
+  const propertyAddress = (contact.customFields as Record<string, string>)?.property_address || '';
+
+  return [
+    `Write a short re-engagement SMS (under 160 chars) for a real estate seller lead.`,
+    `Tone: ${tone}.`,
+    `Seller first name: ${name}.`,
+    `Motivation: ${motivation}.`,
+    `Property: ${propertyAddress || 'unknown'}.`,
+    `Days since last contact: ${daysSinceLastTouch}.`,
+    `Follow-up bucket: ${bucketName}.`,
+    `Do NOT use exclamation marks. Sound human, not salesy.`,
+    `Do NOT include company name or agent name — that's appended separately.`,
+  ].join('\n');
+}
+
+/**
+ * Placeholder AI call — replace with real Gemini/OpenAI integration.
+ */
+async function generateSMS(prompt: string): Promise<string> {
+  // TODO: wire to intelligence service (Gemini)
+  // For now returns a safe placeholder that will be overridden in production
+  return `Hey, just checking in — still thinking about selling? Let me know if anything's changed.`;
+}
+
+export async function runFollowUpMessenger(req: FollowUpMessageRequest): Promise<void> {
+  if (!isEnabled(AGENT_ID)) return;
+
+  const start = Date.now();
+  const { contactId, bucketName, touchNumber, daysSinceLastTouch, tenantId } = req;
+
+  // Guard: check if already touched today (idempotency)
+  const contact = await contactBot(contactId);
+  const lastTouch = Number((contact as any).customFields?.fu_last_touch || 0);
+  const hoursSinceTouch = (Date.now() - lastTouch) / (1000 * 60 * 60);
+  if (hoursSinceTouch < 20) {
+    auditLog({
+      agent: AGENT_ID,
+      contactId,
+      action: 'sms:skipped',
+      result: 'skipped',
+      reason: 'Already touched within 20 hours',
+    });
+    return;
+  }
+
+  const tone = selectTone(bucketName, touchNumber, daysSinceLastTouch);
+  const prompt = buildPrompt(contact as Record<string, unknown>, tone, bucketName, daysSinceLastTouch);
+  const message = await generateSMS(prompt);
+
+  // Send via smsBot (bot handles DRY_RUN internally)
+  await smsBot(contactId, message);
+
+  // Update touch tracking fields
+  await fieldBot(contactId, {
+    fu_last_touch: String(Date.now()),
+    fu_touch_count: String(touchNumber),
+  });
+
+  auditLog({
+    agent: AGENT_ID,
+    contactId,
+    action: 'sms:sent',
+    result: 'success',
+    durationMs: Date.now() - start,
+    metadata: { tone, bucketName, touchNumber, messageLength: message.length },
+  });
+}
