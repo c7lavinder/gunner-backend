@@ -97,8 +97,8 @@ a:hover{text-decoration:underline}
   <h1>🔫 Gunner Control Room</h1>
   <p>Toggle agents and bots on/off. Changes take effect immediately.</p>
   <div class="header-links">
-    <a href="index.html">← Dashboard</a>
-    <a href="audit.html">📋 Audit Log</a>
+    <a href="/dashboard">← Dashboard</a>
+    <a href="/dashboard/audit">📋 Audit Log</a>
   </div>
 </div>
 
@@ -207,20 +207,35 @@ const BOTS = [
   {id:'assign_bot',emoji:'👤',name:'Assign Bot',desc:'Assigns contacts to team members'}
 ];
 
-// State from localStorage
-function getState() {
-  try { return JSON.parse(localStorage.getItem('gunner_controls') || '{}'); } catch { return {}; }
+// State — loaded from API, cached locally
+let _state = {};
+async function loadState() {
+  try {
+    const res = await fetch('/api/control/state');
+    const data = await res.json();
+    _state = {};
+    if (data.toggles) {
+      for (const t of data.toggles) { _state[t.id] = t.enabled; }
+    }
+    _state._dryRun = data.dryRun || false;
+  } catch (e) { console.warn('Failed to load state from API, using defaults', e); }
 }
-function saveState(s) { localStorage.setItem('gunner_controls', JSON.stringify(s)); }
-function isOn(id) { const s = getState(); return s[id] !== false; } // default ON
-function setOn(id, val) { const s = getState(); s[id] = val; saveState(s); }
-function isDryRun() { return getState()._dryRun === true; }
+function isOn(id) { return _state[id] !== false; }
+function setOn(id, val) { _state[id] = val; }
+function isDryRun() { return _state._dryRun === true; }
 
-// TODO: Replace with Gunner API calls
-function apiToggle(id, enabled) { console.log(`TODO: API call — toggle ${id} to ${enabled}`); }
-function apiKillAll() { console.log('TODO: API call — kill all'); }
-function apiEnableAll() { console.log('TODO: API call — enable all'); }
-function apiSetDryRun(val) { console.log(`TODO: API call — set DRY_RUN to ${val}`); }
+function apiToggle(id, enabled) {
+  fetch('/api/control/toggle', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({id, enabled}) }).catch(e => console.error('toggle error', e));
+}
+function apiKillAll() {
+  const allIds = [...PHASES.flatMap(p=>p.agents), ...BOTS];
+  allIds.forEach(a => apiToggle(a.id, false));
+}
+function apiEnableAll() {
+  const allIds = [...PHASES.flatMap(p=>p.agents), ...BOTS];
+  allIds.forEach(a => apiToggle(a.id, true));
+}
+function apiSetDryRun(val) { console.log('DRY_RUN changes require env var update'); }
 
 const mockTimes = ['2 min ago','5 min ago','12 min ago','1 hr ago','3 hrs ago'];
 function randTime() { return mockTimes[Math.floor(Math.random()*mockTimes.length)]; }
@@ -318,7 +333,7 @@ function render() {
   updateCounts();
 }
 
-render();
+loadState().then(() => render());
 </script>
 </body>
 </html>

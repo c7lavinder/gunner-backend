@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
+import path from 'path';
 import { loadConfig } from './playbook/config';
 import { configureGHL } from './integrations/ghl/client';
 import { configureAI } from './integrations/ai/client';
@@ -34,6 +35,13 @@ async function main() {
   app.use(express.json());
 
   app.get('/health', (_req, res) => res.json({ status: 'ok', dryRun: process.env.DRY_RUN === 'true' }));
+
+  // Dashboard static pages
+  const dashboardDir = path.join(__dirname, '..', 'docs', 'dashboard');
+  app.get('/dashboard', (_req, res) => res.sendFile(path.join(dashboardDir, 'index.html')));
+  app.get('/dashboard/audit', (_req, res) => res.sendFile(path.join(dashboardDir, 'audit.html')));
+  app.get('/dashboard/controls', (_req, res) => res.sendFile(path.join(dashboardDir, 'controls.html')));
+
   app.use('/api/control', controlRouter);
   app.use('/api/audit', auditRouter);
   app.use('/webhooks', webhookRouter);

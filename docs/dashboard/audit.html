@@ -223,9 +223,9 @@ body{background:#fff;color:#000}
 <div class="live-badge"><span class="live-dot"></span> LIVE</div>
 </div>
 <div class="nav-links">
-<a href="index.html">← Dashboard</a>
-<a href="controls.html">Control Room</a>
-<a class="current" href="audit.html">Audit Log</a>
+<a href="/dashboard">← Dashboard</a>
+<a href="/dashboard/controls">Control Room</a>
+<a class="current" href="/dashboard/audit">Audit Log</a>
 </div>
 </div>
 </div>
@@ -576,8 +576,32 @@ entries.sort((a,b)=>b.timestamp-a.timestamp);
 return entries;
 }
 
-const allEntries = generateEntries();
+let allEntries = generateEntries();
 let selectedRange = 12;
+
+// Try to load real audit data from the API
+(async function loadRealAudit() {
+  try {
+    const res = await fetch('/api/audit');
+    const data = await res.json();
+    if (Array.isArray(data) && data.length > 0) {
+      allEntries = data.map(e => ({
+        id: e.id || e.eventId || ('evt-' + Math.random().toString(36).slice(2,7)),
+        timestamp: e.timestamp ? new Date(e.timestamp).getTime() : Date.now(),
+        agent: e.agentId || e.agent || 'unknown',
+        action: e.action || e.message || JSON.stringify(e),
+        result: e.result || (e.error ? 'error' : 'success'),
+        duration: e.durationMs ? e.durationMs / 1000 : null,
+        contact: e.contactName || e.contact || '',
+        assignedTo: e.assignedTo ? { name: e.assignedTo, role: '' } : null,
+        steps: e.steps || [],
+        raw: e
+      }));
+      allEntries.sort((a,b) => b.timestamp - a.timestamp);
+      renderAll();
+    }
+  } catch (e) { console.log('Using mock audit data (API unavailable)', e); }
+})();
 
 // Populate agent filter
 const agentSelect = document.getElementById('filterAgent');
