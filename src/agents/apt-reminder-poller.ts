@@ -76,7 +76,13 @@ async function processSchedule(schedule: ReminderSchedule): Promise<void> {
     }
 
     // Fetch contact to determine appointment type
-    const contact = await contactBot(contactId) as Record<string, any>;
+    const contact = await contactBot(contactId).catch(err => {
+      auditLog({ agent: AGENT_ID, contactId, action: 'contactBot:failed', result: 'error', reason: err?.message });
+      return null;
+    }) as Record<string, any> | null;
+
+    if (!contact) continue;
+
     const [fAptType, fAptTime] = await Promise.all([
       getFieldName(schedule.tenantId, 'active_appointment_type'),
       getFieldName(schedule.tenantId, 'active_appointment_time'),
@@ -87,7 +93,9 @@ async function processSchedule(schedule: ReminderSchedule): Promise<void> {
     const message = generateReminderSMS(stage, aptTime, aptType);
 
     // Send via smsBot (handles DRY_RUN)
-    await smsBot(contactId, message);
+    await smsBot(contactId, message).catch(err => {
+      auditLog({ agent: AGENT_ID, contactId, action: 'smsBot:failed', result: 'error', reason: err?.message });
+    });
 
     // Mark sent
     sentReminders.add(key);
@@ -108,21 +116,27 @@ async function processSchedule(schedule: ReminderSchedule): Promise<void> {
 export async function runAptReminderPoller(): Promise<void> {
   if (!isEnabled(AGENT_ID)) return;
 
-  const start = Date.now();
-  const schedules = getAllPendingSchedules();
+  try {
+    const start = Date.now();
+    const schedules = getAllPendingSchedules();
 
-  let processed = 0;
-  for (const schedule of schedules) {
-    await processSchedule(schedule);
-    processed++;
+    let processed = 0;
+    for (const schedule of schedules) {
+      await processSchedule(schedule).catch(err => {
+        auditLog({ agent: AGENT_ID, contactId: schedule.contactId, action: 'processSchedule:failed', result: 'error', reason: err?.message });
+      });
+      processed++;
+    }
+
+    auditLog({
+      agent: AGENT_ID,
+      contactId: '*',
+      action: 'poll:complete',
+      result: 'success',
+      durationMs: Date.now() - start,
+      metadata: { schedulesChecked: processed },
+    });
+  } catch (err: any) {
+    auditLog({ agent: AGENT_ID, contactId: '*', action: 'agent:crashed', result: 'error', reason: err?.message });
   }
-
-  auditLog({
-    agent: AGENT_ID,
-    contactId: '*',
-    action: 'poll:complete',
-    result: 'success',
-    durationMs: Date.now() - start,
-    metadata: { schedulesChecked: processed },
-  });
 }

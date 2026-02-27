@@ -29,6 +29,9 @@ export { aiClassifierBot } from './ai-classifier';
 // === COMMUNICATION BOTS ===
 export { emailBot } from './email';
 
+// === INTELLIGENCE ===
+export { intelligenceBot } from './intelligence';
+
 // === LOGIC BOTS ===
 export { classifierBot } from './classifier';
 export { templateBot } from './template';

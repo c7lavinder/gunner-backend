@@ -28,39 +28,67 @@ export async function runCallbackCapture(event: GunnerEvent, playbook: CallbackP
   const callId = event.callId || (event.raw?.callId as string);
   if (!callId) return;
 
-  const { contactId } = event;
-  const start = Date.now();
+  try {
+    const { contactId } = event;
+    const start = Date.now();
 
-  const contact = await contactBot(contactId) as Record<string, any>;
-  if (contact.customFields?.last_processed_callback === callId) {
-    auditLog({ agent: AGENT_ID, contactId, action: 'callback:skipped', result: 'skipped', reason: 'Call already processed' });
-    return;
-  }
+    const contact = await contactBot(contactId).catch(err => {
+      auditLog({ agent: AGENT_ID, contactId, action: 'contactBot:failed', result: 'error', reason: err?.message });
+      return null;
+    }) as Record<string, any> | null;
 
-  const disposition = classifierBot.classifyDisposition(event, playbook.shortCallThresholdSec);
-  const duration = (event.raw?.duration as number) || 0;
-  const notes = (event.raw?.notes as string) || '';
-  const notesSnippet = notes ? `Notes: ${notes.slice(0, 300)}` : 'No notes captured.';
+    if (!contact) return;
 
-  await fieldBot(contactId, { last_processed_callback: callId });
+    if (contact.customFields?.last_processed_callback === callId) {
+      auditLog({ agent: AGENT_ID, contactId, action: 'callback:skipped', result: 'skipped', reason: 'Call already processed' });
+      return;
+    }
 
-  if (disposition === 'short-call') {
-    await noteBot(contactId, templateBot.buildNote('callback:short-call', { duration: String(duration), notes: notesSnippet }));
-  } else if (disposition === 'conversation') {
-    await stageBot(contactId, playbook.warmStageId);
-    await taskBot(contactId, {
-      title: 'Seller called back — follow up NOW',
-      body: `Inbound call ${duration}s. ${notes ? 'Notes: ' + notes.slice(0, 200) : 'Review call recording.'}`,
-      dueDate: schedulerBot.dueIn(playbook.lmTaskDueMinutes),
-      assignedTo: 'lm',
+    const disposition = classifierBot.classifyDisposition(event, playbook.shortCallThresholdSec);
+    const duration = (event.raw?.duration as number) || 0;
+    const notes = (event.raw?.notes as string) || '';
+    const notesSnippet = notes ? `Notes: ${notes.slice(0, 300)}` : 'No notes captured.';
+
+    await fieldBot(contactId, { last_processed_callback: callId }).catch(err => {
+      auditLog({ agent: AGENT_ID, contactId, action: 'fieldBot:failed', result: 'error', reason: err?.message });
     });
-    await noteBot(contactId, templateBot.buildNote('callback:conversation', { duration: String(duration), lmTaskDueMinutes: String(playbook.lmTaskDueMinutes), notes: notes ? `Notes: ${notes.slice(0, 300)}` : '' }));
-  } else {
-    await tagBot(contactId, [playbook.dripCancelTag]);
-    await stageBot(contactId, playbook.appointmentStageId);
-    await noteBot(contactId, templateBot.buildNote('callback:appointment', { duration: String(duration), notes: notes ? `Notes: ${notes.slice(0, 300)}` : '' }));
-    await tagBot(contactId, ['callback-appointment']);
-  }
 
-  auditLog({ agent: AGENT_ID, contactId, action: `callback:${disposition}`, result: 'success', durationMs: Date.now() - start, metadata: { disposition, duration, callId } });
+    if (disposition === 'short-call') {
+      await noteBot(contactId, templateBot.buildNote('callback:short-call', { duration: String(duration), notes: notesSnippet })).catch(err => {
+        auditLog({ agent: AGENT_ID, contactId, action: 'noteBot:failed', result: 'error', reason: err?.message });
+      });
+    } else if (disposition === 'conversation') {
+      await stageBot(contactId, playbook.warmStageId).catch(err => {
+        auditLog({ agent: AGENT_ID, contactId, action: 'stageBot:failed', result: 'error', reason: err?.message });
+      });
+      await taskBot(contactId, {
+        title: 'Seller called back — follow up NOW',
+        body: `Inbound call ${duration}s. ${notes ? 'Notes: ' + notes.slice(0, 200) : 'Review call recording.'}`,
+        dueDate: schedulerBot.dueIn(playbook.lmTaskDueMinutes),
+        assignedTo: 'lm',
+      }).catch(err => {
+        auditLog({ agent: AGENT_ID, contactId, action: 'taskBot:failed', result: 'error', reason: err?.message });
+      });
+      await noteBot(contactId, templateBot.buildNote('callback:conversation', { duration: String(duration), lmTaskDueMinutes: String(playbook.lmTaskDueMinutes), notes: notes ? `Notes: ${notes.slice(0, 300)}` : '' })).catch(err => {
+        auditLog({ agent: AGENT_ID, contactId, action: 'noteBot:failed', result: 'error', reason: err?.message });
+      });
+    } else {
+      await tagBot(contactId, [playbook.dripCancelTag]).catch(err => {
+        auditLog({ agent: AGENT_ID, contactId, action: 'tagBot:failed', result: 'error', reason: err?.message });
+      });
+      await stageBot(contactId, playbook.appointmentStageId).catch(err => {
+        auditLog({ agent: AGENT_ID, contactId, action: 'stageBot:failed', result: 'error', reason: err?.message });
+      });
+      await noteBot(contactId, templateBot.buildNote('callback:appointment', { duration: String(duration), notes: notes ? `Notes: ${notes.slice(0, 300)}` : '' })).catch(err => {
+        auditLog({ agent: AGENT_ID, contactId, action: 'noteBot:failed', result: 'error', reason: err?.message });
+      });
+      await tagBot(contactId, ['callback-appointment']).catch(err => {
+        auditLog({ agent: AGENT_ID, contactId, action: 'tagBot:failed', result: 'error', reason: err?.message });
+      });
+    }
+
+    auditLog({ agent: AGENT_ID, contactId, action: `callback:${disposition}`, result: 'success', durationMs: Date.now() - start, metadata: { disposition, duration, callId } });
+  } catch (err: any) {
+    auditLog({ agent: AGENT_ID, contactId: event.contactId, action: 'agent:crashed', result: 'error', reason: err?.message });
+  }
 }

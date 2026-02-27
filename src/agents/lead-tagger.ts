@@ -17,20 +17,26 @@ const AGENT_ID = 'lead-tagger';
 export async function runLeadTagger(event: GunnerEvent): Promise<void> {
   if (!isEnabled(AGENT_ID)) return;
 
-  const { contactId, opportunityId, tenantId, score } = event;
-  if (!score) return;
+  try {
+    const { contactId, opportunityId, tenantId, score } = event;
+    if (!score) return;
 
-  const start = Date.now();
-  const tag = await getTag(tenantId, score.tier === 'HOT' ? 'hot' : 'warm');
-  await tagBot(contactId, [tag]);
+    const start = Date.now();
+    const tag = await getTag(tenantId, score.tier === 'HOT' ? 'hot' : 'warm');
+    await tagBot(contactId, [tag]).catch(err => {
+      auditLog({ agent: AGENT_ID, contactId, action: 'tagBot:failed', result: 'error', reason: err?.message });
+    });
 
-  auditLog({
-    agent: AGENT_ID,
-    contactId,
-    opportunityId,
-    action: 'lead:tagged',
-    result: 'success',
-    durationMs: Date.now() - start,
-    metadata: { tier: score.tier },
-  });
+    auditLog({
+      agent: AGENT_ID,
+      contactId,
+      opportunityId,
+      action: 'lead:tagged',
+      result: 'success',
+      durationMs: Date.now() - start,
+      metadata: { tier: score.tier },
+    });
+  } catch (err: any) {
+    auditLog({ agent: AGENT_ID, contactId: event.contactId, action: 'agent:crashed', result: 'error', reason: err?.message });
+  }
 }

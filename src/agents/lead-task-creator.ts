@@ -39,40 +39,46 @@ async function resolveAssignee(role: string, tenantId: string): Promise<string> 
 export async function runLeadTaskCreator(event: GunnerEvent): Promise<void> {
   if (!isEnabled(AGENT_ID)) return;
 
-  const { contactId, opportunityId, tenantId, score, contact } = event;
-  if (!score) return;
+  try {
+    const { contactId, opportunityId, tenantId, score, contact } = event;
+    if (!score) return;
 
-  const start = Date.now();
+    const start = Date.now();
 
-  const taskTemplate = await getTaskTemplate(tenantId, 'qualify_new_lead');
-  if (!taskTemplate) return;
+    const taskTemplate = await getTaskTemplate(tenantId, 'qualify_new_lead');
+    if (!taskTemplate) return;
 
-  const deadlineMinutes =
-    taskTemplate.deadline_minutes ?? (await getSla(tenantId, 'lm_first_call_minutes')) ?? 30;
-  const dueDate = new Date(Date.now() + deadlineMinutes * 60_000).toISOString();
+    const deadlineMinutes =
+      taskTemplate.deadline_minutes ?? (await getSla(tenantId, 'lm_first_call_minutes')) ?? 30;
+    const dueDate = new Date(Date.now() + deadlineMinutes * 60_000).toISOString();
 
-  const cf = await getFieldNames(tenantId);
-  const contactRecord = (contact as Record<string, any>) ?? {};
-  const name = (contactRecord.firstName as string) ?? (contactRecord.name as string) ?? '';
-  const address = ((contactRecord.customFields as Record<string, string>) ?? {})[cf.property_address] ?? '';
+    const cf = await getFieldNames(tenantId);
+    const contactRecord = (contact as Record<string, any>) ?? {};
+    const name = (contactRecord.firstName as string) ?? (contactRecord.name as string) ?? '';
+    const address = ((contactRecord.customFields as Record<string, string>) ?? {})[cf.property_address] ?? '';
 
-  const vars = { tier: score.tier, name, score: String(score.score), address };
-  const assignedTo = await resolveAssignee(taskTemplate.assign_to, tenantId);
+    const vars = { tier: score.tier, name, score: String(score.score), address };
+    const assignedTo = await resolveAssignee(taskTemplate.assign_to, tenantId);
 
-  await taskBot(contactId, {
-    title: renderTemplate(taskTemplate.title, vars),
-    body: renderTemplate(taskTemplate.body ?? '', vars),
-    dueDate,
-    assignedTo,
-  });
+    await taskBot(contactId, {
+      title: renderTemplate(taskTemplate.title, vars),
+      body: renderTemplate(taskTemplate.body ?? '', vars),
+      dueDate,
+      assignedTo,
+    }).catch(err => {
+      auditLog({ agent: AGENT_ID, contactId, action: 'taskBot:failed', result: 'error', reason: err?.message });
+    });
 
-  auditLog({
-    agent: AGENT_ID,
-    contactId,
-    opportunityId,
-    action: 'lead:task-created',
-    result: 'success',
-    durationMs: Date.now() - start,
-    metadata: { tier: score.tier, assignedTo },
-  });
+    auditLog({
+      agent: AGENT_ID,
+      contactId,
+      opportunityId,
+      action: 'lead:task-created',
+      result: 'success',
+      durationMs: Date.now() - start,
+      metadata: { tier: score.tier, assignedTo },
+    });
+  } catch (err: any) {
+    auditLog({ agent: AGENT_ID, contactId: event.contactId, action: 'agent:crashed', result: 'error', reason: err?.message });
+  }
 }

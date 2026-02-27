@@ -16,26 +16,37 @@ const AGENT_ID = 'new-lead-pipeline';
 export async function runNewLeadPipeline(event: GunnerEvent): Promise<void> {
   if (!isEnabled(AGENT_ID)) return;
 
-  const { contactId, opportunityId, tenantId } = event;
-  const start = Date.now();
+  try {
+    const { contactId, opportunityId, tenantId } = event;
+    const start = Date.now();
 
-  const contact = await contactBot(contactId);
+    const contact = await contactBot(contactId).catch(err => {
+      auditLog({ agent: AGENT_ID, contactId, action: 'contactBot:failed', result: 'error', reason: err?.message });
+      return null;
+    });
 
-  await emit({
-    kind: 'lead.new',
-    tenantId,
-    contactId,
-    opportunityId,
-    contact,
-    receivedAt: Date.now(),
-  });
+    if (!contact) return;
 
-  auditLog({
-    agent: AGENT_ID,
-    contactId,
-    opportunityId,
-    action: 'lead.new:emitted',
-    result: 'success',
-    durationMs: Date.now() - start,
-  });
+    await emit({
+      kind: 'lead.new',
+      tenantId,
+      contactId,
+      opportunityId,
+      contact,
+      receivedAt: Date.now(),
+    }).catch(err => {
+      auditLog({ agent: AGENT_ID, contactId, action: 'emit:lead.new:failed', result: 'error', reason: err?.message });
+    });
+
+    auditLog({
+      agent: AGENT_ID,
+      contactId,
+      opportunityId,
+      action: 'lead.new:emitted',
+      result: 'success',
+      durationMs: Date.now() - start,
+    });
+  } catch (err: any) {
+    auditLog({ agent: AGENT_ID, contactId: event.contactId, action: 'agent:crashed', result: 'error', reason: err?.message });
+  }
 }

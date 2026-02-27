@@ -29,32 +29,38 @@ function renderTemplate(template: string, vars: Record<string, string>, list?: {
 export async function runLeadNoter(event: GunnerEvent): Promise<void> {
   if (!isEnabled(AGENT_ID)) return;
 
-  const { contactId, opportunityId, tenantId, score } = event;
-  if (!score) return;
+  try {
+    const { contactId, opportunityId, tenantId, score } = event;
+    if (!score) return;
 
-  const start = Date.now();
-  const playbook = await loadPlaybook(tenantId);
+    const start = Date.now();
+    const playbook = await loadPlaybook(tenantId);
 
-  const template = playbook.notes?.score_breakdown ??
-    'Lead Score: {{score}}/5 ({{tier}})\n{{#factors}}• {{name}}: {{passed}} — {{reason}}\n{{/factors}}';
+    const template = playbook.notes?.score_breakdown ??
+      'Lead Score: {{score}}/5 ({{tier}})\n{{#factors}}• {{name}}: {{passed}} — {{reason}}\n{{/factors}}';
 
-  const note = renderTemplate(
-    template,
-    { score: String(score.score), tier: score.tier },
-    {
-      key: 'factors',
-      items: score.factors.map((f) => ({ name: f.name, passed: f.passed ? '✅' : '❌', reason: f.reason })),
-    }
-  );
+    const note = renderTemplate(
+      template,
+      { score: String(score.score), tier: score.tier },
+      {
+        key: 'factors',
+        items: score.factors.map((f) => ({ name: f.name, passed: f.passed ? '✅' : '❌', reason: f.reason })),
+      },
+    );
 
-  await noteBot(contactId, note);
+    await noteBot(contactId, note).catch(err => {
+      auditLog({ agent: AGENT_ID, contactId, action: 'noteBot:failed', result: 'error', reason: err?.message });
+    });
 
-  auditLog({
-    agent: AGENT_ID,
-    contactId,
-    opportunityId,
-    action: 'lead:noted',
-    result: 'success',
-    durationMs: Date.now() - start,
-  });
+    auditLog({
+      agent: AGENT_ID,
+      contactId,
+      opportunityId,
+      action: 'lead:noted',
+      result: 'success',
+      durationMs: Date.now() - start,
+    });
+  } catch (err: any) {
+    auditLog({ agent: AGENT_ID, contactId: event.contactId, action: 'agent:crashed', result: 'error', reason: err?.message });
+  }
 }

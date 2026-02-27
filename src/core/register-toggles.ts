@@ -81,3 +81,7 @@ registerToggle({ id: 'bot-template', kind: 'bot', label: 'Template Bot', descrip
 registerToggle({ id: 'bot-scheduler', kind: 'bot', label: 'Scheduler Bot', description: 'All time/scheduling logic', enabled: true });
 registerToggle({ id: 'bot-guard', kind: 'bot', label: 'Guard Bot', description: 'Idempotency/dedup/guard checks', enabled: true });
 registerToggle({ id: 'bot-compliance', kind: 'bot', label: 'Compliance Bot', description: 'DNC and regulatory checks', enabled: true });
+
+// === INTELLIGENCE ===
+registerToggle({ id: 'bot-intelligence', kind: 'bot', label: 'Intelligence Bot', description: 'Learning memory — records actions, outcomes, and feedback for AI improvement', enabled: true });
+registerToggle({ id: 'intelligence-poller', kind: 'agent', label: 'Intelligence Poller', description: 'Daily learning cycle — matches outcomes, generates briefings, identifies trends', enabled: true });

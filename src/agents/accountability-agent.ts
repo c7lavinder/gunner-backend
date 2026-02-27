@@ -61,55 +61,65 @@ function resolveTier(overdueMinutes: number, tiers: TierConfig[]): EscalationTie
 export async function runAccountabilityAgent(event: GunnerEvent): Promise<void> {
   if (!isEnabled(AGENT_ID)) return;
 
-  const { tenantId } = event;
-  const start = Date.now();
-  const playbook = await loadPlaybook(tenantId);
-  const tiers: TierConfig[] = playbook?.accountability?.tiers ?? DEFAULT_TIERS;
-  const cooldownMins = playbook?.accountability?.cooldownMins ?? 60;
-  const escalationContact = playbook?.roles?.escalationContact ?? playbook?.roles?.acquisitionManager ?? 'am';
-  const leadership = playbook?.roles?.leadership ?? escalationContact;
+  try {
+    const { tenantId } = event;
+    const start = Date.now();
+    const playbook = await loadPlaybook(tenantId);
+    const tiers: TierConfig[] = playbook?.accountability?.tiers ?? DEFAULT_TIERS;
+    const cooldownMins = playbook?.accountability?.cooldownMins ?? 60;
+    const escalationContact = playbook?.roles?.escalationContact ?? playbook?.roles?.acquisitionManager ?? 'am';
+    const leadership = playbook?.roles?.leadership ?? escalationContact;
 
-  const overdueTasks: OverdueTask[] = (event.metadata as any)?.overdueTasks ?? [];
+    const overdueTasks: OverdueTask[] = (event.metadata as any)?.overdueTasks ?? [];
 
-  for (const task of overdueTasks) {
-    const tier = resolveTier(task.overdueMinutes, tiers);
-    if (!tier) continue;
-    if (isOnCooldown(task.taskId, tier, cooldownMins)) continue;
+    for (const task of overdueTasks) {
+      const tier = resolveTier(task.overdueMinutes, tiers);
+      if (!tier) continue;
+      if (isOnCooldown(task.taskId, tier, cooldownMins)) continue;
 
-    if (!isDryRun()) {
-      switch (tier) {
-        case 'yellow':
-          await tagBot(task.contactId, ['overdue-task']);
-          break;
+      if (!isDryRun()) {
+        switch (tier) {
+          case 'yellow':
+            await tagBot(task.contactId, ['overdue-task']).catch(err => {
+              auditLog({ agent: AGENT_ID, contactId: task.contactId, action: 'tagBot:failed', result: 'error', reason: err?.message });
+            });
+            break;
 
-        case 'orange':
-          await taskBot(task.contactId, {
-            title: `⚠️ OVERDUE (${task.overdueMinutes}min): ${task.title}`,
-            assignedTo: escalationContact,
-            dueDate: new Date(Date.now() + 30 * 60_000).toISOString(),
-          });
-          break;
+          case 'orange':
+            await taskBot(task.contactId, {
+              title: `⚠️ OVERDUE (${task.overdueMinutes}min): ${task.title}`,
+              assignedTo: escalationContact,
+              dueDate: new Date(Date.now() + 30 * 60_000).toISOString(),
+            }).catch(err => {
+              auditLog({ agent: AGENT_ID, contactId: task.contactId, action: 'taskBot:failed', result: 'error', reason: err?.message });
+            });
+            break;
 
-        case 'red':
-          await taskBot(task.contactId, {
-            title: `🚨 CRITICAL OVERDUE (${task.overdueMinutes}min): ${task.title}`,
-            assignedTo: leadership,
-            dueDate: new Date(Date.now() + 15 * 60_000).toISOString(),
-          });
-          break;
+          case 'red':
+            await taskBot(task.contactId, {
+              title: `🚨 CRITICAL OVERDUE (${task.overdueMinutes}min): ${task.title}`,
+              assignedTo: leadership,
+              dueDate: new Date(Date.now() + 15 * 60_000).toISOString(),
+            }).catch(err => {
+              auditLog({ agent: AGENT_ID, contactId: task.contactId, action: 'taskBot:failed', result: 'error', reason: err?.message });
+            });
+            break;
+        }
+
+        setCooldown(task.taskId, tier);
       }
 
-      setCooldown(task.taskId, tier);
+      auditLog({
+        agent: AGENT_ID,
+        contactId: task.contactId,
+        opportunityId: task.opportunityId,
+        action: `escalation.${tier}`,
+        result: 'success',
+        metadata: { overdueMinutes: task.overdueMinutes },
+        durationMs: Date.now() - start,
+      });
     }
-
-    auditLog({
-      agent: AGENT_ID,
-      contactId: task.contactId,
-      opportunityId: task.opportunityId,
-      action: `escalation.${tier}`,
-      result: 'success',
-      metadata: { overdueMinutes: task.overdueMinutes },
-      durationMs: Date.now() - start,
-    });
+  } catch (err: any) {
+    auditLog({ agent: AGENT_ID, contactId: event.contactId ?? '*', action: 'agent:crashed', result: 'error', reason: err?.message });
   }
 }
