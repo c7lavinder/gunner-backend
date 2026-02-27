@@ -81,6 +81,20 @@ a{color:var(--cyan);text-decoration:none}
 .detail-bullets li{font-size:.95rem;color:var(--muted);padding:6px 0;display:flex;align-items:flex-start;gap:8px;line-height:1.6}
 .detail-bullets li::before{content:'›';color:var(--green);font-weight:700;font-size:1.1rem;flex-shrink:0;margin-top:-1px}
 
+.output-list{list-style:none;padding:0}
+.output-item{display:flex;align-items:flex-start;gap:10px;padding:8px 12px;margin-bottom:6px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px}
+.output-type{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:3px 8px;border-radius:4px;white-space:nowrap;flex-shrink:0;margin-top:1px}
+.ot-sms{background:rgba(34,197,94,.15);color:var(--green)}
+.ot-task{background:rgba(234,179,8,.15);color:var(--yellow)}
+.ot-note{background:rgba(6,182,212,.15);color:var(--cyan)}
+.ot-tag{background:rgba(168,85,247,.15);color:var(--purple)}
+.ot-stage{background:rgba(249,115,22,.15);color:var(--orange)}
+.ot-email{background:rgba(236,72,153,.15);color:var(--pink)}
+.ot-api{background:rgba(59,130,246,.15);color:var(--blue)}
+.ot-data{background:rgba(255,255,255,.1);color:var(--muted)}
+.ot-alert{background:rgba(239,68,68,.15);color:var(--red)}
+.output-text{font-size:.88rem;color:var(--text);line-height:1.5}
+
 .issues-list{list-style:none;padding:0}
 .issues-list li{font-size:.88rem;color:var(--red);padding:4px 0;opacity:.9}
 .issues-list li::before{content:'· '}
@@ -200,6 +214,13 @@ const AGENTS = {
     whenFires:'Fires automatically the moment a new lead enters your pipeline.',
     triggers:[{event:'Webhook',label:'OpportunityCreate',color:'green'},{event:'Stage Change',label:'→ New Lead',color:'cyan'}],
     whatItDoes:['Verifies the phone number, email, and address are real','Enriches lead with BatchLeads: AVM, equity, distress flags, driving distance','Grades property condition from Street View (A–F scale)','Flags anything that looks wrong so your team doesn\'t waste a call'],
+    outputs:[
+      {type:'data',label:'DATA',text:'Updates contact: AVM, equity %, distress flags, driving distance from BatchLeads'},
+      {type:'note',label:'NOTE',text:'Adds CRM note: "Data Hygiene: Phone ✅ | Email ✅ | Address ✅ | AVM: $XXX,XXX | Equity: XX%"'},
+      {type:'tag',label:'TAG',text:'Tags contact: "Bad Phone" or "Bad Email" if verification fails'},
+      {type:'data',label:'DATA',text:'Sets property condition grade (A–F) from Street View analysis'},
+      {type:'alert',label:'ALERT',text:'Flags lead for manual review if 2+ data points fail verification'},
+    ],
     issues:['BatchLeads enrichment skips if BATCHLEADS_API_KEY not set','Property condition grading skips if Google Maps key not set'],
     learning:'Every time a contact record gets corrected after cleaning, Gunner notes the pattern. Over time it gets better at recognizing bad sources — so fewer bad records make it through.'
   },
@@ -208,6 +229,12 @@ const AGENTS = {
     whenFires:'Fires on every new lead to build an intelligence profile.',
     triggers:[{event:'Webhook',label:'OpportunityCreate',color:'green'}],
     whatItDoes:['Analyzes seller motivation from lead source data','Scores urgency, timeline, and property condition','Creates initial intelligence profile for the contact','Flags high-priority leads for immediate action'],
+    outputs:[
+      {type:'note',label:'NOTE',text:'Adds CRM note: "Lead IQ: Score XX/100 | Motivation: HIGH | Timeline: 30 days | Condition: Fair"'},
+      {type:'data',label:'DATA',text:'Sets lead_score, motivation_level, timeline_urgency on contact record'},
+      {type:'tag',label:'TAG',text:'Tags contact: "Hot Lead", "Motivated Seller", or "Low Priority"'},
+      {type:'alert',label:'ALERT',text:'If score ≥ 75: flags as HOT — team gets priority notification'},
+    ],
     issues:null,
     learning:'Tracks which lead sources produce the most motivated sellers and adjusts scoring weights over time.'
   },
@@ -216,6 +243,11 @@ const AGENTS = {
     whenFires:'Fires on every new lead — sends the first text within 3 minutes.',
     triggers:[{event:'Webhook',label:'OpportunityCreate',color:'green'},{event:'Pipeline',label:'Sales → New Lead',color:'cyan'}],
     whatItDoes:['Sends personalized first text within 3 minutes','Matches tone to lead source and motivation level','Respects 9AM–6PM send window (TCPA compliance)','Queues for next morning if outside window'],
+    outputs:[
+      {type:'sms',label:'SMS',text:'Sends: "Hi [name], this is [LM] with New Again Houses. Someone nearby [address] inquired about the home. Available for a sec? Reply STOP to opt out"'},
+      {type:'note',label:'NOTE',text:'Adds CRM note: "Initial outreach sent at [time] — [template variant used]"'},
+      {type:'task',label:'TASK',text:'If outside send window: creates scheduled task "Send initial text at 9:00 AM"'},
+    ],
     issues:null,
     learning:'Tracks which opening messages get responses and refines templates over time.'
   },
@@ -224,6 +256,13 @@ const AGENTS = {
     whenFires:'Fires when a lead moves to Warm or Hot stage.',
     triggers:[{event:'Stage Change',label:'→ Warm Lead',color:'cyan'},{event:'Stage Change',label:'→ Hot Lead',color:'orange'}],
     whatItDoes:['Activates 24-touch drip sequence over 104 days','Personalizes each message based on property and seller','Pauses automatically if seller responds','Cancels permanently on appointment set'],
+    outputs:[
+      {type:'sms',label:'SMS',text:'Sends drip touch: "Hey [name], just checking in on [address]. Still thinking about selling? — [LM]"'},
+      {type:'data',label:'DATA',text:'Sets drip_active=true, drip_touch=X, drip_next_date on contact'},
+      {type:'note',label:'NOTE',text:'Adds CRM note: "Drip touch #X/24 sent — Day [N] of sequence"'},
+      {type:'stage',label:'STAGE',text:'On seller response: pauses drip, routes to Response Agent'},
+      {type:'stage',label:'STAGE',text:'On appointment set: cancels drip permanently, clears drip fields'},
+    ],
     issues:null,
     learning:'Monitors which drip touches get responses and optimizes timing and messaging.'
   },
@@ -232,6 +271,12 @@ const AGENTS = {
     whenFires:'Fires after every completed call between LM and a lead.',
     triggers:[{event:'Gunner Webhook',label:'Call Completed',color:'purple'},{event:'Source',label:'Gunner Call Recording',color:'cyan'}],
     whatItDoes:['Summarizes call and posts CRM note','Identifies next steps from conversation','Creates follow-up tasks automatically','Flags coaching opportunities for the call'],
+    outputs:[
+      {type:'note',label:'NOTE',text:'Adds CRM note: "Call Summary: [2-3 sentence AI summary of conversation, key points, seller sentiment]"'},
+      {type:'task',label:'TASK',text:'Creates task for LM: "[Next step from call] — due [timeframe]"'},
+      {type:'tag',label:'TAG',text:'Tags call outcome: "Appointment Set", "Not Right Now", "Wrong Number", "No Answer"'},
+      {type:'data',label:'DATA',text:'Updates contact: last_call_date, call_disposition, call_count'},
+    ],
     issues:null,
     learning:'Improves call summaries based on coaching feedback and which summaries LMs find most useful.'
   },
@@ -240,6 +285,11 @@ const AGENTS = {
     whenFires:'Fires on every completed call — grades performance.',
     triggers:[{event:'Gunner Webhook',label:'Call Completed',color:'purple'},{event:'Grading',label:'6-Factor Scorecard',color:'cyan'}],
     whatItDoes:['Grades call on 6 factors (rapport, discovery, objection handling, etc.)','Provides specific, actionable coaching notes','Scores A through F with detailed breakdown','Posts results to Gunner app leaderboard'],
+    outputs:[
+      {type:'api',label:'API',text:'Posts to Gunner app: grade (A–F), score (0–100), per-factor breakdown'},
+      {type:'note',label:'NOTE',text:'Adds CRM note: "Call Grade: [B+] — Strong discovery, missed urgency signal at 4:20. Work on closing."'},
+      {type:'data',label:'DATA',text:'Updates Gunner leaderboard: [LM name] score, rank, streak'},
+    ],
     issues:null,
     learning:'Calibrates grading based on which call behaviors actually convert to appointments.'
   },
@@ -248,6 +298,13 @@ const AGENTS = {
     whenFires:'Fires on every inbound text message from a lead.',
     triggers:[{event:'Webhook',label:'InboundMessage',color:'green'},{event:'Channel',label:'SMS from Lead',color:'pink'}],
     whatItDoes:['Classifies intent: interest, brushoff, DNC, or scheduling','Generates contextual AI reply within seconds','Escalates to Follow-Up Closer on buying interest','Handles DNC requests automatically'],
+    outputs:[
+      {type:'sms',label:'SMS',text:'Sends AI reply: contextual response matching seller\'s tone and intent'},
+      {type:'tag',label:'TAG',text:'Tags intent: "Interest", "Brushoff", "DNC Request", "Scheduling Intent"'},
+      {type:'stage',label:'STAGE',text:'On interest: fires Follow-Up Closer agent'},
+      {type:'data',label:'DATA',text:'On DNC: sets do_not_contact=true, removes from all sequences'},
+      {type:'note',label:'NOTE',text:'Adds CRM note: "Inbound SMS classified as [intent]. AI replied: [summary]"'},
+    ],
     issues:null,
     learning:'Tracks which reply styles drive engagement and adjusts tone and approach.'
   },
@@ -256,6 +313,13 @@ const AGENTS = {
     whenFires:'Fires on walkthrough, offer appointment, and made offer stages.',
     triggers:[{event:'Stage Change',label:'→ Walkthrough Apt',color:'purple'},{event:'Stage Change',label:'→ Offer Apt',color:'orange'},{event:'Stage Change',label:'→ Made Offer',color:'green'}],
     whatItDoes:['Briefs Kyle with comps, ARV, and seller profile','Calculates offer range based on comparable sales','Handles no-show path with re-engagement text','Creates follow-up tasks on offer rejection'],
+    outputs:[
+      {type:'task',label:'TASK',text:'Creates task for Kyle: "Review deal package for [name] at [address] — offer range $XXXk–$XXXk"'},
+      {type:'note',label:'NOTE',text:'Adds CRM note: "AM Brief: ARV $XXXk | Repairs $XXk | Offer range $XXXk–$XXXk | [motivation summary]"'},
+      {type:'sms',label:'SMS',text:'On no-show: sends re-engagement text to seller + creates LM reschedule task (24h)'},
+      {type:'stage',label:'STAGE',text:'On no-show: moves to Pending Apt stage for reschedule'},
+      {type:'task',label:'TASK',text:'On offer rejected: creates task "Follow up with offer — due 1 week" + fires Bucket Re-eval'},
+    ],
     issues:null,
     learning:'Refines comp selection and ARV estimates based on which deals actually close.'
   },
@@ -264,6 +328,11 @@ const AGENTS = {
     whenFires:'Fires when a lead enters any appointment stage.',
     triggers:[{event:'Stage Change',label:'→ Pending Apt',color:'cyan'},{event:'Stage Change',label:'→ Walkthrough Apt',color:'purple'},{event:'Stage Change',label:'→ Offer Apt',color:'orange'}],
     whatItDoes:['Pulls comparable sales from the area','Estimates ARV and repair costs','Creates seller motivation brief','Packages everything for Kyle before the appointment'],
+    outputs:[
+      {type:'task',label:'TASK',text:'Creates task for Kyle: "Apt prep ready for [name] at [address] — [date/time]"'},
+      {type:'note',label:'NOTE',text:'Adds CRM note: "Apt Package: [3-5] comps | ARV: $XXXk | Est. repairs: $XXk | Motivation: [summary]"'},
+      {type:'data',label:'DATA',text:'Stores comp data, ARV estimate, repair estimate on contact record'},
+    ],
     issues:null,
     learning:'Gets better at repair estimates based on walkthrough feedback and actual rehab costs.'
   },
@@ -272,6 +341,12 @@ const AGENTS = {
     whenFires:'Fires when an offer is made — follows up until response.',
     triggers:[{event:'Stage Change',label:'→ Made Offer',color:'orange'},{event:'Schedule',label:'Day 3 / 7 / 14 Auto',color:'cyan'}],
     whatItDoes:['Day 3, Day 7, Day 14 follow-up sequence to seller','Personalizes messages based on offer details and seller situation','Escalates if no response after 14 days','Tracks seller engagement signals'],
+    outputs:[
+      {type:'sms',label:'SMS',text:'Day 3: "Just wanted to check if you\'ve had a chance to review our offer on [address]..."'},
+      {type:'sms',label:'SMS',text:'Day 7: "Wanted to circle back on our offer of $XXXk for [address]..."'},
+      {type:'sms',label:'SMS',text:'Day 14: "Our offer is still on the table for [address]. Would love to make this work."'},
+      {type:'task',label:'TASK',text:'After Day 14 with no reply: creates task for Kyle "Offer expired — call seller or close out"'},
+    ],
     issues:null,
     learning:'Tracks which follow-up timing and messaging converts and adjusts intervals.'
   },
@@ -280,6 +355,13 @@ const AGENTS = {
     whenFires:'Fires when a seller responds to an offer.',
     triggers:[{event:'Webhook',label:'InboundMessage',color:'green'},{event:'Pipeline',label:'Sales → Made Offer',color:'orange'}],
     whatItDoes:['Classifies seller response (accept, counter, reject, stall)','Routes to appropriate next action','Notifies Kyle immediately on positive signals','Creates tasks for negotiation follow-up'],
+    outputs:[
+      {type:'tag',label:'TAG',text:'Tags response: "Offer Accepted", "Counter Offer", "Offer Rejected", "Stalling"'},
+      {type:'task',label:'TASK',text:'On accept: creates task for Kyle "Seller accepted — send to TC immediately"'},
+      {type:'stage',label:'STAGE',text:'On accept: moves opportunity → Under Contract'},
+      {type:'task',label:'TASK',text:'On counter: creates task for Kyle "Counter offer received — $XXXk — respond within 24h"'},
+      {type:'note',label:'NOTE',text:'Adds CRM note: "Offer Reply: [classification]. Seller said: [key quote from message]"'},
+    ],
     issues:null,
     learning:'Learns to recognize positive buying signals earlier in conversation.'
   },
@@ -288,6 +370,11 @@ const AGENTS = {
     whenFires:'Fires on follow-up bucket placement (1mo, 4mo, 1yr).',
     triggers:[{event:'Stage Change',label:'→ Follow Up 1mo',color:'cyan'},{event:'Stage Change',label:'→ Follow Up 4mo',color:'purple'},{event:'Stage Change',label:'→ Follow Up 1yr',color:'orange'}],
     whatItDoes:['Organizes follow-up queue by priority','Schedules touches at correct intervals per bucket','1mo: 7-day intervals (6 touches), 4mo: 20-day intervals, 1yr: 60-day intervals','Hands off to Follow-Up Messenger for execution'],
+    outputs:[
+      {type:'data',label:'DATA',text:'Sets follow_up_bucket, touch_number, next_touch_date on contact'},
+      {type:'stage',label:'STAGE',text:'1mo complete → moves to 4mo bucket | 4mo complete → moves to 1yr | 1yr complete → Dead Lead'},
+      {type:'note',label:'NOTE',text:'Adds CRM note: "Organized into [1mo] bucket — Touch 1/6 scheduled for [date]"'},
+    ],
     issues:null,
     learning:'Optimizes bucket placement based on which leads re-engage from which intervals.'
   },
@@ -296,6 +383,11 @@ const AGENTS = {
     whenFires:'Fires on scheduled follow-up touch.',
     triggers:[{event:'Schedule',label:'Cadence Timer',color:'green'},{event:'Source',label:'Follow-Up Queue',color:'cyan'}],
     whatItDoes:['Sends personalized follow-up message','Varies approach based on touch number','References previous conversation context','Respects send window and contact preferences'],
+    outputs:[
+      {type:'sms',label:'SMS',text:'Sends: "Hey [name], it\'s been a while since we talked about [address]. Anything changed? — [LM]"'},
+      {type:'note',label:'NOTE',text:'Adds CRM note: "Follow-up touch #X/6 sent — [bucket] bucket, Day [N]"'},
+      {type:'data',label:'DATA',text:'Updates touch_number, last_follow_up_date on contact'},
+    ],
     issues:null,
     learning:'Tracks which follow-up messages re-engage leads and improves templates.'
   },
@@ -304,6 +396,12 @@ const AGENTS = {
     whenFires:'Fires when Response Agent detects scheduling intent or buying interest.',
     triggers:[{event:'Response Agent',label:'Interest Detected',color:'green'},{event:'Intent',label:'Scheduling / Buying',color:'pink'}],
     whatItDoes:['Engages lead with appointment-setting language','Confirms availability and suggests times','Creates appointment in GHL on confirmation','Transitions lead out of follow-up bucket'],
+    outputs:[
+      {type:'sms',label:'SMS',text:'Sends: "Great to hear from you! Kyle can meet [day] at [time] — does that work?"'},
+      {type:'stage',label:'STAGE',text:'On confirmation: moves opportunity → Pending Apt'},
+      {type:'task',label:'TASK',text:'Creates task for Kyle: "Appointment confirmed with [name] at [address] — [date/time]"'},
+      {type:'data',label:'DATA',text:'Clears follow-up bucket, sets appointment_date, cancels drip permanently'},
+    ],
     issues:null,
     learning:'Learns which closing approaches work best for re-engaged leads.'
   },
@@ -312,6 +410,11 @@ const AGENTS = {
     whenFires:'Fires when a lead goes silent for 14+ days.',
     triggers:[{event:'Stage Change',label:'→ Ghosted',color:'orange'},{event:'Condition',label:'14+ Days No Contact',color:'cyan'}],
     whatItDoes:['Sends breakup text to prompt a response','Sends new comp email with recent area sales','Drops personalized voicemail','Varies approach based on lead history'],
+    outputs:[
+      {type:'sms',label:'SMS',text:'Sends breakup: "No hard feelings if you\'ve decided not to sell [address]. Just wanted to close the loop."'},
+      {type:'email',label:'EMAIL',text:'Sends comp update: "3 homes near [address] just sold — here\'s what yours could be worth"'},
+      {type:'note',label:'NOTE',text:'Adds CRM note: "Ghosted re-engagement sequence started — breakup text sent"'},
+    ],
     issues:null,
     learning:'Tracks which re-engagement tactics get responses and prioritizes them.'
   },
@@ -320,6 +423,11 @@ const AGENTS = {
     whenFires:'Fires on any non-positive seller reply during follow-up.',
     triggers:[{event:'Webhook',label:'InboundMessage',color:'green'},{event:'Condition',label:'Non-Positive Reply',color:'orange'}],
     whatItDoes:['AI evaluates seller response sentiment','Determines if bucket reassignment needed','Moves lead to appropriate follow-up tier','Updates pipeline stage automatically'],
+    outputs:[
+      {type:'stage',label:'STAGE',text:'Moves to new bucket: 1mo → 4mo → 1yr based on AI sentiment analysis'},
+      {type:'note',label:'NOTE',text:'Adds CRM note: "Bucket Re-eval: Seller replied [negative]. Moving from [1mo] → [4mo]"'},
+      {type:'data',label:'DATA',text:'Updates follow_up_bucket, resets touch_number to 1'},
+    ],
     issues:null,
     learning:'Gets better at predicting which bucket produces the best re-engagement rates.'
   },
@@ -328,6 +436,13 @@ const AGENTS = {
     whenFires:'Fires when a seller says the property was already sold.',
     triggers:[{event:'AI Classification',label:'\"Already Sold\" Detected',color:'orange'},{event:'Verification',label:'County Records Check',color:'cyan'}],
     whatItDoes:['Verifies sale against county records','If confirmed sold → marks as Dead Lead','If no county record found → marks as Under Contract for re-engagement','Prevents wasted follow-up on closed deals'],
+    outputs:[
+      {type:'api',label:'API',text:'Queries county records for recent sale at [address]'},
+      {type:'stage',label:'STAGE',text:'Confirmed sold: moves opportunity → Dead Lead'},
+      {type:'stage',label:'STAGE',text:'No record found: moves opportunity → Under Contract (re-engage)'},
+      {type:'note',label:'NOTE',text:'Adds CRM note: "Already Sold check: [Confirmed/Not confirmed] via county records"'},
+      {type:'tag',label:'TAG',text:'Tags: "Confirmed Sold" or "Claimed Sold — Unverified"'},
+    ],
     issues:null,
     learning:'Builds database of sold properties to catch duplicates faster.'
   },
@@ -336,6 +451,13 @@ const AGENTS = {
     whenFires:'Fires when a deal moves to Under Contract.',
     triggers:[{event:'Stage Change',label:'→ Under Contract',color:'green'},{event:'Pipeline',label:'Sales Process',color:'cyan'}],
     whatItDoes:['Sends confirmation SMS to seller','Creates AM task with 1-hour deadline','Initiates TC and Dispo package workflows','Logs contract milestone'],
+    outputs:[
+      {type:'sms',label:'SMS',text:'Sends: "Great news [name]! Everything is official on [address]. Our team will be in touch with next steps."'},
+      {type:'task',label:'TASK',text:'Creates task for Kyle: "UC — Get details to TC and Dispo within 1 hour" (1hr deadline)'},
+      {type:'api',label:'API',text:'Fires TC Packager agent → compiles title company package'},
+      {type:'api',label:'API',text:'Fires Dispo Packager agent → creates buyer-facing deal blast'},
+      {type:'note',label:'NOTE',text:'Adds CRM note: "Under Contract confirmed. TC + Dispo packages initiated."'},
+    ],
     issues:null,
     learning:'Tracks which confirmation messages reduce seller cold feet.'
   },
@@ -344,6 +466,12 @@ const AGENTS = {
     whenFires:'Runs periodic checks on all under-contract deals.',
     triggers:[{event:'Stage Change',label:'→ Under Contract',color:'green'},{event:'Schedule',label:'Every 30min Check',color:'cyan'}],
     whatItDoes:['Monitors seller communication activity','Sends proactive check-ins if seller goes quiet','Creates urgent tasks on seller concerns','Tracks days-to-close and flags delays'],
+    outputs:[
+      {type:'sms',label:'SMS',text:'If quiet 5+ days: "Hey [name], just checking in on [address]. Everything still on track?"'},
+      {type:'task',label:'TASK',text:'On seller concern: creates URGENT task for Kyle "Seller expressed concern — call ASAP"'},
+      {type:'alert',label:'ALERT',text:'If 10+ days no contact: escalation alert to Corey'},
+      {type:'note',label:'NOTE',text:'Adds CRM note: "UC Monitor: Day [X] of contract. Seller [active/quiet]. Status: [on track/at risk]"'},
+    ],
     issues:null,
     learning:'Learns which check-in timing prevents deals from falling through.'
   },
@@ -352,6 +480,11 @@ const AGENTS = {
     whenFires:'Fires when a deal goes under contract.',
     triggers:[{event:'Stage Change',label:'→ Under Contract',color:'green'},{event:'Auto',label:'Fires with Contract Bot',color:'purple'}],
     whatItDoes:['Compiles all deal documents into TC package','Prepares title company submission','Includes property details, contract terms, contact info','Sends to title company for processing'],
+    outputs:[
+      {type:'email',label:'EMAIL',text:'Sends TC package: property address, seller info, contract terms, purchase price, closing date'},
+      {type:'note',label:'NOTE',text:'Adds CRM note: "TC Package sent to [title company] — awaiting title search"'},
+      {type:'task',label:'TASK',text:'Creates task: "Confirm TC received package — follow up if no response in 24h"'},
+    ],
     issues:null,
     learning:'Streamlines package format based on title company feedback.'
   },
@@ -360,6 +493,12 @@ const AGENTS = {
     whenFires:'Fires when a deal goes under contract.',
     triggers:[{event:'Stage Change',label:'→ Under Contract',color:'green'},{event:'Auto',label:'Fires with Contract Bot',color:'purple'}],
     whatItDoes:['Creates buyer-facing deal package','Includes property photos, ARV, asking price, repair estimates','Blasts to qualified buyer list','Tracks buyer interest and responses'],
+    outputs:[
+      {type:'email',label:'EMAIL',text:'Blasts to [XX] buyers: "[address] — $XXXk | ARV $XXXk | Repairs $XXk | [X] bed/[X] bath"'},
+      {type:'sms',label:'SMS',text:'SMS blast to top buyers: "New deal just hit — [address] at $XXXk. Reply YES for details."'},
+      {type:'note',label:'NOTE',text:'Adds CRM note: "Dispo package sent to [XX] buyers. [X] opened, [X] replied."'},
+      {type:'stage',label:'STAGE',text:'Creates opportunity in Dispo Pipeline → New Deal stage'},
+    ],
     issues:null,
     learning:'Learns which deal presentation formats get faster buyer responses.'
   },
@@ -368,6 +507,12 @@ const AGENTS = {
     whenFires:'Fires after a deal closes (Purchased stage).',
     triggers:[{event:'Stage Change',label:'→ Purchased',color:'green'},{event:'Schedule',label:'24h / 48h / 7d Drip',color:'cyan'}],
     whatItDoes:['Sends thank you text at 24 hours','Requests Google review at 48 hours','Sends referral ask at 7 days','Maintains seller relationship post-close'],
+    outputs:[
+      {type:'sms',label:'SMS',text:'24h: "Thank you [name]! It was great working with you on [address]. Wishing you all the best."'},
+      {type:'sms',label:'SMS',text:'48h: "Would you mind leaving us a quick Google review? [link] — it really helps!"'},
+      {type:'sms',label:'SMS',text:'7d: "Hey [name], know anyone else thinking about selling? We\'d love to help them too."'},
+      {type:'note',label:'NOTE',text:'Adds CRM note: "Post-close sequence: [touch X/3] sent"'},
+    ],
     issues:null,
     learning:'Tracks which post-close messages generate referrals and reviews.'
   },
@@ -376,6 +521,11 @@ const AGENTS = {
     whenFires:'Fires when a new deal enters the dispo pipeline.',
     triggers:[{event:'Stage Change',label:'→ New Deal',color:'green'},{event:'Pipeline',label:'Dispo Process',color:'purple'}],
     whatItDoes:['Validates deal information completeness','Creates deal profile with key metrics','Initiates buyer matching process','Logs deal entry'],
+    outputs:[
+      {type:'data',label:'DATA',text:'Creates deal profile: address, purchase price, ARV, repair estimate, spread'},
+      {type:'api',label:'API',text:'Fires Buyer Matcher agent to find matching buyers'},
+      {type:'note',label:'NOTE',text:'Adds note: "New deal intake complete. Spread: $XXk. Buyer matching initiated."'},
+    ],
     issues:null,
     learning:'Identifies which deal data points predict faster closings.'
   },
@@ -384,6 +534,10 @@ const AGENTS = {
     whenFires:'Fires on new deal intake.',
     triggers:[{event:'Stage Change',label:'→ New Deal',color:'green'},{event:'Auto',label:'Fires with Deal Intake',color:'purple'}],
     whatItDoes:['Matches deal criteria against buyer preferences','Ranks buyers by likelihood to close','Considers geography, price range, property type','Generates priority buyer list'],
+    outputs:[
+      {type:'data',label:'DATA',text:'Generates ranked buyer list: [XX] matches sorted by close probability'},
+      {type:'note',label:'NOTE',text:'Adds note: "Buyer match complete. Top match: [buyer name] — XX% match score"'},
+    ],
     issues:null,
     learning:'Improves matching based on which buyers actually close on which deal types.'
   },
@@ -392,6 +546,11 @@ const AGENTS = {
     whenFires:'Fires when deal is cleared to send.',
     triggers:[{event:'Stage Change',label:'→ Clear to Send',color:'green'},{event:'Pipeline',label:'Dispo Process',color:'purple'}],
     whatItDoes:['Sends deal to matched buyer list','Uses email and SMS channels','Tracks open rates and responses','Manages blast timing for maximum engagement'],
+    outputs:[
+      {type:'email',label:'EMAIL',text:'Blast to [XX] buyers with deal package, photos, and terms'},
+      {type:'sms',label:'SMS',text:'SMS to top [XX] buyers: "New deal — [address] at $XXXk. Reply YES for details."'},
+      {type:'data',label:'DATA',text:'Tracks: [X] sent, [X] opened, [X] replied'},
+    ],
     issues:null,
     learning:'Optimizes send times and messaging based on buyer response patterns.'
   },
@@ -400,6 +559,11 @@ const AGENTS = {
     whenFires:'Fires when buyer offers come in.',
     triggers:[{event:'Stage Change',label:'→ Offers Received',color:'green'},{event:'Pipeline',label:'Dispo Process',color:'purple'}],
     whatItDoes:['Collects and organizes buyer offers','Compares offers side-by-side','Ranks by terms (price, closing speed, contingencies)','Presents summary to Esteban'],
+    outputs:[
+      {type:'note',label:'NOTE',text:'Adds note: "Offer received: [buyer] at $XXXk | Close in [X] days | [contingencies]"'},
+      {type:'task',label:'TASK',text:'Creates task for Esteban: "Review [X] offers on [address] — top offer $XXXk"'},
+      {type:'data',label:'DATA',text:'Stores offer comparison: price, speed, contingencies ranked'},
+    ],
     issues:null,
     learning:'Learns which offer characteristics predict successful closings.'
   },
@@ -408,6 +572,11 @@ const AGENTS = {
     whenFires:'Fires when a deal is flagged for JV partner.',
     triggers:[{event:'Stage Change',label:'→ With JV Partner',color:'purple'},{event:'Pipeline',label:'Dispo Process',color:'cyan'}],
     whatItDoes:['Routes deal to appropriate JV partner','Prepares JV-specific deal package','Manages communication flow','Tracks JV deal progress'],
+    outputs:[
+      {type:'email',label:'EMAIL',text:'Sends JV package to [partner name] with deal terms and split structure'},
+      {type:'task',label:'TASK',text:'Creates task for Esteban: "JV deal sent to [partner] — follow up in 48h"'},
+      {type:'note',label:'NOTE',text:'Adds note: "Routed to JV partner [name]. Split: XX/XX."'},
+    ],
     issues:null,
     learning:'Identifies which JV partners close fastest on which deal types.'
   },
@@ -416,6 +585,12 @@ const AGENTS = {
     whenFires:'Fires when a deal needs to be terminated.',
     triggers:[{event:'Stage Change',label:'→ Need to Terminate',color:'orange'},{event:'Pipeline',label:'Dispo Process',color:'cyan'}],
     whatItDoes:['Sends termination notice to all parties','Handles cancellation paperwork triggers','Updates pipeline status','Logs termination reason for future reference'],
+    outputs:[
+      {type:'email',label:'EMAIL',text:'Sends termination notice to buyer, seller, and title company'},
+      {type:'stage',label:'STAGE',text:'Moves opportunity → Terminated'},
+      {type:'note',label:'NOTE',text:'Adds note: "Deal terminated. Reason: [reason]. Earnest release: [status]"'},
+      {type:'task',label:'TASK',text:'Creates task: "Process earnest money release"'},
+    ],
     issues:null,
     learning:'Identifies early warning signs of deals likely to terminate.'
   },
@@ -424,6 +599,11 @@ const AGENTS = {
     whenFires:'Fires when a buyer is under contract.',
     triggers:[{event:'Stage Change',label:'→ UC with Buyer',color:'green'},{event:'Pipeline',label:'Dispo Process',color:'purple'}],
     whatItDoes:['Manages buyer-side closing process','Coordinates between buyer, seller, and title','Sends milestone updates','Tracks days to close'],
+    outputs:[
+      {type:'sms',label:'SMS',text:'Milestone update to buyer: "Closing on [address] is on track for [date]"'},
+      {type:'task',label:'TASK',text:'Creates task: "Confirm closing date with title — [X] days remaining"'},
+      {type:'note',label:'NOTE',text:'Adds note: "Dispo closing: Day [X]. Status: [on track/delayed]. Est close: [date]"'},
+    ],
     issues:null,
     learning:'Optimizes closing coordination based on historical timelines.'
   },
@@ -432,6 +612,12 @@ const AGENTS = {
     whenFires:'Fires when deal is working with title company.',
     triggers:[{event:'Stage Change',label:'→ Working with Title',color:'cyan'},{event:'Pipeline',label:'Dispo Process',color:'purple'}],
     whatItDoes:['Manages title company communication','Tracks document submission status','Flags missing items','Sends reminders on deadlines'],
+    outputs:[
+      {type:'email',label:'EMAIL',text:'Reminder to TC: "Missing [document] for [address] — closing in [X] days"'},
+      {type:'task',label:'TASK',text:'Creates task: "Follow up with title on [missing item]"'},
+      {type:'alert',label:'ALERT',text:'If deadline at risk: escalation to Esteban + Corey'},
+      {type:'note',label:'NOTE',text:'Adds note: "Title status: [X/Y] docs received. Missing: [list]"'},
+    ],
     issues:null,
     learning:'Learns which title companies close fastest and flags potential delays early.'
   },
@@ -440,6 +626,12 @@ const AGENTS = {
     whenFires:'Fires when a dispo deal closes.',
     triggers:[{event:'Stage Change',label:'→ Closed',color:'green'},{event:'Pipeline',label:'Dispo Process',color:'purple'}],
     whatItDoes:['Confirms closing with all parties','Calculates final profit/spread','Updates buyer reliability score','Logs closed deal metrics'],
+    outputs:[
+      {type:'sms',label:'SMS',text:'Sends to buyer + seller: "Closing confirmed on [address]! Congratulations."'},
+      {type:'data',label:'DATA',text:'Logs deal: purchase $XXXk → sold $XXXk → profit $XXk | Days to close: [X]'},
+      {type:'data',label:'DATA',text:'Updates buyer reliability score based on closing speed and communication'},
+      {type:'note',label:'NOTE',text:'Adds note: "CLOSED. Spread: $XXk. Buyer: [name]. Days in pipeline: [X]"'},
+    ],
     issues:null,
     learning:'Tracks profit margins by deal type to improve future pricing.'
   },
@@ -448,6 +640,12 @@ const AGENTS = {
     whenFires:'Runs on schedule — checks for overdue tasks across the team.',
     triggers:[{event:'Schedule',label:'Every 24h',color:'cyan'},{event:'Scans',label:'All Open GHL Tasks',color:'orange'}],
     whatItDoes:['Scans all open tasks for overdue items','Sends yellow flag at 15 min overdue','Sends orange alert to Jessica at 30 min','Sends red escalation to Corey at 60 min'],
+    outputs:[
+      {type:'alert',label:'ALERT',text:'🟡 15min: "[LM name] has [X] tasks overdue" — sent to team member'},
+      {type:'alert',label:'ALERT',text:'🟠 30min: "[LM name] still has [X] overdue" — escalated to Jessica'},
+      {type:'alert',label:'ALERT',text:'🔴 60min: "ESCALATION: [X] tasks overdue 60+ min" — sent to Corey'},
+      {type:'note',label:'NOTE',text:'Adds note: "Accountability check: [X] tasks on time, [X] overdue"'},
+    ],
     issues:null,
     learning:'Tracks which team members respond to which escalation tiers.'
   },
@@ -456,6 +654,12 @@ const AGENTS = {
     whenFires:'Runs periodically to verify pipeline data integrity.',
     triggers:[{event:'Schedule',label:'Periodic Scan',color:'cyan'},{event:'Checks',label:'Pipeline Data Integrity',color:'purple'}],
     whatItDoes:['Verifies contact data against external sources','Catches duplicate opportunities','Flags stalled pipelines','Cross-references county records'],
+    outputs:[
+      {type:'alert',label:'ALERT',text:'Flags: "Duplicate opportunity found — [name] appears in [X] stages"'},
+      {type:'alert',label:'ALERT',text:'Flags: "Pipeline stalled — [name] in [stage] for [X] days with no activity"'},
+      {type:'tag',label:'TAG',text:'Tags: "Duplicate", "Stalled", "Data Mismatch"'},
+      {type:'note',label:'NOTE',text:'Adds note: "Reality Check: [X] contacts verified, [X] issues found"'},
+    ],
     issues:null,
     learning:'Builds patterns of common data errors to catch earlier.'
   },
@@ -464,6 +668,11 @@ const AGENTS = {
     whenFires:'Fires on every inbound call.',
     triggers:[{event:'Webhook',label:'Inbound Call',color:'green'},{event:'Source',label:'CallRail / GHL',color:'cyan'}],
     whatItDoes:['Captures inbound call details','Creates callback task for assigned LM','Logs call in CRM','Notifies team member immediately'],
+    outputs:[
+      {type:'task',label:'TASK',text:'Creates task for [LM]: "Callback — [name] called at [time]. Call back ASAP."'},
+      {type:'note',label:'NOTE',text:'Adds note: "Inbound call from [name] at [time]. Duration: [Xs]. [Answered/Missed]"'},
+      {type:'data',label:'DATA',text:'Updates last_call_date, inbound_call_count on contact'},
+    ],
     issues:null,
     learning:'Tracks which callback response times lead to conversions.'
   },
@@ -472,6 +681,11 @@ const AGENTS = {
     whenFires:'Fires on every pipeline stage change.',
     triggers:[{event:'Webhook',label:'OpportunityStageUpdate',color:'green'},{event:'Routes to',label:'Correct Agent Handler',color:'cyan'}],
     whatItDoes:['Routes stage changes to correct agent handlers','Validates stage transition is legitimate','Logs all pipeline movement','Prevents duplicate agent fires'],
+    outputs:[
+      {type:'api',label:'API',text:'Fires agent(s): [list of agents triggered by this stage change]'},
+      {type:'data',label:'DATA',text:'Logs: "[name] moved from [old stage] → [new stage] at [time]"'},
+      {type:'alert',label:'ALERT',text:'If invalid transition detected: blocks agents and flags for review'},
+    ],
     issues:null,
     learning:'Identifies unusual stage transitions that may indicate data errors.'
   },
@@ -480,6 +694,11 @@ const AGENTS = {
     whenFires:'Fires daily at 8:00 AM CST.',
     triggers:[{event:'Schedule',label:'Daily 8:00 AM CST',color:'cyan'},{event:'Scans',label:'Last 24h Activity',color:'purple'}],
     whatItDoes:['Scans last 24 hours of activity','Compiles key metrics and alerts','Generates Telegram-ready briefing','Highlights items needing attention'],
+    outputs:[
+      {type:'api',label:'TELEGRAM',text:'Sends morning briefing: "📊 Yesterday: [X] new leads, [X] calls, [X] texts, [X] appointments, [X] errors"'},
+      {type:'data',label:'DATA',text:'Compiles: leads processed, calls graded, tasks completed, overdue items, pipeline movement'},
+      {type:'alert',label:'ALERT',text:'Highlights: "[X] items need attention today" with specific action items'},
+    ],
     issues:null,
     learning:'Adapts briefing content based on which sections Corey engages with most.'
   },
@@ -557,6 +776,15 @@ function renderDetail(id) {
 
   const bulletsHtml = a.whatItDoes.map(b => `<li>${b}</li>`).join('');
 
+  const typeClass = (t) => ({sms:'ot-sms',task:'ot-task',note:'ot-note',tag:'ot-tag',stage:'ot-stage',email:'ot-email',api:'ot-api',data:'ot-data',alert:'ot-alert'}[t]||'ot-data');
+  const outputsHtml = a.outputs && a.outputs.length
+    ? `<div class="detail-section">
+        <div class="detail-section-title" style="color:var(--text)">📋 EXACT OUTPUTS</div>
+        <div class="output-list">${a.outputs.map(o =>
+          `<div class="output-item"><span class="output-type ${typeClass(o.type)}">${o.label}</span><span class="output-text">${o.text}</span></div>`
+        ).join('')}</div>
+      </div>` : '';
+
   const issuesHtml = a.issues && a.issues.length
     ? `<div class="detail-section">
         <div class="detail-section-title dst-red">⚠️ KNOWN ISSUES / RED FLAGS</div>
@@ -576,6 +804,7 @@ function renderDetail(id) {
       <div class="detail-section-title dst-green">✅ WHAT IT DOES WHEN IT RUNS</div>
       <ul class="detail-bullets">${bulletsHtml}</ul>
     </div>
+    ${outputsHtml}
     ${issuesHtml}
     <div class="detail-section">
       <div class="detail-section-title dst-purple">🧠 HOW IT GETS SMARTER OVER TIME</div>
