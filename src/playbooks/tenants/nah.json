@@ -1,0 +1,355 @@
+{
+  "tenantId": "nah",
+  "name": "New Again Houses",
+  "industry": "real-estate-wholesale",
+  "extends": "real-estate-wholesale",
+
+  "company": {
+    "name": "New Again Houses",
+    "shortName": "NAH",
+    "phone": null,
+    "website": "newagainhouses.com",
+    "markets": ["Nashville", "Columbia", "Knoxville"],
+    "state": "Tennessee"
+  },
+
+  "crm": {
+    "provider": "ghl",
+    "locationId": "hmD7eWGQJE7EVFpJxj4q",
+    "pipelines": {
+      "acquisitions": {
+        "pipelineId": "tOqQbembKlIoPiXbepP3",
+        "stages": {
+          "new_lead": "f919c1a7-17da-456f-b8f9-10c1aca62691",
+          "contacted": null,
+          "qualified": null,
+          "warm": null,
+          "appointment_set": null,
+          "offer_made": null,
+          "under_contract": null,
+          "closed": null,
+          "dead": null,
+          "follow_up_1mo": null,
+          "follow_up_4mo": null,
+          "follow_up_1yr": null,
+          "ghosted": null
+        }
+      },
+      "dispositions": {
+        "pipelineId": null,
+        "stages": {}
+      }
+    }
+  },
+
+  "team": {
+    "owner": {
+      "name": "Corey Lavinder",
+      "role": "ceo",
+      "ghlUserId": null
+    },
+    "members": [
+      {
+        "name": "Kyle",
+        "role": "acquisition_manager",
+        "shortName": "Kyle",
+        "ghlUserId": null,
+        "markets": ["Nashville", "Columbia", "Knoxville"]
+      },
+      {
+        "name": "Chris",
+        "role": "lead_manager",
+        "shortName": "Chris",
+        "ghlUserId": null,
+        "markets": ["Nashville"]
+      },
+      {
+        "name": "Daniel",
+        "role": "lead_manager",
+        "shortName": "Daniel",
+        "ghlUserId": null,
+        "markets": ["Columbia", "Knoxville"]
+      },
+      {
+        "name": "Esteban",
+        "role": "dispo_manager",
+        "shortName": "Esteban",
+        "ghlUserId": null,
+        "markets": ["Nashville", "Columbia", "Knoxville"]
+      },
+      {
+        "name": "Jessica",
+        "role": "data_manager",
+        "shortName": "Jessica",
+        "ghlUserId": null,
+        "description": "KPI entry, channel routing, escalation contact"
+      }
+    ]
+  },
+
+  "leadSources": {
+    "ppl": {
+      "name": "Pay Per Lead",
+      "type": "outbound",
+      "providers": ["Leadzolo", "PropertyLeads", "MotivatedSellers"],
+      "includeCompanyName": false
+    },
+    "tv": {
+      "name": "TV Marketing",
+      "type": "inbound",
+      "includeCompanyName": true
+    },
+    "directMail": {
+      "name": "Direct Mail",
+      "type": "outbound",
+      "includeCompanyName": false
+    },
+    "coldCall": {
+      "name": "Cold Call",
+      "type": "outbound",
+      "includeCompanyName": false
+    },
+    "website": {
+      "name": "Website",
+      "type": "inbound",
+      "includeCompanyName": true
+    },
+    "referral": {
+      "name": "Referral",
+      "type": "inbound",
+      "includeCompanyName": true
+    }
+  },
+
+  "scoring": {
+    "factors": [
+      {
+        "key": "timeline",
+        "name": "Timeline",
+        "weight": 0.20,
+        "description": "Do they need to sell soon? Within 30 days = pass.",
+        "passIf": "Seller indicates urgency — moving, behind on payments, inherited, divorce, etc."
+      },
+      {
+        "key": "motivation",
+        "name": "Motivation",
+        "weight": 0.25,
+        "description": "Are they distressed or must-sell? High motivation = pass.",
+        "passIf": "Distressed situation — foreclosure, probate, divorce, job relocation, tax issues"
+      },
+      {
+        "key": "price",
+        "name": "Price Expectation",
+        "weight": 0.20,
+        "description": "Is their asking price realistic for a wholesale deal?",
+        "passIf": "Asking price leaves room for wholesale spread (at or below 70% ARV minus repairs)"
+      },
+      {
+        "key": "source",
+        "name": "Lead Source Quality",
+        "weight": 0.15,
+        "description": "Did they come to us (inbound) or did we find them (outbound)?",
+        "passIf": "Inbound lead (TV, website, referral) OR PPL with strong intent signals"
+      },
+      {
+        "key": "condition",
+        "name": "Property Condition",
+        "weight": 0.20,
+        "description": "Is the property distressed enough for a wholesale deal?",
+        "passIf": "Visible distress in Street View or seller mentions major repairs needed"
+      }
+    ],
+    "tiers": {
+      "hot": { "min_signals": 3, "label": "🔥 HOT", "tag": "hot-lead" },
+      "warm": { "min_signals": 0, "label": "🟡 WARM", "tag": "warm-lead" }
+    },
+    "note": "There is no cold tier. Every lead gets worked."
+  },
+
+  "sla": {
+    "new_lead_response_minutes": 3,
+    "lm_first_call_minutes": 15,
+    "lm_escalation_minutes": 30,
+    "escalation_contact": "Jessica",
+    "warmCallMins": 30,
+    "walkthroughNoteMins": 1440,
+    "maxStageTimeHours": 48,
+    "am_offer_deadline_hours": 24,
+    "uc_am_task_hours": 1,
+    "offer_chase_days": [3, 7, 14]
+  },
+
+  "communication": {
+    "send_window": {
+      "start": "09:00",
+      "end": "18:00",
+      "timezone_source": "lead",
+      "fallback_timezone": "America/Chicago"
+    },
+    "skip_days": ["Sunday"],
+    "rate_limit_per_24h": 3,
+    "initial_outreach": {
+      "personalized": true,
+      "include_company_if_inbound": true,
+      "tone_by_time": {
+        "morning": "Friendly, energetic. 'Good morning {{first_name}}, this is {{lm_name}}...'",
+        "afternoon": "Professional, warm. 'Hi {{first_name}}, this is {{lm_name}}...'",
+        "evening": "Casual, low-pressure. 'Hey {{first_name}}, this is {{lm_name}}...'",
+        "overnight": "BLOCKED — queued for morning send"
+      }
+    }
+  },
+
+  "drip": {
+    "enabled": true,
+    "name": "Working Drip",
+    "total_days": 104,
+    "total_touches": 24,
+    "cadence": "Starts frequent (daily), then tapers (every few days, then weekly)",
+    "first_drip_after_minutes": 5,
+    "stop_on": ["reply", "conversation", "stage_change", "appointment_set"],
+    "skip_days": ["Sunday"],
+    "ghosted_trigger_day": 14,
+    "ghosted_action": "Tag 'ghosted', LM stops calling, drip continues"
+  },
+
+  "followUp": {
+    "buckets": {
+      "1mo": {
+        "name": "1-Month Bucket",
+        "label": "Hot Follow-Up",
+        "criteria": "Selling in ~30 days",
+        "touches": 6,
+        "span_days": 90,
+        "intervals_days": [15, 30, 45, 60, 75, 90]
+      },
+      "4mo": {
+        "name": "4-Month Bucket",
+        "label": "Warm Follow-Up",
+        "criteria": "Selling within 6 months",
+        "touches": 6,
+        "span_days": 360,
+        "intervals_days": [60, 120, 180, 240, 300, 360]
+      },
+      "1yr": {
+        "name": "1-Year Bucket",
+        "label": "Someday Seller",
+        "criteria": "Wants to sell eventually",
+        "touches": 6,
+        "span_months": 36,
+        "intervals_months": [6, 12, 18, 24, 30, 36]
+      }
+    },
+    "tones": ["check-in", "time-sensitive", "empathetic", "rekindle", "final-touch"],
+    "on_interest_detected": "Move to Warm, LM task within 30 min"
+  },
+
+  "appointments": {
+    "reminders": {
+      "confirmation_after_minutes": 18,
+      "day_before_hours": 24,
+      "hours_before": 2
+    },
+    "am_prep_task_hours_before": 2,
+    "outcomes": {
+      "accepted": "Move to Under Contract → Contract Bot fires",
+      "rejected": "AI places in follow-up bucket",
+      "negotiating": "Move to Offer stage → Offer Chase fires",
+      "no_show": "Pending + LM reschedule task",
+      "no_same_day_offer": "AM task: run numbers, 24h deadline"
+    }
+  },
+
+  "underContract": {
+    "contract_bot_actions": [
+      "AI confirmation text to seller",
+      "AM task: deal details to TC and Dispo (1h deadline)",
+      "TC Packager fires",
+      "Dispo Packager fires"
+    ],
+    "uc_monitor_interval_minutes": 30,
+    "uc_monitor_rules": {
+      "general_checkin": "AI auto-replies",
+      "closing_questions": "TC gets a task",
+      "concern_backing_out": "AM task within 30 min (high urgency)",
+      "seller_quiet_days": 5
+    }
+  },
+
+  "postClose": {
+    "sequence": [
+      { "delay_hours": 24, "type": "thank_you", "description": "Gratitude text — no ask" },
+      { "delay_hours": 48, "type": "review_request", "description": "Google review request" },
+      { "delay_days": 7, "type": "referral_ask", "description": "Soft referral ask" }
+    ]
+  },
+
+  "callCoaching": {
+    "provider": "gunner",
+    "grading_scale": "A-F",
+    "factors": 6,
+    "note": "Scores stored in Gunner app (getgunner.ai), summary note written to GHL"
+  },
+
+  "accountability": {
+    "tiers": [
+      { "level": "yellow", "overdue_minutes": 15, "action": "Flag in system" },
+      { "level": "orange", "overdue_minutes": 30, "action": "Alert to Jessica" },
+      { "level": "red", "overdue_minutes": 60, "action": "Escalate to Corey" }
+    ],
+    "cooldown_minutes": 30
+  },
+
+  "realityCheck": {
+    "enabled": true,
+    "windowHours": 6,
+    "intervalHours": 4,
+    "checks": {
+      "system": ["no-score-assigned", "no-initial-outreach", "pipeline-stalled", "duplicate-tasks", "missing-stage-note-or-tag"],
+      "team": ["warm-no-call", "appointment-no-walkthrough-notes", "dead-zero-outreach", "slow-response-time", "overdue-tasks"]
+    }
+  },
+
+  "agents": {
+    "toggles": {
+      "new-lead-pipeline": true,
+      "lead-scorer": true,
+      "lead-tagger": true,
+      "lead-noter": true,
+      "lead-task-creator": true,
+      "initial-outreach": false,
+      "working-drip": false,
+      "lm-assistant": false,
+      "call-coaching": false,
+      "response-agent": false,
+      "follow-up-organizer": false,
+      "follow-up-messenger": false,
+      "follow-up-closer": false,
+      "ghosted-agent": false,
+      "already-sold-agent": false,
+      "bucket-reeval": false,
+      "stage-change-router": false,
+      "am-assistant": false,
+      "apt-prep": false,
+      "apt-reminder-poller": false,
+      "offer-chase": false,
+      "offer-reply": false,
+      "callback-capture": false,
+      "uc-monitor": false,
+      "accountability-agent": false,
+      "outbound-manager": false,
+      "contract-bot": false,
+      "tc-packager": false,
+      "dispo-packager": false,
+      "post-close-bot": false,
+      "reality-check": false,
+      "reality-check-poller": false
+    },
+    "note": "Only intake agents enabled initially. Everything else OFF until dry run is verified. Corey turns them on."
+  },
+
+  "flags": {
+    "DRY_RUN": true,
+    "note": "NOTHING fires in GHL until Corey manually sets DRY_RUN=false"
+  }
+}
