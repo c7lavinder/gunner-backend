@@ -33,7 +33,15 @@ export type EventKind =
   | 'offer.stall'
   | 'offer.chase.scheduled'
   | 'bucket.reeval'
-  | 'post_close.scheduled';
+  | 'post_close.scheduled'
+  | 'dispo.blast.sent'
+  | 'dispo.offer.received'
+  | 'dispo.showing.scheduled'
+  | 'dispo.closing.started'
+  | 'dispo.terminated'
+  | 'dispo.jv.routed'
+  | 'buyer.response'
+  | 'buyer.matched';
 
 export interface GunnerEvent {
   kind: EventKind;

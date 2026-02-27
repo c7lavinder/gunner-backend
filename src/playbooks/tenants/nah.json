@@ -231,6 +231,76 @@
         "fires": [
           "apt-prep"
         ]
+      },
+      "dispo_new_deal": {
+        "type": "opportunity_stage_change",
+        "pipelineId": "3hSuypWfNz2rCnu5nnal",
+        "stageId": "f773a2da-2641-42a7-b630-9c028ea2bcad",
+        "fires": [
+          "buyer-matcher"
+        ]
+      },
+      "dispo_clear_to_send": {
+        "type": "opportunity_stage_change",
+        "pipelineId": "3hSuypWfNz2rCnu5nnal",
+        "stageId": "48cb9026-7242-449c-a7ea-7c195cf3d6a1",
+        "fires": [
+          "deal-blaster"
+        ]
+      },
+      "dispo_offers_received": {
+        "type": "opportunity_stage_change",
+        "pipelineId": "3hSuypWfNz2rCnu5nnal",
+        "stageId": "54a2a405-d3d4-4222-bc19-067a8828cbdb",
+        "fires": [
+          "offer-collector"
+        ]
+      },
+      "dispo_uc_with_buyer": {
+        "type": "opportunity_stage_change",
+        "pipelineId": "3hSuypWfNz2rCnu5nnal",
+        "stageId": "e725fb5e-745d-4f5c-ba87-3f28b615cbe0",
+        "fires": [
+          "dispo-closer"
+        ]
+      },
+      "dispo_with_jv": {
+        "type": "opportunity_stage_change",
+        "pipelineId": "3hSuypWfNz2rCnu5nnal",
+        "stageId": "fe041520-f27a-49cf-a383-03a9d1a2c44e",
+        "fires": [
+          "jv-router"
+        ]
+      },
+      "dispo_need_to_terminate": {
+        "type": "opportunity_stage_change",
+        "pipelineId": "3hSuypWfNz2rCnu5nnal",
+        "stageId": "413aa43e-3ca9-4e84-ba32-d4207648e685",
+        "fires": [
+          "deal-terminator"
+        ]
+      },
+      "dispo_closed": {
+        "type": "opportunity_stage_change",
+        "pipelineId": "3hSuypWfNz2rCnu5nnal",
+        "stageId": "4fc48125-fc9c-4aeb-8667-33f8af7ead5b",
+        "fires": []
+      },
+      "buyer_showing_scheduled": {
+        "type": "opportunity_stage_change",
+        "pipelineId": "QSUHOidatRTOi2ztGFGt",
+        "stageId": "6d917d93-eaac-478e-9182-3393b530dbc2",
+        "fires": [
+          "showing-manager"
+        ]
+      },
+      "buyer_inbound_sms": {
+        "type": "inbound_message",
+        "channel": "sms",
+        "pipelineId": "QSUHOidatRTOi2ztGFGt",
+        "fires": [
+          "buyer-response"
+        ]
       }
     },
     "webhooks": {

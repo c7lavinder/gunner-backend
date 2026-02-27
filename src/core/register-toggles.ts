@@ -39,6 +39,17 @@ registerToggle({ id: 'lm-assistant', kind: 'agent', label: 'LM Assistant', descr
 registerToggle({ id: 'uc-monitor', kind: 'agent', label: 'Under Contract Monitor', description: 'Monitors deals under contract for issues', enabled: true });
 registerToggle({ id: 'working-drip', kind: 'agent', label: 'Working Drip', description: 'Drip sequences for leads in working status', enabled: true });
 
+// === DISPO PIPELINE AGENTS ===
+registerToggle({ id: 'deal-blaster', kind: 'agent', label: 'Deal Blaster', description: 'AI-writes and sends deal blasts to qualified buyers', enabled: true });
+registerToggle({ id: 'buyer-matcher', kind: 'agent', label: 'Buyer Matcher', description: 'Scores and ranks buyers against new dispo deals', enabled: true });
+registerToggle({ id: 'buyer-response', kind: 'agent', label: 'Buyer Response', description: 'AI-classifies inbound buyer messages and routes accordingly', enabled: true });
+registerToggle({ id: 'showing-manager', kind: 'agent', label: 'Showing Manager', description: 'Manages property showings — prep tasks, confirmations, reminders', enabled: true });
+registerToggle({ id: 'offer-collector', kind: 'agent', label: 'Offer Collector', description: 'Logs and ranks buyer offers, creates comparison notes', enabled: true });
+registerToggle({ id: 'dispo-closer', kind: 'agent', label: 'Dispo Closer', description: 'Manages closing workflow — title coordination, buyer check-ins', enabled: true });
+registerToggle({ id: 'jv-router', kind: 'agent', label: 'JV Router', description: 'Routes deals to JV partners and coordinates terms', enabled: true });
+registerToggle({ id: 'deal-terminator', kind: 'agent', label: 'Deal Terminator', description: 'Handles deal termination — logging, cleanup, re-evaluation', enabled: true });
+registerToggle({ id: 'dispo-accountability', kind: 'agent', label: 'Dispo Accountability', description: 'Audits dispo pipeline health every 4 hours, alerts on stale deals', enabled: true });
+
 // === BOTS ===
 registerToggle({ id: 'bot-assign', kind: 'bot', label: 'Assign Bot', description: 'Assigns opportunities to team members in GHL', enabled: true });
 registerToggle({ id: 'bot-contact', kind: 'bot', label: 'Contact Bot', description: '⚠️ Fetches contact data from GHL — disabling this breaks most agents', enabled: true });
