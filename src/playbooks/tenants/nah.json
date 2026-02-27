@@ -683,7 +683,8 @@
           "action": "proactive_checkin_sms"
         }
       }
-    }
+    },
+    "tcEmail": "corey@newagainhouses.com"
   },
   "postClose": {
     "sequence": [
