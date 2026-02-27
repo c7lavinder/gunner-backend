@@ -59,13 +59,29 @@ a{color:var(--cyan);text-decoration:none}
 .detail{flex:1;overflow-y:auto;padding:32px 40px 60px}
 .detail-empty{display:flex;align-items:center;justify-content:center;height:100%;color:var(--dim);font-size:1rem}
 
-.detail-section{margin-bottom:28px}
-.detail-section-title{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+/* Agent header */
+.agent-header{margin-bottom:28px;display:flex;align-items:flex-start;gap:16px}
+.agent-header-emoji{font-size:2.4rem;margin-top:2px}
+.agent-header-info{flex:1}
+.agent-header-name{font-size:1.8rem;font-weight:800;line-height:1.2}
+.agent-header-sub{font-size:.9rem;color:var(--dim);margin-top:2px}
+
+/* Confidence bar */
+.confidence-bar{margin-bottom:32px;display:flex;align-items:center;gap:12px}
+.confidence-label{font-size:.85rem;color:var(--muted);white-space:nowrap}
+.confidence-track{flex:1;height:8px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden}
+.confidence-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--cyan),var(--green));transition:width .6s ease}
+.confidence-pct{font-size:1rem;font-weight:800;color:var(--green);min-width:40px;text-align:right}
+
+.detail-section{margin-bottom:32px}
+.detail-section-title{font-size:.85rem;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:12px;display:flex;align-items:center;gap:6px}
 .dst-cyan{color:var(--cyan)}
 .dst-green{color:var(--green)}
 .dst-red{color:var(--red)}
 .dst-yellow{color:var(--yellow)}
 .dst-purple{color:var(--purple)}
+
+.agent-description{font-size:1.05rem;color:var(--muted);line-height:1.8}
 
 .trigger-pills{display:flex;gap:8px;flex-wrap:wrap}
 .pill{padding:8px 14px;border-radius:8px;font-size:.78rem;font-weight:600;background:rgba(34,197,94,.12);color:var(--green);border:1px solid rgba(34,197,94,.25);display:flex;flex-direction:column;gap:2px;min-width:140px}
@@ -76,10 +92,10 @@ a{color:var(--cyan);text-decoration:none}
 .pill .pill-event{font-size:.65rem;text-transform:uppercase;letter-spacing:.5px;opacity:.7}
 .pill .pill-stage{font-size:.82rem;font-weight:700}
 
-.detail-text{font-size:.95rem;color:var(--muted);line-height:1.7}
+.detail-text{font-size:1.05rem;color:var(--muted);line-height:1.8}
 .detail-bullets{list-style:none;padding:0}
-.detail-bullets li{font-size:.95rem;color:var(--muted);padding:6px 0;display:flex;align-items:flex-start;gap:8px;line-height:1.6}
-.detail-bullets li::before{content:'›';color:var(--green);font-weight:700;font-size:1.1rem;flex-shrink:0;margin-top:-1px}
+.detail-bullets li{font-size:1.05rem;color:var(--muted);padding:8px 0;display:flex;align-items:flex-start;gap:10px;line-height:1.7}
+.detail-bullets li::before{content:'›';color:var(--green);font-weight:700;font-size:1.2rem;flex-shrink:0;margin-top:-1px}
 
 .output-list{list-style:none;padding:0}
 .output-item{display:flex;align-items:flex-start;gap:10px;padding:8px 12px;margin-bottom:6px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px}
@@ -96,10 +112,10 @@ a{color:var(--cyan);text-decoration:none}
 .output-text{font-size:.88rem;color:var(--text);line-height:1.5}
 
 .issues-list{list-style:none;padding:0}
-.issues-list li{font-size:.88rem;color:var(--red);padding:4px 0;opacity:.9}
+.issues-list li{font-size:.95rem;color:var(--red);padding:5px 0;opacity:.9}
 .issues-list li::before{content:'· '}
 
-.learning-text{font-size:.95rem;color:var(--muted);line-height:1.7}
+.learning-text{font-size:1.05rem;color:var(--muted);line-height:1.8}
 
 /* Stats row at bottom of detail */
 .detail-stats{display:flex;gap:0;margin-top:8px;border:1px solid var(--border);border-radius:12px;overflow:hidden}
@@ -210,7 +226,8 @@ const GROUPS = [
 
 const AGENTS = {
   'data-hygiene': {
-    emoji:'🧹', name:'Data Hygiene',
+    emoji:'🧹', name:'Data Hygiene', subtitle:'Every new lead', confidence:78,
+    description:'Cleans up every new lead before anyone on your team calls them. Bad contact info wastes your team\'s time — this makes sure they\'re only working with verified leads.',
     whenFires:'Fires automatically the moment a new lead enters your pipeline.',
     triggers:[{event:'Webhook',label:'OpportunityCreate',color:'green'},{event:'Stage Change',label:'→ New Lead',color:'cyan'}],
     whatItDoes:['Verifies the phone number, email, and address are real','Enriches lead with BatchLeads: AVM, equity, distress flags, driving distance','Grades property condition from Street View (A–F scale)','Flags anything that looks wrong so your team doesn\'t waste a call'],
@@ -225,7 +242,8 @@ const AGENTS = {
     learning:'Every time a contact record gets corrected after cleaning, Gunner notes the pattern. Over time it gets better at recognizing bad sources — so fewer bad records make it through.'
   },
   'lead-iq': {
-    emoji:'🧠', name:'Lead IQ',
+    emoji:'🧠', name:'Lead IQ', subtitle:'Every new lead', confidence:72,
+    description:'Builds an intelligence profile on every lead the moment they enter your pipeline. Scores motivation, urgency, and timeline so your team knows exactly who to call first.',
     whenFires:'Fires on every new lead to build an intelligence profile.',
     triggers:[{event:'Webhook',label:'OpportunityCreate',color:'green'}],
     whatItDoes:['Analyzes seller motivation from lead source data','Scores urgency, timeline, and property condition','Creates initial intelligence profile for the contact','Flags high-priority leads for immediate action'],
@@ -239,7 +257,8 @@ const AGENTS = {
     learning:'Tracks which lead sources produce the most motivated sellers and adjusts scoring weights over time.'
   },
   'initial-outreach': {
-    emoji:'📱', name:'Initial Outreach',
+    emoji:'📱', name:'Initial Outreach', subtitle:'Every new lead', confidence:85,
+    description:'Speed to lead. Sends a personalized first text within 3 minutes of a lead entering your pipeline. Every message is AI-written to match the seller\'s situation — not a template blast.',
     whenFires:'Fires on every new lead — sends the first text within 3 minutes.',
     triggers:[{event:'Webhook',label:'OpportunityCreate',color:'green'},{event:'Pipeline',label:'Sales → New Lead',color:'cyan'}],
     whatItDoes:['Sends personalized first text within 3 minutes','Matches tone to lead source and motivation level','Respects 9AM–6PM send window (TCPA compliance)','Queues for next morning if outside window'],
@@ -252,7 +271,8 @@ const AGENTS = {
     learning:'Tracks which opening messages get responses and refines templates over time.'
   },
   'working-drip': {
-    emoji:'💧', name:'Working Drip',
+    emoji:'💧', name:'Working Drip', subtitle:'Warm & Hot leads', confidence:82,
+    description:'Keeps your warm and hot leads engaged with a 24-touch drip over 104 days. Every message is personalized. Pauses when the seller responds, cancels when an appointment is set.',
     whenFires:'Fires when a lead moves to Warm or Hot stage.',
     triggers:[{event:'Stage Change',label:'→ Warm Lead',color:'cyan'},{event:'Stage Change',label:'→ Hot Lead',color:'orange'}],
     whatItDoes:['Activates 24-touch drip sequence over 104 days','Personalizes each message based on property and seller','Pauses automatically if seller responds','Cancels permanently on appointment set'],
@@ -267,7 +287,8 @@ const AGENTS = {
     learning:'Monitors which drip touches get responses and optimizes timing and messaging.'
   },
   'lm-assistant': {
-    emoji:'📞', name:'LM Assistant',
+    emoji:'📞', name:'LM Assistant', subtitle:'Every call', confidence:80,
+    description:'Your LM\'s AI sidekick. After every call, it summarizes what happened, creates follow-up tasks, and makes sure nothing falls through the cracks.',
     whenFires:'Fires after every completed call between LM and a lead.',
     triggers:[{event:'Gunner Webhook',label:'Call Completed',color:'purple'},{event:'Source',label:'Gunner Call Recording',color:'cyan'}],
     whatItDoes:['Summarizes call and posts CRM note','Identifies next steps from conversation','Creates follow-up tasks automatically','Flags coaching opportunities for the call'],
@@ -281,7 +302,8 @@ const AGENTS = {
     learning:'Improves call summaries based on coaching feedback and which summaries LMs find most useful.'
   },
   'call-coaching': {
-    emoji:'🎓', name:'Call Coaching',
+    emoji:'🎓', name:'Call Coaching', subtitle:'Every call', confidence:88,
+    description:'Grades every call your team makes on 6 factors. Gives specific coaching notes so reps improve without you having to listen to every recording. Results go straight to the Gunner leaderboard.',
     whenFires:'Fires on every completed call — grades performance.',
     triggers:[{event:'Gunner Webhook',label:'Call Completed',color:'purple'},{event:'Grading',label:'6-Factor Scorecard',color:'cyan'}],
     whatItDoes:['Grades call on 6 factors (rapport, discovery, objection handling, etc.)','Provides specific, actionable coaching notes','Scores A through F with detailed breakdown','Posts results to Gunner app leaderboard'],
@@ -294,7 +316,8 @@ const AGENTS = {
     learning:'Calibrates grading based on which call behaviors actually convert to appointments.'
   },
   'response-agent': {
-    emoji:'💬', name:'Response Agent',
+    emoji:'💬', name:'Response Agent', subtitle:'Every inbound SMS', confidence:83,
+    description:'Handles every inbound text from a lead in real-time. Classifies what they want, replies intelligently, and escalates to your team when it detects real interest.',
     whenFires:'Fires on every inbound text message from a lead.',
     triggers:[{event:'Webhook',label:'InboundMessage',color:'green'},{event:'Channel',label:'SMS from Lead',color:'pink'}],
     whatItDoes:['Classifies intent: interest, brushoff, DNC, or scheduling','Generates contextual AI reply within seconds','Escalates to Follow-Up Closer on buying interest','Handles DNC requests automatically'],
@@ -309,7 +332,8 @@ const AGENTS = {
     learning:'Tracks which reply styles drive engagement and adjusts tone and approach.'
   },
   'am-assistant': {
-    emoji:'🤝', name:'AM Assistant',
+    emoji:'🤝', name:'AM Assistant', subtitle:'Kyle\'s deals', confidence:76,
+    description:'Kyle\'s AI briefing partner. Preps him with comps, ARV, offer ranges, and seller motivation before every appointment. Handles the messy stuff — no-shows, rejections, follow-ups.',
     whenFires:'Fires on walkthrough, offer appointment, and made offer stages.',
     triggers:[{event:'Stage Change',label:'→ Walkthrough Apt',color:'purple'},{event:'Stage Change',label:'→ Offer Apt',color:'orange'},{event:'Stage Change',label:'→ Made Offer',color:'green'}],
     whatItDoes:['Briefs Kyle with comps, ARV, and seller profile','Calculates offer range based on comparable sales','Handles no-show path with re-engagement text','Creates follow-up tasks on offer rejection'],
@@ -324,7 +348,8 @@ const AGENTS = {
     learning:'Refines comp selection and ARV estimates based on which deals actually close.'
   },
   'apt-prep': {
-    emoji:'📅', name:'Appointment Prep',
+    emoji:'📅', name:'Appointment Prep', subtitle:'Before every appointment', confidence:81,
+    description:'Does the homework before Kyle walks into an appointment. Pulls comps, estimates ARV and repairs, and builds a seller brief so Kyle shows up prepared every time.',
     whenFires:'Fires when a lead enters any appointment stage.',
     triggers:[{event:'Stage Change',label:'→ Pending Apt',color:'cyan'},{event:'Stage Change',label:'→ Walkthrough Apt',color:'purple'},{event:'Stage Change',label:'→ Offer Apt',color:'orange'}],
     whatItDoes:['Pulls comparable sales from the area','Estimates ARV and repair costs','Creates seller motivation brief','Packages everything for Kyle before the appointment'],
@@ -337,7 +362,8 @@ const AGENTS = {
     learning:'Gets better at repair estimates based on walkthrough feedback and actual rehab costs.'
   },
   'offer-chase': {
-    emoji:'💰', name:'Offer Chase',
+    emoji:'💰', name:'Offer Chase', subtitle:'Pending offers', confidence:79,
+    description:'Doesn\'t let offers die on the vine. Follows up with sellers at Day 3, 7, and 14 after an offer is made. Keeps the deal alive without Kyle having to remember every follow-up.',
     whenFires:'Fires when an offer is made — follows up until response.',
     triggers:[{event:'Stage Change',label:'→ Made Offer',color:'orange'},{event:'Schedule',label:'Day 3 / 7 / 14 Auto',color:'cyan'}],
     whatItDoes:['Day 3, Day 7, Day 14 follow-up sequence to seller','Personalizes messages based on offer details and seller situation','Escalates if no response after 14 days','Tracks seller engagement signals'],
@@ -351,7 +377,8 @@ const AGENTS = {
     learning:'Tracks which follow-up timing and messaging converts and adjusts intervals.'
   },
   'offer-reply': {
-    emoji:'📩', name:'Offer Reply',
+    emoji:'📩', name:'Offer Reply', subtitle:'Seller responses to offers', confidence:74,
+    description:'Catches every seller response to an offer and classifies it instantly — accept, counter, reject, or stall. Routes to the right next step so deals don\'t stall.',
     whenFires:'Fires when a seller responds to an offer.',
     triggers:[{event:'Webhook',label:'InboundMessage',color:'green'},{event:'Pipeline',label:'Sales → Made Offer',color:'orange'}],
     whatItDoes:['Classifies seller response (accept, counter, reject, stall)','Routes to appropriate next action','Notifies Kyle immediately on positive signals','Creates tasks for negotiation follow-up'],
@@ -366,7 +393,8 @@ const AGENTS = {
     learning:'Learns to recognize positive buying signals earlier in conversation.'
   },
   'follow-up-organizer': {
-    emoji:'📊', name:'Follow-Up Organizer',
+    emoji:'📊', name:'Follow-Up Organizer', subtitle:'All follow-up leads', confidence:84,
+    description:'Manages every lead that isn\'t ready to sell yet. Organizes them into 1-month, 4-month, and 1-year buckets with scheduled touches at the right intervals.',
     whenFires:'Fires on follow-up bucket placement (1mo, 4mo, 1yr).',
     triggers:[{event:'Stage Change',label:'→ Follow Up 1mo',color:'cyan'},{event:'Stage Change',label:'→ Follow Up 4mo',color:'purple'},{event:'Stage Change',label:'→ Follow Up 1yr',color:'orange'}],
     whatItDoes:['Organizes follow-up queue by priority','Schedules touches at correct intervals per bucket','1mo: 7-day intervals (6 touches), 4mo: 20-day intervals, 1yr: 60-day intervals','Hands off to Follow-Up Messenger for execution'],
@@ -379,7 +407,8 @@ const AGENTS = {
     learning:'Optimizes bucket placement based on which leads re-engage from which intervals.'
   },
   'follow-up-messenger': {
-    emoji:'💌', name:'Follow-Up Messenger',
+    emoji:'💌', name:'Follow-Up Messenger', subtitle:'Scheduled touches', confidence:83,
+    description:'The executor. When it\'s time to reach out to a follow-up lead, this agent sends the message — personalized every time, referencing previous conversations.',
     whenFires:'Fires on scheduled follow-up touch.',
     triggers:[{event:'Schedule',label:'Cadence Timer',color:'green'},{event:'Source',label:'Follow-Up Queue',color:'cyan'}],
     whatItDoes:['Sends personalized follow-up message','Varies approach based on touch number','References previous conversation context','Respects send window and contact preferences'],
@@ -392,7 +421,8 @@ const AGENTS = {
     learning:'Tracks which follow-up messages re-engage leads and improves templates.'
   },
   'follow-up-closer': {
-    emoji:'🔥', name:'Follow-Up Closer',
+    emoji:'🔥', name:'Follow-Up Closer', subtitle:'Hot re-engagements', confidence:77,
+    description:'When a follow-up lead suddenly shows interest again, this agent jumps in to set the appointment before the moment passes. Speed matters here.',
     whenFires:'Fires when Response Agent detects scheduling intent or buying interest.',
     triggers:[{event:'Response Agent',label:'Interest Detected',color:'green'},{event:'Intent',label:'Scheduling / Buying',color:'pink'}],
     whatItDoes:['Engages lead with appointment-setting language','Confirms availability and suggests times','Creates appointment in GHL on confirmation','Transitions lead out of follow-up bucket'],
@@ -406,7 +436,8 @@ const AGENTS = {
     learning:'Learns which closing approaches work best for re-engaged leads.'
   },
   'ghosted-agent': {
-    emoji:'👻', name:'Ghosted Agent',
+    emoji:'👻', name:'Ghosted Agent', subtitle:'Silent leads', confidence:75,
+    description:'Your last shot at leads who\'ve gone dark. Uses breakup texts, new comp emails, and voicemail drops to get one more response before the lead goes cold.',
     whenFires:'Fires when a lead goes silent for 14+ days.',
     triggers:[{event:'Stage Change',label:'→ Ghosted',color:'orange'},{event:'Condition',label:'14+ Days No Contact',color:'cyan'}],
     whatItDoes:['Sends breakup text to prompt a response','Sends new comp email with recent area sales','Drops personalized voicemail','Varies approach based on lead history'],
@@ -419,7 +450,8 @@ const AGENTS = {
     learning:'Tracks which re-engagement tactics get responses and prioritizes them.'
   },
   'bucket-reeval': {
-    emoji:'🔄', name:'Bucket Re-eval',
+    emoji:'🔄', name:'Bucket Re-eval', subtitle:'Follow-up replies', confidence:73,
+    description:'When a follow-up lead responds negatively, this agent re-evaluates which bucket they belong in. Prevents wasting touches on leads that need more time.',
     whenFires:'Fires on any non-positive seller reply during follow-up.',
     triggers:[{event:'Webhook',label:'InboundMessage',color:'green'},{event:'Condition',label:'Non-Positive Reply',color:'orange'}],
     whatItDoes:['AI evaluates seller response sentiment','Determines if bucket reassignment needed','Moves lead to appropriate follow-up tier','Updates pipeline stage automatically'],
@@ -432,7 +464,8 @@ const AGENTS = {
     learning:'Gets better at predicting which bucket produces the best re-engagement rates.'
   },
   'already-sold-agent': {
-    emoji:'🏠', name:'Already Sold Agent',
+    emoji:'🏠', name:'Already Sold Agent', subtitle:'Sold claims', confidence:70,
+    description:'Verifies when a seller claims their property already sold. Checks county records to confirm — if no sale on record, the lead stays alive for re-engagement.',
     whenFires:'Fires when a seller says the property was already sold.',
     triggers:[{event:'AI Classification',label:'\"Already Sold\" Detected',color:'orange'},{event:'Verification',label:'County Records Check',color:'cyan'}],
     whatItDoes:['Verifies sale against county records','If confirmed sold → marks as Dead Lead','If no county record found → marks as Under Contract for re-engagement','Prevents wasted follow-up on closed deals'],
@@ -447,7 +480,8 @@ const AGENTS = {
     learning:'Builds database of sold properties to catch duplicates faster.'
   },
   'contract-bot': {
-    emoji:'📝', name:'Contract Bot',
+    emoji:'📝', name:'Contract Bot', subtitle:'New contracts', confidence:86,
+    description:'The moment a deal goes under contract, this agent takes over. Confirms with the seller, creates urgent tasks for Kyle, and kicks off the TC and Dispo packages automatically.',
     whenFires:'Fires when a deal moves to Under Contract.',
     triggers:[{event:'Stage Change',label:'→ Under Contract',color:'green'},{event:'Pipeline',label:'Sales Process',color:'cyan'}],
     whatItDoes:['Sends confirmation SMS to seller','Creates AM task with 1-hour deadline','Initiates TC and Dispo package workflows','Logs contract milestone'],
@@ -462,7 +496,8 @@ const AGENTS = {
     learning:'Tracks which confirmation messages reduce seller cold feet.'
   },
   'uc-monitor': {
-    emoji:'📡', name:'UC Monitor',
+    emoji:'📡', name:'UC Monitor', subtitle:'Active contracts', confidence:74,
+    description:'Watches every deal under contract like a hawk. Checks in with sellers, catches concerns early, and escalates to you if something feels off.',
     whenFires:'Runs periodic checks on all under-contract deals.',
     triggers:[{event:'Stage Change',label:'→ Under Contract',color:'green'},{event:'Schedule',label:'Every 30min Check',color:'cyan'}],
     whatItDoes:['Monitors seller communication activity','Sends proactive check-ins if seller goes quiet','Creates urgent tasks on seller concerns','Tracks days-to-close and flags delays'],
@@ -476,7 +511,8 @@ const AGENTS = {
     learning:'Learns which check-in timing prevents deals from falling through.'
   },
   'tc-packager': {
-    emoji:'📦', name:'TC Packager',
+    emoji:'📦', name:'TC Packager', subtitle:'Title company prep', confidence:80,
+    description:'Compiles everything the title company needs into one package the moment a deal goes UC. No more chasing down docs — it\'s all sent automatically.',
     whenFires:'Fires when a deal goes under contract.',
     triggers:[{event:'Stage Change',label:'→ Under Contract',color:'green'},{event:'Auto',label:'Fires with Contract Bot',color:'purple'}],
     whatItDoes:['Compiles all deal documents into TC package','Prepares title company submission','Includes property details, contract terms, contact info','Sends to title company for processing'],
@@ -489,7 +525,8 @@ const AGENTS = {
     learning:'Streamlines package format based on title company feedback.'
   },
   'dispo-packager': {
-    emoji:'📦', name:'Dispo Packager',
+    emoji:'📦', name:'Dispo Packager', subtitle:'Buyer blasts', confidence:81,
+    description:'Creates the buyer-facing deal package and blasts it to your buyer list the moment a deal goes UC. Gets eyeballs on the deal within minutes, not days.',
     whenFires:'Fires when a deal goes under contract.',
     triggers:[{event:'Stage Change',label:'→ Under Contract',color:'green'},{event:'Auto',label:'Fires with Contract Bot',color:'purple'}],
     whatItDoes:['Creates buyer-facing deal package','Includes property photos, ARV, asking price, repair estimates','Blasts to qualified buyer list','Tracks buyer interest and responses'],
@@ -503,7 +540,8 @@ const AGENTS = {
     learning:'Learns which deal presentation formats get faster buyer responses.'
   },
   'post-close-bot': {
-    emoji:'🎉', name:'Post-Close Bot',
+    emoji:'🎉', name:'Post-Close Bot', subtitle:'Closed deals', confidence:90,
+    description:'Turns every closed deal into a review and a referral. Thank you at 24h, Google review request at 48h, referral ask at 7 days. Automatic relationship maintenance.',
     whenFires:'Fires after a deal closes (Purchased stage).',
     triggers:[{event:'Stage Change',label:'→ Purchased',color:'green'},{event:'Schedule',label:'24h / 48h / 7d Drip',color:'cyan'}],
     whatItDoes:['Sends thank you text at 24 hours','Requests Google review at 48 hours','Sends referral ask at 7 days','Maintains seller relationship post-close'],
@@ -517,7 +555,8 @@ const AGENTS = {
     learning:'Tracks which post-close messages generate referrals and reviews.'
   },
   'deal-intake': {
-    emoji:'📥', name:'Deal Intake',
+    emoji:'📥', name:'Deal Intake', subtitle:'New dispo deals', confidence:77,
+    description:'First stop in the dispo pipeline. Validates the deal, creates the profile, and immediately starts matching buyers.',
     whenFires:'Fires when a new deal enters the dispo pipeline.',
     triggers:[{event:'Stage Change',label:'→ New Deal',color:'green'},{event:'Pipeline',label:'Dispo Process',color:'purple'}],
     whatItDoes:['Validates deal information completeness','Creates deal profile with key metrics','Initiates buyer matching process','Logs deal entry'],
@@ -530,7 +569,8 @@ const AGENTS = {
     learning:'Identifies which deal data points predict faster closings.'
   },
   'buyer-matcher': {
-    emoji:'🎯', name:'Buyer Matcher',
+    emoji:'🎯', name:'Buyer Matcher', subtitle:'New dispo deals', confidence:72,
+    description:'Matches every deal to the right buyers based on geography, price range, and property type. Ranks them by likelihood to close so Esteban calls the best ones first.',
     whenFires:'Fires on new deal intake.',
     triggers:[{event:'Stage Change',label:'→ New Deal',color:'green'},{event:'Auto',label:'Fires with Deal Intake',color:'purple'}],
     whatItDoes:['Matches deal criteria against buyer preferences','Ranks buyers by likelihood to close','Considers geography, price range, property type','Generates priority buyer list'],
@@ -542,7 +582,8 @@ const AGENTS = {
     learning:'Improves matching based on which buyers actually close on which deal types.'
   },
   'deal-blaster': {
-    emoji:'📣', name:'Deal Blaster',
+    emoji:'📣', name:'Deal Blaster', subtitle:'Cleared deals', confidence:80,
+    description:'Blasts your deal to the matched buyer list via email and SMS. Tracks who opens, who replies, and optimizes timing for maximum engagement.',
     whenFires:'Fires when deal is cleared to send.',
     triggers:[{event:'Stage Change',label:'→ Clear to Send',color:'green'},{event:'Pipeline',label:'Dispo Process',color:'purple'}],
     whatItDoes:['Sends deal to matched buyer list','Uses email and SMS channels','Tracks open rates and responses','Manages blast timing for maximum engagement'],
@@ -555,7 +596,8 @@ const AGENTS = {
     learning:'Optimizes send times and messaging based on buyer response patterns.'
   },
   'offer-collector': {
-    emoji:'📬', name:'Offer Collector',
+    emoji:'📬', name:'Offer Collector', subtitle:'Buyer offers', confidence:75,
+    description:'Collects every buyer offer, compares them side-by-side, and presents a clean summary to Esteban so he can pick the winner fast.',
     whenFires:'Fires when buyer offers come in.',
     triggers:[{event:'Stage Change',label:'→ Offers Received',color:'green'},{event:'Pipeline',label:'Dispo Process',color:'purple'}],
     whatItDoes:['Collects and organizes buyer offers','Compares offers side-by-side','Ranks by terms (price, closing speed, contingencies)','Presents summary to Esteban'],
@@ -568,7 +610,8 @@ const AGENTS = {
     learning:'Learns which offer characteristics predict successful closings.'
   },
   'jv-router': {
-    emoji:'🤝', name:'JV Router',
+    emoji:'🤝', name:'JV Router', subtitle:'JV deals', confidence:68,
+    description:'Routes deals to JV partners when you can\'t close them yourself. Handles the package, communication, and tracking so nothing gets lost.',
     whenFires:'Fires when a deal is flagged for JV partner.',
     triggers:[{event:'Stage Change',label:'→ With JV Partner',color:'purple'},{event:'Pipeline',label:'Dispo Process',color:'cyan'}],
     whatItDoes:['Routes deal to appropriate JV partner','Prepares JV-specific deal package','Manages communication flow','Tracks JV deal progress'],
@@ -581,7 +624,8 @@ const AGENTS = {
     learning:'Identifies which JV partners close fastest on which deal types.'
   },
   'deal-terminator': {
-    emoji:'🚫', name:'Deal Terminator',
+    emoji:'🚫', name:'Deal Terminator', subtitle:'Dead deals', confidence:82,
+    description:'When a deal dies, this agent handles the paperwork — termination notices, earnest release, and cleanup. Logs the reason so you can learn from it.',
     whenFires:'Fires when a deal needs to be terminated.',
     triggers:[{event:'Stage Change',label:'→ Need to Terminate',color:'orange'},{event:'Pipeline',label:'Dispo Process',color:'cyan'}],
     whatItDoes:['Sends termination notice to all parties','Handles cancellation paperwork triggers','Updates pipeline status','Logs termination reason for future reference'],
@@ -595,7 +639,8 @@ const AGENTS = {
     learning:'Identifies early warning signs of deals likely to terminate.'
   },
   'dispo-closer': {
-    emoji:'🏁', name:'Dispo Closer',
+    emoji:'🏁', name:'Dispo Closer', subtitle:'Buyer closings', confidence:76,
+    description:'Manages the buyer-side closing process. Coordinates between buyer, seller, and title company, sends milestone updates, and tracks days to close.',
     whenFires:'Fires when a buyer is under contract.',
     triggers:[{event:'Stage Change',label:'→ UC with Buyer',color:'green'},{event:'Pipeline',label:'Dispo Process',color:'purple'}],
     whatItDoes:['Manages buyer-side closing process','Coordinates between buyer, seller, and title','Sends milestone updates','Tracks days to close'],
@@ -608,7 +653,8 @@ const AGENTS = {
     learning:'Optimizes closing coordination based on historical timelines.'
   },
   'title-coordinator': {
-    emoji:'📋', name:'Title Coordinator',
+    emoji:'📋', name:'Title Coordinator', subtitle:'Title company mgmt', confidence:74,
+    description:'Keeps title companies on track. Tracks document status, sends reminders on deadlines, and flags missing items before they delay your closing.',
     whenFires:'Fires when deal is working with title company.',
     triggers:[{event:'Stage Change',label:'→ Working with Title',color:'cyan'},{event:'Pipeline',label:'Dispo Process',color:'purple'}],
     whatItDoes:['Manages title company communication','Tracks document submission status','Flags missing items','Sends reminders on deadlines'],
@@ -622,7 +668,8 @@ const AGENTS = {
     learning:'Learns which title companies close fastest and flags potential delays early.'
   },
   'dispo-closing-agent': {
-    emoji:'✅', name:'Dispo Closing Agent',
+    emoji:'✅', name:'Dispo Closing Agent', subtitle:'Closed dispo deals', confidence:85,
+    description:'Celebrates the win. Confirms closing with all parties, calculates your actual profit, and updates the buyer\'s reliability score for future deals.',
     whenFires:'Fires when a dispo deal closes.',
     triggers:[{event:'Stage Change',label:'→ Closed',color:'green'},{event:'Pipeline',label:'Dispo Process',color:'purple'}],
     whatItDoes:['Confirms closing with all parties','Calculates final profit/spread','Updates buyer reliability score','Logs closed deal metrics'],
@@ -636,7 +683,8 @@ const AGENTS = {
     learning:'Tracks profit margins by deal type to improve future pricing.'
   },
   'accountability': {
-    emoji:'⚖️', name:'Accountability',
+    emoji:'⚖️', name:'Accountability', subtitle:'Team task monitoring', confidence:87,
+    description:'Your team accountability system. Scans for overdue tasks and escalates in tiers — yellow to the rep, orange to Jessica, red to you. Nobody hides from overdue tasks.',
     whenFires:'Runs on schedule — checks for overdue tasks across the team.',
     triggers:[{event:'Schedule',label:'Every 24h',color:'cyan'},{event:'Scans',label:'All Open GHL Tasks',color:'orange'}],
     whatItDoes:['Scans all open tasks for overdue items','Sends yellow flag at 15 min overdue','Sends orange alert to Jessica at 30 min','Sends red escalation to Corey at 60 min'],
@@ -650,7 +698,8 @@ const AGENTS = {
     learning:'Tracks which team members respond to which escalation tiers.'
   },
   'reality-check': {
-    emoji:'🔬', name:'Reality Check',
+    emoji:'🔬', name:'Reality Check', subtitle:'Data integrity', confidence:71,
+    description:'Your pipeline\'s immune system. Catches duplicates, stalled deals, and bad data before they cause problems downstream.',
     whenFires:'Runs periodically to verify pipeline data integrity.',
     triggers:[{event:'Schedule',label:'Periodic Scan',color:'cyan'},{event:'Checks',label:'Pipeline Data Integrity',color:'purple'}],
     whatItDoes:['Verifies contact data against external sources','Catches duplicate opportunities','Flags stalled pipelines','Cross-references county records'],
@@ -664,7 +713,8 @@ const AGENTS = {
     learning:'Builds patterns of common data errors to catch earlier.'
   },
   'callback-capture': {
-    emoji:'📲', name:'Callback Capture',
+    emoji:'📲', name:'Callback Capture', subtitle:'Inbound calls', confidence:88,
+    description:'Never miss a callback. Every inbound call gets logged, a callback task gets created, and the assigned LM gets notified immediately.',
     whenFires:'Fires on every inbound call.',
     triggers:[{event:'Webhook',label:'Inbound Call',color:'green'},{event:'Source',label:'CallRail / GHL',color:'cyan'}],
     whatItDoes:['Captures inbound call details','Creates callback task for assigned LM','Logs call in CRM','Notifies team member immediately'],
@@ -677,7 +727,8 @@ const AGENTS = {
     learning:'Tracks which callback response times lead to conversions.'
   },
   'stage-change-router': {
-    emoji:'🔀', name:'Stage Change Router',
+    emoji:'🔀', name:'Stage Change Router', subtitle:'All stage changes', confidence:92,
+    description:'The traffic controller. Every time a lead moves stages in GHL, this agent figures out which other agents need to fire and routes the event to them.',
     whenFires:'Fires on every pipeline stage change.',
     triggers:[{event:'Webhook',label:'OpportunityStageUpdate',color:'green'},{event:'Routes to',label:'Correct Agent Handler',color:'cyan'}],
     whatItDoes:['Routes stage changes to correct agent handlers','Validates stage transition is legitimate','Logs all pipeline movement','Prevents duplicate agent fires'],
@@ -690,7 +741,8 @@ const AGENTS = {
     learning:'Identifies unusual stage transitions that may indicate data errors.'
   },
   'morning-briefing': {
-    emoji:'☀️', name:'Morning Briefing',
+    emoji:'☀️', name:'Morning Briefing', subtitle:'Daily at 8 AM', confidence:85,
+    description:'Your daily intelligence report. Every morning at 8 AM you get a Telegram message with everything that happened in the last 24 hours — leads, calls, deals, and anything that needs your attention.',
     whenFires:'Fires daily at 8:00 AM CST.',
     triggers:[{event:'Schedule',label:'Daily 8:00 AM CST',color:'cyan'},{event:'Scans',label:'Last 24h Activity',color:'purple'}],
     whatItDoes:['Scans last 24 hours of activity','Compiles key metrics and alerts','Generates Telegram-ready briefing','Highlights items needing attention'],
@@ -791,7 +843,26 @@ function renderDetail(id) {
         <ul class="issues-list">${a.issues.map(i => `<li>${i}</li>`).join('')}</ul>
       </div>` : '';
 
+  const conf = a.confidence || 0;
+  const confColor = conf >= 80 ? 'var(--green)' : conf >= 60 ? 'var(--yellow)' : 'var(--orange)';
+
   el.innerHTML = `
+    <div class="agent-header">
+      <span class="agent-header-emoji">${a.emoji}</span>
+      <div class="agent-header-info">
+        <div class="agent-header-name">${a.name}</div>
+        <div class="agent-header-sub">${a.subtitle || ''}</div>
+      </div>
+    </div>
+    <div class="confidence-bar">
+      <span class="confidence-label">Build confidence:</span>
+      <div class="confidence-track"><div class="confidence-fill" style="width:${conf}%;background:linear-gradient(90deg,var(--cyan),${confColor})"></div></div>
+      <span class="confidence-pct" style="color:${confColor}">${conf}%</span>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title" style="color:var(--text)">🔍 WHAT THIS AGENT DOES</div>
+      <div class="agent-description">${a.description || ''}</div>
+    </div>
     <div class="detail-section">
       <div class="detail-section-title dst-cyan">⚡ WHEN DOES IT FIRE?</div>
       <div class="detail-text">${a.whenFires}</div>
