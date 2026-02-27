@@ -23,111 +23,17 @@ import { fieldBot } from '../bots/field';
 import { noteBot } from '../bots/note';
 import { loadPlaybook } from '../config/loader';
 import { aiWriterBot } from '../bots/ai-writer';
+import { classifierBot } from '../bots/classifier';
+import { templateBot } from '../bots/template';
+import { schedulerBot } from '../bots/scheduler';
 
 const AGENT_ID = 'initial-outreach';
 
-// Lead's local hour → tone label
 type TimeTone = 'morning' | 'afternoon' | 'evening' | 'overnight';
-
-function getTimeTone(localHour: number): TimeTone {
-  if (localHour >= 6 && localHour < 12) return 'morning';
-  if (localHour >= 12 && localHour < 17) return 'afternoon';
-  if (localHour >= 17 && localHour < 21) return 'evening';
-  return 'overnight';
-}
-
-/**
- * Resolve the lead's local hour from GHL timezone field.
- * Falls back to server time if no timezone is on the contact.
- */
-function getLeadLocalHour(contact: Record<string, unknown>): number {
-  const tz = (contact.timezone as string) || (contact.timeZone as string) || null;
-  if (tz) {
-    try {
-      const localTime = new Date().toLocaleString('en-US', { timeZone: tz, hour: 'numeric', hour12: false });
-      return parseInt(localTime, 10);
-    } catch {
-      // Unknown timezone string — fall through to server time
-    }
-  }
-  return new Date().getHours();
-}
-
-/** Parse "HH:MM" string → integer hour. */
-function parseHour(timeStr: string): number {
-  return parseInt(timeStr.split(':')[0], 10);
-}
-
-/**
- * Returns true when the lead's local time is inside the playbook send window.
- */
-function isInLeadSendWindow(localHour: number, playbook: any): boolean {
-  const sw = playbook.communication?.send_window ?? { start: '09:00', end: '18:00' };
-  return localHour >= parseHour(sw.start) && localHour < parseHour(sw.end);
-}
-
-/**
- * Determines whether this is an inbound lead by checking playbook leadSources.
- */
-function isInboundLead(contact: Record<string, unknown>, playbook: any): boolean {
-  const source = ((contact.source as string) || '').toLowerCase();
-  const inboundKeys = Object.entries(playbook.leadSources ?? {})
-    .filter(([, cfg]: [string, any]) => cfg.type === 'inbound')
-    .map(([key]) => key.toLowerCase());
-  // Also keep fallback web/form/chat/google/facebook/seo patterns
-  const fallback = ['website', 'web', 'form', 'chat', 'referral', 'google', 'facebook', 'seo'];
-  return [...inboundKeys, ...fallback].some((s) => source.includes(s));
-}
-
-/**
- * Builds the AI prompt for the opening SMS.
- * Produces a short, conversational, non-template message.
- */
-function buildPrompt(
-  contact: Record<string, unknown>,
-  tone: TimeTone,
-  includeCompanyName: boolean,
-  companyName: string,
-  playbook: any
-): string {
-  const cf = playbook.customFields;
-  const firstName = (contact.firstName as string) || '';
-  const customFields = (contact.customFields as Record<string, string>) || {};
-  const address = customFields[cf.property_address] || '';
-  const motivation = customFields[cf.motivation] || '';
-
-  const lines = [
-    `You are a real estate acquisitions rep texting a seller lead for the first time.`,
-    `Write ONE conversational SMS opener — under 160 characters. No exclamation marks. Sound like a real person, not a script.`,
-    ``,
-    `Tone: ${tone}. Adjust warmth/energy to match the time of day.`,
-    firstName ? `Lead's first name: ${firstName}.` : `Do not use a name — we don't have one yet.`,
-    address ? `Property they may want to sell: ${address}.` : '',
-    motivation ? `Their stated motivation: ${motivation}.` : '',
-    includeCompanyName
-      ? `Close with something natural that references "${companyName}" since they reached out to us.`
-      : `Do NOT mention the company name.`,
-    `Do NOT include a phone number, link, or opt-out language in the message body.`,
-    `Output only the SMS text — no quotes, no labels.`,
-  ].filter(Boolean);
-
-  return lines.join('\n');
-}
 
 const SMS_SYSTEM_PROMPT = `You are a real estate acquisitions rep writing an opening SMS. Rules: under 160 characters, no exclamation marks, sound like a real person not a script, no links or phone numbers. Output only the SMS text.`;
 
 const SMS_FALLBACK = `Hey, saw you might be interested in selling — happy to chat whenever works for you.`;
-
-async function generateSMS(prompt: string): Promise<string> {
-  try {
-    const text = await aiWriterBot.writeText(prompt, SMS_SYSTEM_PROMPT);
-    const cleaned = text.trim().replace(/^["']|["']$/g, '');
-    return cleaned || SMS_FALLBACK;
-  } catch (err) {
-    console.error(`[initial-outreach] Gemini failed, using fallback:`, (err as Error).message);
-    return SMS_FALLBACK;
-  }
-}
 
 export async function runInitialOutreach(event: GunnerEvent): Promise<void> {
   if (!isEnabled(AGENT_ID)) return;
@@ -156,8 +62,8 @@ export async function runInitialOutreach(event: GunnerEvent): Promise<void> {
   }
 
   // Enforce send window in lead's timezone
-  const localHour = getLeadLocalHour(contact);
-  if (!isInLeadSendWindow(localHour, playbook)) {
+  const localHour = schedulerBot.getLeadLocalHour(contact);
+  if (!schedulerBot.isInLeadSendWindow(localHour, playbook)) {
     auditLog({
       agent: AGENT_ID,
       contactId,
@@ -170,12 +76,19 @@ export async function runInitialOutreach(event: GunnerEvent): Promise<void> {
     return;
   }
 
-  const tone = getTimeTone(localHour);
-  const inbound = isInboundLead(contact, playbook);
+  const tone = schedulerBot.getTimeTone(localHour);
+  const inbound = classifierBot.isInboundLead(contact, playbook);
   const companyName = playbook.company?.name ?? 'our company';
 
-  const prompt = buildPrompt(contact, tone, inbound, companyName, playbook);
-  const message = await generateSMS(prompt);
+  const prompt = templateBot.buildInitialOutreachPrompt(contact, tone, inbound, companyName, playbook);
+  let message: string;
+  try {
+    const text = await aiWriterBot.writeText(prompt, SMS_SYSTEM_PROMPT);
+    message = text.trim().replace(/^["']|["']$/g, '') || SMS_FALLBACK;
+  } catch (err) {
+    console.error(`[initial-outreach] Gemini failed, using fallback:`, (err as Error).message);
+    message = SMS_FALLBACK;
+  }
 
   if (!isDryRun()) {
     await smsBot(contactId, message);

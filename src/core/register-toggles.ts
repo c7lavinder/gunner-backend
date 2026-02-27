@@ -74,3 +74,10 @@ registerToggle({ id: 'bot-ai-classifier', kind: 'bot', label: 'AI Classifier Bot
 
 // === COMMUNICATION BOTS ===
 registerToggle({ id: 'bot-email', kind: 'bot', label: 'Email Bot', description: 'Sends emails via GHL (stub)', enabled: true });
+
+// === LOGIC BOTS ===
+registerToggle({ id: 'bot-classifier', kind: 'bot', label: 'Classifier Bot', description: 'Consolidates all classification/detection logic', enabled: true });
+registerToggle({ id: 'bot-template', kind: 'bot', label: 'Template Bot', description: 'All string/note/SMS construction', enabled: true });
+registerToggle({ id: 'bot-scheduler', kind: 'bot', label: 'Scheduler Bot', description: 'All time/scheduling logic', enabled: true });
+registerToggle({ id: 'bot-guard', kind: 'bot', label: 'Guard Bot', description: 'Idempotency/dedup/guard checks', enabled: true });
+registerToggle({ id: 'bot-compliance', kind: 'bot', label: 'Compliance Bot', description: 'DNC and regulatory checks', enabled: true });

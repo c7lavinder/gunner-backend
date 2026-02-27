@@ -9,7 +9,8 @@
 import { auditLog } from '../core/audit';
 import { isEnabled } from '../core/toggles';
 import { smsBot, contactBot } from '../bots';
-import { getAllPendingSchedules, ReminderSchedule } from './apt-prep';
+import { getAllPendingSchedules } from './apt-prep';
+import { ReminderSchedule } from '../bots/scheduler';
 import { getFieldName } from '../config';
 
 const AGENT_ID = 'apt-reminder-poller';

@@ -1,8 +1,6 @@
 /**
- * Offer Collector Agent
- *
+ * Offer Collector Agent — pure orchestration.
  * Fires on: dispo stage → offers_received
- * Does: Logs offer, ranks against others, creates comparison note, tasks Esteban
  */
 
 import { GunnerEvent, emit } from '../core/event-bus';
@@ -11,6 +9,7 @@ import { isEnabled } from '../core/toggles';
 import { isDryRun } from '../core/dry-run';
 import { loadPlaybook } from '../config/loader';
 import { contactBot, noteBot, taskBot } from '../bots';
+import { templateBot } from '../bots/template';
 
 const AGENT_ID = 'offer-collector';
 const ESTEBAN_USER_ID = 'BhVAeJjAfojeX9AJdqbf';
@@ -29,17 +28,14 @@ export async function runOfferCollector(event: GunnerEvent): Promise<void> {
 
   const { contactId, opportunityId, tenantId } = event;
   const start = Date.now();
-  const playbook = await loadPlaybook(tenantId);
 
   const contact = await contactBot(contactId);
   const cf = (contact as any)?.customFields ?? {};
   const propertyAddress = cf.property_address ?? 'N/A';
 
-  // Offers come from event metadata (populated by webhook or manual entry)
   const offers: Offer[] = (event.metadata as any)?.offers ?? [];
   const newOffer: Partial<Offer> = (event.metadata as any)?.newOffer ?? {};
 
-  // Sort offers by price descending
   const allOffers = [...offers];
   if (newOffer.price) {
     allOffers.push({
@@ -55,20 +51,9 @@ export async function runOfferCollector(event: GunnerEvent): Promise<void> {
   allOffers.sort((a, b) => b.price - a.price);
 
   if (!isDryRun()) {
-    // Create comparison note
-    const highest = allOffers[0];
-    const noteLines = [
-      `💰 Offer Summary — ${propertyAddress}`,
-      `${allOffers.length} offer(s) received — highest: $${highest?.price?.toLocaleString() ?? 'N/A'} from ${highest?.buyerName ?? 'N/A'}`,
-      `---`,
-      ...allOffers.map((o, i) => [
-        `${i + 1}. ${o.buyerName}: $${o.price.toLocaleString()}`,
-        `   Terms: ${o.terms} | POF: ${o.proofOfFunds ? '✅' : '❌'} | Close: ${o.closingTimeline}`,
-      ].join('\n')),
-    ];
-    await noteBot(contactId, noteLines.join('\n'));
+    await noteBot(contactId, templateBot.buildComparisonNote(allOffers, propertyAddress));
 
-    // Create review task for Esteban
+    const highest = allOffers[0];
     await taskBot(contactId, {
       title: `📋 Review ${allOffers.length} offer(s) on ${propertyAddress}`,
       body: `Highest: $${highest?.price?.toLocaleString() ?? 'N/A'} from ${highest?.buyerName ?? 'N/A'}\nTotal offers: ${allOffers.length}`,
@@ -77,21 +62,7 @@ export async function runOfferCollector(event: GunnerEvent): Promise<void> {
     });
   }
 
-  await emit({
-    kind: 'dispo.offer.received',
-    tenantId,
-    contactId,
-    opportunityId,
-    metadata: { offerCount: allOffers.length, highestPrice: allOffers[0]?.price },
-  });
+  await emit({ kind: 'dispo.offer.received', tenantId, contactId, opportunityId, metadata: { offerCount: allOffers.length, highestPrice: allOffers[0]?.price } });
 
-  auditLog({
-    agent: AGENT_ID,
-    contactId,
-    opportunityId,
-    action: 'dispo.offer.collected',
-    result: 'success',
-    metadata: { offerCount: allOffers.length },
-    durationMs: Date.now() - start,
-  });
+  auditLog({ agent: AGENT_ID, contactId, opportunityId, action: 'dispo.offer.collected', result: 'success', metadata: { offerCount: allOffers.length }, durationMs: Date.now() - start });
 }

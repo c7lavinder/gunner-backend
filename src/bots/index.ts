@@ -28,3 +28,10 @@ export { aiClassifierBot } from './ai-classifier';
 
 // === COMMUNICATION BOTS ===
 export { emailBot } from './email';
+
+// === LOGIC BOTS ===
+export { classifierBot } from './classifier';
+export { templateBot } from './template';
+export { schedulerBot } from './scheduler';
+export { guardBot } from './guard';
+export { complianceBot } from './compliance';
