@@ -24,38 +24,45 @@ interface GhostedEvent extends GunnerEvent {
 export async function runGhostedAgent(event: GhostedEvent): Promise<void> {
   if (!isEnabled(AGENT_ID)) return;
 
-  const { contactId, opportunityId, tenantId } = event;
-  const start = Date.now();
+  try {
+    const { contactId, opportunityId, tenantId } = event;
+    const start = Date.now();
 
-  const ghostedStage = await getStageId(tenantId, 'sales', 'ghosted') ?? 'Ghosted';
+    const ghostedStage = await getStageId(tenantId, 'sales', 'ghosted') ?? 'Ghosted';
 
-  // Guard: already ghosted
-  if (event.currentStage === ghostedStage) {
+    if (event.currentStage === ghostedStage) {
+      auditLog({
+        agent: AGENT_ID,
+        contactId,
+        opportunityId,
+        action: 'ghosted:skipped',
+        result: 'skipped',
+        durationMs: Date.now() - start,
+      });
+      return;
+    }
+
+    if (!isDryRun() && opportunityId) {
+      await stageBot(opportunityId, ghostedStage).catch(err => {
+        auditLog({ agent: AGENT_ID, contactId, action: 'stageBot:failed', result: 'error', reason: err?.message });
+      });
+
+      const ghostedTag = await getTag(tenantId, 'ghosted');
+      await tagBot(contactId, [ghostedTag]).catch(err => {
+        auditLog({ agent: AGENT_ID, contactId, action: 'tagBot:failed', result: 'error', reason: err?.message });
+      });
+    }
+
     auditLog({
       agent: AGENT_ID,
       contactId,
       opportunityId,
-      action: 'ghosted:skipped',
-      result: 'skipped',
+      action: 'ghosted:processed',
+      result: 'success',
+      metadata: { dayOffset: event.dayOffset },
       durationMs: Date.now() - start,
     });
-    return;
+  } catch (err: any) {
+    auditLog({ agent: AGENT_ID, contactId: event.contactId, action: 'agent:crashed', result: 'error', reason: err?.message });
   }
-
-  if (!isDryRun() && opportunityId) {
-    await stageBot(opportunityId, ghostedStage);
-
-    const ghostedTag = await getTag(tenantId, 'ghosted');
-    await tagBot(contactId, [ghostedTag]);
-  }
-
-  auditLog({
-    agent: AGENT_ID,
-    contactId,
-    opportunityId,
-    action: 'ghosted:processed',
-    result: 'success',
-    metadata: { dayOffset: event.dayOffset },
-    durationMs: Date.now() - start,
-  });
 }

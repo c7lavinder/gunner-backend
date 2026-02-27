@@ -2,13 +2,16 @@
  * Intelligence Poller — runs every 24 hours.
  * Matches actions to outcomes, generates daily briefing, identifies trends.
  * Toggle: intelligence-poller
+ *
+ * NO logic here — only calls bots.
  */
 
 import { isEnabled } from '../core/toggles';
-import { isDryRun } from '../core/dry-run';
 import { auditLog } from '../core/audit';
-import { getRecentByCategory, getStats, getAllCategories } from '../intelligence/memory';
-import { generateBriefing, analyzePatterns } from '../intelligence/researcher';
+import { outcomeTrackerBot } from '../bots/outcome-tracker';
+import { learningBuilderBot } from '../bots/learning-builder';
+import { briefingWriterBot } from '../bots/briefing-writer';
+import { patternAnalyzerBot } from '../bots/pattern-analyzer';
 
 const AGENT_ID = 'intelligence-poller';
 let intervalHandle: ReturnType<typeof setInterval> | null = null;
@@ -20,39 +23,44 @@ async function runCycle(): Promise<void> {
   console.log('[intelligence-poller] starting daily cycle');
 
   try {
-    const categories = await getAllCategories();
-    const statsReport: string[] = [];
+    const tenantId = 'default';
 
-    for (const cat of categories) {
-      const stats = await getStats(cat);
-      statsReport.push(`${cat}: ${stats.total} entries, avg ${stats.avgScore}/100, improving=${stats.improvedOverTime}`);
+    // Match outcomes
+    const { matched, unmatched } = await outcomeTrackerBot.matchOutcomes(tenantId).catch((err) => {
+      console.error('[intelligence-poller] matchOutcomes failed:', (err as Error).message);
+      return { matched: 0, unmatched: 0 };
+    });
 
-      // Find unscored entries that might have outcomes by now
-      const recent = await getRecentByCategory(cat, 50);
-      const unscored = recent.filter((e) => e.score === null && e.outcome === null);
-      if (unscored.length > 0) {
-        console.log(`[intelligence-poller] ${cat}: ${unscored.length} entries awaiting outcomes`);
-      }
-    }
+    // Build learnings
+    const learnings = await learningBuilderBot.buildContext('all').catch((err) => {
+      console.error('[intelligence-poller] buildContext failed:', (err as Error).message);
+      return '';
+    });
 
-    // Generate patterns for SMS
-    const patterns = await analyzePatterns('default');
+    // Analyze patterns
+    const patterns = await patternAnalyzerBot.analyzeResponseRates(tenantId).catch((err) => {
+      console.error('[intelligence-poller] analyzeResponseRates failed:', (err as Error).message);
+      return { bestSendTimes: [], bestTones: [], bestDays: [], insights: [] };
+    });
+
     if (patterns.insights.length > 0) {
       console.log('[intelligence-poller] SMS insights:', patterns.insights.join('; '));
     }
 
     // Generate briefing
-    if (!isDryRun()) {
-      const briefing = await generateBriefing('default');
-      console.log('[intelligence-poller] briefing generated, length:', briefing.length);
-    }
+    const briefing = await briefingWriterBot.writeBriefing(tenantId).catch((err) => {
+      console.error('[intelligence-poller] writeBriefing failed:', (err as Error).message);
+      return '';
+    });
+
+    console.log(`[intelligence-poller] briefing length: ${briefing.length}`);
 
     auditLog({
       agent: AGENT_ID,
       contactId: '',
       action: 'intelligence:daily-cycle',
       result: 'success',
-      reason: statsReport.join(' | '),
+      reason: `matched=${matched} unmatched=${unmatched} learnings=${learnings.length}chars briefing=${briefing.length}chars`,
       durationMs: Date.now() - start,
     });
   } catch (err) {
@@ -71,7 +79,6 @@ async function runCycle(): Promise<void> {
 const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
 
 export function startIntelligencePoller(): void {
-  // Run first cycle after 60s, then every 24h
   setTimeout(() => {
     void runCycle();
     intervalHandle = setInterval(() => void runCycle(), TWENTY_FOUR_HOURS);

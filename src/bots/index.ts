@@ -30,7 +30,13 @@ export { aiClassifierBot } from './ai-classifier';
 export { emailBot } from './email';
 
 // === INTELLIGENCE ===
-export { intelligenceBot } from './intelligence';
+export { memoryWriterBot } from './memory-writer';
+export { memoryReaderBot } from './memory-reader';
+export { outcomeTrackerBot } from './outcome-tracker';
+export { learningBuilderBot } from './learning-builder';
+export { patternAnalyzerBot } from './pattern-analyzer';
+export { briefingWriterBot } from './briefing-writer';
+export { feedbackWriterBot } from './feedback-writer';
 
 // === LOGIC BOTS ===
 export { classifierBot } from './classifier';

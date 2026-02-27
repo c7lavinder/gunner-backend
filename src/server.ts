@@ -10,6 +10,8 @@ import { startCrmSync } from './core/crm-sync';
 import controlRouter from './api/control';
 import auditRouter from './api/audit';
 import webhookRouter from './api/webhooks';
+import intelligenceRouter from './api/intelligence';
+import { startIntelligencePoller } from './agents/intelligence-poller';
 
 async function main() {
   // 1. Load config (all env vars → typed config object)
@@ -33,11 +35,15 @@ async function main() {
   app.use('/api/control', controlRouter);
   app.use('/api/audit', auditRouter);
   app.use('/webhooks', webhookRouter);
+  app.use('/api/intelligence', intelligenceRouter);
 
   const port = Number(process.env.PORT ?? 3000);
   app.listen(port, () => console.log(`[server] listening on port ${port}`));
 
-  // 6. Start CRM sync (5s after boot)
+  // 6. Start intelligence poller
+  startIntelligencePoller();
+
+  // 7. Start CRM sync (5s after boot)
   startCrmSync();
 
   console.log('[server] Gunner Backend ready');

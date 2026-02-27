@@ -8,6 +8,7 @@ import { auditLog } from '../core/audit';
 import { isEnabled } from '../core/toggles';
 import { loadPlaybook } from '../config';
 import { classifierBot } from '../bots/classifier';
+import { intelligenceBot } from '../bots/intelligence';
 
 const AGENT_ID = 'response-agent';
 
@@ -46,5 +47,8 @@ export async function runResponseAgent(event: SmsEvent): Promise<void> {
   }
 
   await emit({ kind: 'lead.responded', tenantId, contactId, opportunityId, metadata: { message, classification } });
+
+  await intelligenceBot.recordAction('classification-corrections', { contactId, message }, { classification }, tenantId);
+
   auditLog({ agent: AGENT_ID, contactId, opportunityId, action: 'response:classified', result: 'success', metadata: { classification }, durationMs: Date.now() - start });
 }

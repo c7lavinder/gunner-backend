@@ -25,7 +25,7 @@ interface FollowUpBucket {
 
 interface PlaybookConfig {
   buckets: FollowUpBucket[];
-  touchField: string; // custom field that stores last touch timestamp
+  touchField: string;
 }
 
 /**
@@ -37,22 +37,28 @@ export async function runFollowUpOrganizer(
 ): Promise<void> {
   if (!isEnabled(AGENT_ID)) return;
 
-  const start = Date.now();
+  try {
+    const start = Date.now();
 
-  const touchField = await getFieldName(tenantId, playbook.touchField);
+    const touchField = await getFieldName(tenantId, playbook.touchField);
 
-  for (const bucket of playbook.buckets) {
-    await processBucket(tenantId, bucket, touchField);
+    for (const bucket of playbook.buckets) {
+      await processBucket(tenantId, bucket, touchField).catch(err => {
+        auditLog({ agent: AGENT_ID, contactId: '*', action: `processBucket:${bucket.name}:failed`, result: 'error', reason: err?.message });
+      });
+    }
+
+    auditLog({
+      agent: AGENT_ID,
+      contactId: '*',
+      action: 'poll:complete',
+      result: 'success',
+      durationMs: Date.now() - start,
+      metadata: { bucketCount: playbook.buckets.length },
+    });
+  } catch (err: any) {
+    auditLog({ agent: AGENT_ID, contactId: '*', action: 'agent:crashed', result: 'error', reason: err?.message });
   }
-
-  auditLog({
-    agent: AGENT_ID,
-    contactId: '*',
-    action: 'poll:complete',
-    result: 'success',
-    durationMs: Date.now() - start,
-    metadata: { bucketCount: playbook.buckets.length },
-  });
 }
 
 async function processBucket(
@@ -60,8 +66,10 @@ async function processBucket(
   bucket: FollowUpBucket,
   touchField: string
 ): Promise<void> {
-  // Fetch contacts in a given stage via searchBot
-  const contacts = (await searchBot.searchContacts('', { pipelineStageId: bucket.stageId })) as Array<{
+  const contacts = await searchBot.searchContacts('', { pipelineStageId: bucket.stageId }).catch(err => {
+    auditLog({ agent: AGENT_ID, contactId: '*', action: 'searchBot:failed', result: 'error', reason: err?.message });
+    return [] as Array<{ id: string; customFields: Record<string, string> }>;
+  }) as Array<{
     id: string;
     customFields: Record<string, string>;
   }>;
@@ -72,17 +80,16 @@ async function processBucket(
     const lastTouch = Number(contact.customFields?.[touchField] || 0);
     const daysSinceTouch = (now - lastTouch) / (1000 * 60 * 60 * 24);
 
-    // Guard: not yet due
     if (lastTouch > 0 && daysSinceTouch < bucket.cadenceDays) continue;
 
-    // Determine if contact has exhausted touches in this bucket
     const fTouchCount = await getFieldName(tenantId, 'fu_touch_count');
     const touchCount = Number(contact.customFields?.[fTouchCount] || 0);
-    const maxTouches = Math.ceil(bucket.cadenceDays / 7); // ~1 touch per week within cadence
+    const maxTouches = Math.ceil(bucket.cadenceDays / 7);
 
     if (touchCount >= maxTouches && bucket.nextBucketStageId) {
-      // Advance to next bucket
-      await stageBot(contact.id, bucket.nextBucketStageId);
+      await stageBot(contact.id, bucket.nextBucketStageId).catch(err => {
+        auditLog({ agent: AGENT_ID, contactId: contact.id, action: 'stageBot:failed', result: 'error', reason: err?.message });
+      });
       auditLog({
         agent: AGENT_ID,
         contactId: contact.id,
@@ -93,13 +100,14 @@ async function processBucket(
       continue;
     }
 
-    // Due for a touch — fire messenger
     await runFollowUpMessenger({
       tenantId,
       contactId: contact.id,
       bucketName: bucket.name,
       touchNumber: touchCount + 1,
       daysSinceLastTouch: Math.floor(daysSinceTouch),
+    }).catch(err => {
+      auditLog({ agent: AGENT_ID, contactId: contact.id, action: 'runFollowUpMessenger:failed', result: 'error', reason: err?.message });
     });
 
     auditLog({

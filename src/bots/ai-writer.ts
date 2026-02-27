@@ -6,10 +6,11 @@
 import { isEnabled } from '../core/toggles';
 import { isDryRun } from '../core/dry-run';
 import { generateText } from '../integrations/ai/gemini';
+import { getLearnings } from './learning-builder';
 
 const BOT_ID = 'bot-ai-writer';
 
-export async function writeText(prompt: string, systemPrompt?: string): Promise<string> {
+export async function writeText(prompt: string, systemPrompt?: string, learningCategory?: string): Promise<string> {
   if (!isEnabled(BOT_ID)) {
     console.log(`[bot-ai-writer] DISABLED — skipping`);
     return '';
@@ -18,7 +19,19 @@ export async function writeText(prompt: string, systemPrompt?: string): Promise<
     console.log(`[bot-ai-writer] DRY RUN — returning placeholder`);
     return '[AI placeholder — dry run]';
   }
-  return generateText(prompt, systemPrompt);
+
+  // Inject learnings into system prompt if category provided
+  let enrichedSystemPrompt = systemPrompt ?? '';
+  if (learningCategory) {
+    const learnings = await getLearnings(learningCategory);
+    if (learnings) {
+      enrichedSystemPrompt = enrichedSystemPrompt
+        ? `${enrichedSystemPrompt}\n\n${learnings}`
+        : learnings;
+    }
+  }
+
+  return generateText(prompt, enrichedSystemPrompt || undefined);
 }
 
 export const aiWriterBot = { writeText };

@@ -27,46 +27,59 @@ export interface FollowUpMessageRequest {
 export async function runFollowUpMessenger(req: FollowUpMessageRequest): Promise<void> {
   if (!isEnabled(AGENT_ID)) return;
 
-  const start = Date.now();
-  const { contactId, bucketName, touchNumber, daysSinceLastTouch, tenantId } = req;
-
-  const contact = await contactBot(contactId);
-  const fLastTouch = await getFieldName(tenantId, 'fu_last_touch');
-  const lastTouch = Number((contact as any).customFields?.[fLastTouch] || 0);
-  const hoursSinceTouch = (Date.now() - lastTouch) / (1000 * 60 * 60);
-  if (hoursSinceTouch < 20) {
-    auditLog({ agent: AGENT_ID, contactId, action: 'sms:skipped', result: 'skipped', reason: 'Already touched within 20 hours' });
-    return;
-  }
-
-  const tone = classifierBot.selectTone(bucketName, touchNumber, daysSinceLastTouch);
-  const [fMotivation, fPropertyAddress] = await Promise.all([
-    getFieldName(tenantId, 'motivation'),
-    getFieldName(tenantId, 'property_address'),
-  ]);
-
-  const prompt = templateBot.buildSmsPrompt(contact as Record<string, unknown>, {
-    tone, bucketName, daysSinceLastTouch,
-    motivationField: fMotivation,
-    propertyAddressField: fPropertyAddress,
-  });
-
-  let message: string;
   try {
-    const text = await aiWriterBot.writeText(prompt, FU_SYSTEM_PROMPT);
-    message = text.trim().replace(/^["']|["']$/g, '') || FU_FALLBACK;
-  } catch (err) {
-    console.error(`[follow-up-messenger] Gemini failed, using fallback:`, (err as Error).message);
-    message = FU_FALLBACK;
+    const start = Date.now();
+    const { contactId, bucketName, touchNumber, daysSinceLastTouch, tenantId } = req;
+
+    const contact = await contactBot(contactId).catch(err => {
+      auditLog({ agent: AGENT_ID, contactId, action: 'contactBot:failed', result: 'error', reason: err?.message });
+      return null;
+    });
+    if (!contact) return;
+
+    const fLastTouch = await getFieldName(tenantId, 'fu_last_touch');
+    const lastTouch = Number((contact as any).customFields?.[fLastTouch] || 0);
+    const hoursSinceTouch = (Date.now() - lastTouch) / (1000 * 60 * 60);
+    if (hoursSinceTouch < 20) {
+      auditLog({ agent: AGENT_ID, contactId, action: 'sms:skipped', result: 'skipped', reason: 'Already touched within 20 hours' });
+      return;
+    }
+
+    const tone = classifierBot.selectTone(bucketName, touchNumber, daysSinceLastTouch);
+    const [fMotivation, fPropertyAddress] = await Promise.all([
+      getFieldName(tenantId, 'motivation'),
+      getFieldName(tenantId, 'property_address'),
+    ]);
+
+    const prompt = templateBot.buildSmsPrompt(contact as Record<string, unknown>, {
+      tone, bucketName, daysSinceLastTouch,
+      motivationField: fMotivation,
+      propertyAddressField: fPropertyAddress,
+    });
+
+    let message: string;
+    try {
+      const text = await aiWriterBot.writeText(prompt, FU_SYSTEM_PROMPT);
+      message = text.trim().replace(/^["']|["']$/g, '') || FU_FALLBACK;
+    } catch (err) {
+      auditLog({ agent: AGENT_ID, contactId, action: 'aiWriterBot:failed', result: 'error', reason: (err as Error)?.message });
+      message = FU_FALLBACK;
+    }
+
+    await smsBot(contactId, message).catch(err => {
+      auditLog({ agent: AGENT_ID, contactId, action: 'smsBot:failed', result: 'error', reason: err?.message });
+    });
+
+    const fTouchCount = await getFieldName(tenantId, 'fu_touch_count');
+    await fieldBot(contactId, {
+      [fLastTouch]: String(Date.now()),
+      [fTouchCount]: String(touchNumber),
+    }).catch(err => {
+      auditLog({ agent: AGENT_ID, contactId, action: 'fieldBot:failed', result: 'error', reason: err?.message });
+    });
+
+    auditLog({ agent: AGENT_ID, contactId, action: 'sms:sent', result: 'success', durationMs: Date.now() - start, metadata: { tone, bucketName, touchNumber, messageLength: message.length } });
+  } catch (err: any) {
+    auditLog({ agent: AGENT_ID, contactId: req.contactId, action: 'agent:crashed', result: 'error', reason: err?.message });
   }
-
-  await smsBot(contactId, message);
-
-  const fTouchCount = await getFieldName(tenantId, 'fu_touch_count');
-  await fieldBot(contactId, {
-    [fLastTouch]: String(Date.now()),
-    [fTouchCount]: String(touchNumber),
-  });
-
-  auditLog({ agent: AGENT_ID, contactId, action: 'sms:sent', result: 'success', durationMs: Date.now() - start, metadata: { tone, bucketName, touchNumber, messageLength: message.length } });
 }

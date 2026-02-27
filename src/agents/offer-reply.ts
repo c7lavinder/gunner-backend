@@ -11,6 +11,7 @@ import { loadPlaybook } from '../config';
 import { taskBot } from '../bots';
 import { classifierBot } from '../bots/classifier';
 import { schedulerBot } from '../bots/scheduler';
+import { intelligenceBot } from '../bots/intelligence';
 
 const AGENT_ID = 'offer-reply';
 
@@ -52,6 +53,8 @@ export async function runOfferReply(event: GunnerEvent): Promise<void> {
         break;
     }
   }
+
+  await intelligenceBot.recordAction('classification-corrections', { contactId, message: messageBody, context: 'offer-reply' }, { classification: classification.outcome, confidence: classification.confidence }, tenantId);
 
   auditLog({ agent: AGENT_ID, contactId, opportunityId, action: `reply.${classification.outcome}`, result: 'success', metadata: { confidence: classification.confidence }, durationMs: Date.now() - start });
 }

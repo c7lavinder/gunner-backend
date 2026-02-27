@@ -26,6 +26,8 @@ import { aiWriterBot } from '../bots/ai-writer';
 import { classifierBot } from '../bots/classifier';
 import { templateBot } from '../bots/template';
 import { schedulerBot } from '../bots/scheduler';
+import { memoryWriterBot } from '../bots/memory-writer';
+import { intelligenceBot } from '../bots/intelligence';
 
 const AGENT_ID = 'initial-outreach';
 
@@ -101,6 +103,8 @@ export async function runInitialOutreach(event: GunnerEvent): Promise<void> {
   }
 
   const defaultLM = playbook.team.routing.default_assignee;
+
+  await intelligenceBot.recordAction('sms-performance', { contactId, tone, inbound, localHour }, { message, sentAt: Date.now() }, tenantId);
 
   auditLog({
     agent: AGENT_ID,

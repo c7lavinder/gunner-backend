@@ -18,31 +18,46 @@ const ESTEBAN_USER_ID = 'BhVAeJjAfojeX9AJdqbf';
 export async function runDispoCloser(event: GunnerEvent): Promise<void> {
   if (!isEnabled(AGENT_ID)) return;
 
-  const { contactId, opportunityId, tenantId } = event;
-  const start = Date.now();
+  try {
+    const { contactId, opportunityId, tenantId } = event;
+    const start = Date.now();
 
-  const contact = await contactBot(contactId);
-  const cf = (contact as any)?.customFields ?? {};
-  const buyerName = (contact as any)?.firstName ?? 'Buyer';
-  const propertyAddress = cf.property_address ?? 'N/A';
-  const closingDate = cf.closing_date ?? (event.metadata as any)?.closingDate ?? '';
+    const contact = await contactBot(contactId).catch(err => {
+      auditLog({ agent: AGENT_ID, contactId, action: 'contactBot:failed', result: 'error', reason: err?.message });
+      return null;
+    });
+    const cf = (contact as any)?.customFields ?? {};
+    const buyerName = (contact as any)?.firstName ?? 'Buyer';
+    const propertyAddress = cf.property_address ?? 'N/A';
+    const closingDate = cf.closing_date ?? (event.metadata as any)?.closingDate ?? '';
 
-  if (!isDryRun()) {
-    await taskBot(contactId, {
-      title: `📋 Title Coordination: ${propertyAddress}`,
-      body: templateBot.buildTitleCoordinationBody({ buyerName, propertyAddress, closingDate: closingDate || 'TBD' }),
-      assignedTo: ESTEBAN_USER_ID,
-      dueDate: schedulerBot.dueInHours(24),
+    if (!isDryRun()) {
+      await taskBot(contactId, {
+        title: `📋 Title Coordination: ${propertyAddress}`,
+        body: templateBot.buildTitleCoordinationBody({ buyerName, propertyAddress, closingDate: closingDate || 'TBD' }),
+        assignedTo: ESTEBAN_USER_ID,
+        dueDate: schedulerBot.dueInHours(24),
+      }).catch(err => {
+        auditLog({ agent: AGENT_ID, contactId, action: 'taskBot:failed', result: 'error', reason: err?.message });
+      });
+
+      await noteBot(contactId, templateBot.buildClosingChecklist(contact as Record<string, unknown>, { buyerName, propertyAddress, closingDate: closingDate || 'TBD' })).catch(err => {
+        auditLog({ agent: AGENT_ID, contactId, action: 'noteBot:failed', result: 'error', reason: err?.message });
+      });
+
+      await smsBot(contactId,
+        `Hey ${buyerName}! We're moving forward on ${propertyAddress}. Title work is getting started. I'll keep you updated on the timeline. 🏠`
+      ).catch(err => {
+        auditLog({ agent: AGENT_ID, contactId, action: 'smsBot:failed', result: 'error', reason: err?.message });
+      });
+    }
+
+    await emit({ kind: 'dispo.closing.started', tenantId, contactId, opportunityId, metadata: { propertyAddress, closingDate } }).catch(err => {
+      auditLog({ agent: AGENT_ID, contactId, action: 'emit:dispo.closing.started:failed', result: 'error', reason: err?.message });
     });
 
-    await noteBot(contactId, templateBot.buildClosingChecklist(contact as Record<string, unknown>, { buyerName, propertyAddress, closingDate: closingDate || 'TBD' }));
-
-    await smsBot(contactId,
-      `Hey ${buyerName}! We're moving forward on ${propertyAddress}. Title work is getting started. I'll keep you updated on the timeline. 🏠`
-    );
+    auditLog({ agent: AGENT_ID, contactId, opportunityId, action: 'dispo.closing.started', result: 'success', metadata: { propertyAddress, closingDate }, durationMs: Date.now() - start });
+  } catch (err: any) {
+    auditLog({ agent: AGENT_ID, contactId: event.contactId, action: 'agent:crashed', result: 'error', reason: err?.message });
   }
-
-  await emit({ kind: 'dispo.closing.started', tenantId, contactId, opportunityId, metadata: { propertyAddress, closingDate } });
-
-  auditLog({ agent: AGENT_ID, contactId, opportunityId, action: 'dispo.closing.started', result: 'success', metadata: { propertyAddress, closingDate }, durationMs: Date.now() - start });
 }
