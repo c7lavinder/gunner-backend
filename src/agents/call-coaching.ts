@@ -11,6 +11,7 @@ import { isEnabled } from '../core/toggles';
 import { isDryRun } from '../core/dry-run';
 import { noteBot } from '../bots/note';
 import { loadPlaybook } from '../config';
+import { generateJSON } from '../integrations/ai/gemini';
 
 const AGENT_ID = 'call-coaching';
 

@@ -22,6 +22,7 @@ import { contactBot } from '../bots/contact';
 import { fieldBot } from '../bots/field';
 import { noteBot } from '../bots/note';
 import { loadPlaybook } from '../config/loader';
+import { generateText } from '../integrations/ai/gemini';
 
 const AGENT_ID = 'initial-outreach';
 
@@ -113,13 +114,19 @@ function buildPrompt(
   return lines.join('\n');
 }
 
-/**
- * Placeholder AI generation — wire to Gemini/OpenAI in production.
- */
+const SMS_SYSTEM_PROMPT = `You are a real estate acquisitions rep writing an opening SMS. Rules: under 160 characters, no exclamation marks, sound like a real person not a script, no links or phone numbers. Output only the SMS text.`;
+
+const SMS_FALLBACK = `Hey, saw you might be interested in selling — happy to chat whenever works for you.`;
+
 async function generateSMS(prompt: string): Promise<string> {
-  // TODO: replace with real AI call
-  void prompt;
-  return `Hey, saw you might be interested in selling — happy to chat whenever works for you.`;
+  try {
+    const text = await generateText(prompt, SMS_SYSTEM_PROMPT);
+    const cleaned = text.trim().replace(/^["']|["']$/g, '');
+    return cleaned || SMS_FALLBACK;
+  } catch (err) {
+    console.error(`[initial-outreach] Gemini failed, using fallback:`, (err as Error).message);
+    return SMS_FALLBACK;
+  }
 }
 
 export async function runInitialOutreach(event: GunnerEvent): Promise<void> {

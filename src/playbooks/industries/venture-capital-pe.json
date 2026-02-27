@@ -1,0 +1,80 @@
+{
+  "_readme": "VC/PE Fund industry playbook for Gunner. Defines the GENERIC framework for any venture capital or private equity fund operation — pipeline stages, roles, scoring, SLAs, drip cadence, and communication defaults. NO tenant-specific IDs, team members, or config. That belongs in the tenant playbook.",
+
+  "industry": "venture-capital-pe",
+  "name": "Venture Capital / Private Equity Fund",
+  "description": "Raise capital from investors (LPs), deploy into real estate or other deals, manage investor relationships, deal flow, and fund performance.",
+
+  "pipelines": {
+    "investor": {
+      "name": "Investor Pipeline",
+      "description": "Track investor relationships from cold outreach to committed capital.",
+      "stages": ["New Lead", "Contacted", "Meeting Set", "Due Diligence", "Soft Commit", "Hard Commit", "Funded", "Declined", "Nurture"]
+    },
+    "deal": {
+      "name": "Deal Pipeline",
+      "description": "Track investment opportunities from sourcing through funding or pass.",
+      "stages": ["New Deal", "Under Review", "Due Diligence", "Committee", "Term Sheet", "Closing", "Funded", "Passed", "Dead"]
+    },
+    "capital": {
+      "name": "Capital Pipeline",
+      "description": "Track fund raises from planning through deployment.",
+      "stages": ["Planning", "Marketing", "First Close", "Subsequent Close", "Final Close", "Deployed"]
+    },
+    "portfolio": {
+      "name": "Portfolio Pipeline",
+      "description": "Track active investments through their lifecycle to exit.",
+      "stages": ["Active", "Value-Add", "Stabilized", "Exit Planning", "Exited"]
+    }
+  },
+
+  "roles": [
+    { "key": "FM", "name": "Fund Manager", "description": "CEO/decision maker — owns fund strategy and final investment decisions." },
+    { "key": "IR", "name": "Investor Relations", "description": "Manages LP relationships, communications, and capital raise efforts." },
+    { "key": "DA", "name": "Deal Analyst", "description": "Underwriting, due diligence, and deal evaluation." },
+    { "key": "OPS", "name": "Operations", "description": "Back office — capital calls, distributions, reporting, compliance." }
+  ],
+
+  "scoring": {
+    "method": "weighted-score",
+    "signals": [
+      { "key": "accredited", "label": "Accredited Investor", "type": "boolean", "weight": 25 },
+      { "key": "check_size", "label": "Check Size Range", "type": "range", "weight": 20, "tiers": ["<50K", "50K-250K", "250K-1M", "1M+"] },
+      { "key": "timeline", "label": "Investment Timeline", "type": "select", "weight": 15, "options": ["Immediate", "1-3 Months", "3-6 Months", "6+ Months"] },
+      { "key": "experience", "label": "Prior Fund Experience", "type": "boolean", "weight": 15 },
+      { "key": "warmth", "label": "Relationship Warmth", "type": "scale", "weight": 15, "range": [1, 5] },
+      { "key": "response_speed", "label": "Response Speed", "type": "select", "weight": 10, "options": ["Same Day", "1-3 Days", "Week+", "No Response"] }
+    ],
+    "hot_threshold": 75,
+    "warm_threshold": 45,
+    "note": "Score 0-100. 75+ = HOT (ready to commit). 45-74 = WARM (active nurture). Below 45 = COOL (long-term drip)."
+  },
+
+  "communication": {
+    "channels": ["email", "phone"],
+    "primary_channel": "email",
+    "tone": "formal",
+    "send_window": { "start": "08:00", "end": "18:00" },
+    "skip_days": ["Saturday", "Sunday"],
+    "note": "Email-first, professional tone. Phone for high-value or time-sensitive conversations only."
+  },
+
+  "sla_defaults": {
+    "new_investor_lead_response_hours": 4,
+    "meeting_follow_up_hours": 24,
+    "due_diligence_package_hours": 48,
+    "capital_call_notice_business_days": 10
+  },
+
+  "drip_defaults": {
+    "total_days": 365,
+    "total_touches": 12,
+    "cadence": "monthly",
+    "stop_on_reply": true,
+    "note": "12-month nurture cycle with monthly touches. Quarterly reports serve as natural touchpoints (months 3, 6, 9, 12)."
+  },
+
+  "follow_up_buckets": ["30 Days", "Quarterly", "Annual"],
+
+  "post_close": ["Welcome Packet", "Quarterly Report", "Annual K-1", "Distribution Notice", "Re-Up Invitation"]
+}

@@ -11,6 +11,7 @@ import { auditLog } from '../core/audit';
 import { isEnabled } from '../core/toggles';
 import { smsBot, contactBot, fieldBot } from '../bots';
 import { getFieldName } from '../config';
+import { generateText } from '../integrations/ai/gemini';
 
 const AGENT_ID = 'follow-up-messenger';
 
@@ -69,13 +70,19 @@ function buildPrompt(
   ].join('\n');
 }
 
-/**
- * Placeholder AI call — replace with real Gemini/OpenAI integration.
- */
+const FU_SYSTEM_PROMPT = `You are a real estate acquisitions rep writing a follow-up SMS. Rules: under 160 characters, no exclamation marks, sound human not salesy, no links or phone numbers. Output only the SMS text.`;
+
+const FU_FALLBACK = `Hey, just checking in — still thinking about selling? Let me know if anything's changed.`;
+
 async function generateSMS(prompt: string): Promise<string> {
-  // TODO: wire to intelligence service (Gemini)
-  // For now returns a safe placeholder that will be overridden in production
-  return `Hey, just checking in — still thinking about selling? Let me know if anything's changed.`;
+  try {
+    const text = await generateText(prompt, FU_SYSTEM_PROMPT);
+    const cleaned = text.trim().replace(/^["']|["']$/g, '');
+    return cleaned || FU_FALLBACK;
+  } catch (err) {
+    console.error(`[follow-up-messenger] Gemini failed, using fallback:`, (err as Error).message);
+    return FU_FALLBACK;
+  }
 }
 
 export async function runFollowUpMessenger(req: FollowUpMessageRequest): Promise<void> {
