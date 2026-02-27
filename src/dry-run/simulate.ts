@@ -109,6 +109,12 @@ async function main() {
     registerToggle({ id, kind: 'agent', label: id, description: `Dry run toggle for ${id}`, enabled: true });
   }
 
+  // Register bot toggles
+  const BOT_IDS = ['bot-assign', 'bot-contact', 'bot-field', 'bot-note', 'bot-scorer', 'bot-sms', 'bot-stage', 'bot-tag', 'bot-task'];
+  for (const id of BOT_IDS) {
+    registerToggle({ id, kind: 'bot', label: id, description: `Dry run toggle for ${id}`, enabled: true });
+  }
+
   // Simulation
   interface StepResult { agent: string; ok: boolean; message: string }
   const results: StepResult[] = [];
