@@ -12,14 +12,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 a{color:var(--cyan);text-decoration:none}
 a:hover{text-decoration:underline}
 
-/* Header */
 .header{text-align:center;padding:40px 20px 24px;position:relative}
 .header::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:600px;height:400px;background:radial-gradient(circle,rgba(59,130,246,.08),transparent 70%);pointer-events:none}
 .header h1{font-size:clamp(1.6rem,4vw,2.4rem);font-weight:800;background:linear-gradient(135deg,#fff,var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px}
 .header p{color:var(--muted);font-size:.95rem;margin-bottom:16px}
 .header-links{display:flex;justify-content:center;gap:20px;font-size:.9rem}
 
-/* Master Controls */
 .master{max-width:800px;margin:0 auto 32px;padding:0 16px}
 .master-row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:16px}
 .master-btn{padding:12px 28px;border-radius:12px;font-weight:700;font-size:.95rem;border:none;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:8px}
@@ -32,7 +30,6 @@ a:hover{text-decoration:underline}
 .dry-run-box .label{font-size:1.1rem;font-weight:700;color:var(--yellow)}
 .dry-run-box .hint{color:var(--muted);font-size:.8rem;width:100%;text-align:center}
 
-/* Toggle Switch */
 .toggle{position:relative;width:52px;height:28px;flex-shrink:0}
 .toggle input{opacity:0;width:0;height:0}
 .toggle .slider{position:absolute;inset:0;background:#475569;border-radius:28px;cursor:pointer;transition:all .3s}
@@ -44,13 +41,11 @@ a:hover{text-decoration:underline}
 .toggle-big input:checked+.slider::before{transform:translateX(30px)}
 .toggle-big input:checked+.slider{background:var(--yellow);box-shadow:0 0 12px rgba(234,179,8,.5)}
 
-/* Sections */
 .container{max-width:1200px;margin:0 auto;padding:0 16px}
 .phase-section{margin-bottom:32px}
 .phase-title{font-size:1.15rem;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:10px}
 .phase-title .dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
 
-/* Agent Cards Grid */
 .agent-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
 .agent-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;display:flex;align-items:flex-start;gap:12px;transition:all .3s;position:relative;overflow:hidden}
 .agent-card.active{border-color:rgba(34,197,94,.3);box-shadow:0 0 20px rgba(34,197,94,.08)}
@@ -59,23 +54,18 @@ a:hover{text-decoration:underline}
 .agent-emoji{font-size:1.3rem;line-height:1}
 .agent-name{font-weight:600;font-size:.9rem;margin-bottom:2px}
 .agent-desc{color:var(--muted);font-size:.78rem;line-height:1.4}
-.agent-time{color:var(--dim);font-size:.7rem;margin-top:4px}
 .agent-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
 
-/* Bot Grid */
 .bot-section{margin-top:40px;margin-bottom:32px}
 .bot-section h2{font-size:1.4rem;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:10px}
 .bot-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
 .bot-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;align-items:center;gap:12px;transition:all .3s}
 .bot-card.active{border-color:rgba(34,197,94,.3);box-shadow:0 0 16px rgba(34,197,94,.06)}
 .bot-card.inactive{opacity:.5}
-.bot-warning{font-size:.7rem;color:var(--orange);margin-top:2px}
 
-/* Status Bar */
 .status-bar{position:fixed;bottom:0;left:0;right:0;background:rgba(15,23,42,.95);backdrop-filter:blur(12px);border-top:1px solid var(--border);padding:14px 20px;text-align:center;font-weight:600;font-size:.9rem;z-index:100;display:flex;justify-content:center;gap:24px}
 .status-bar span{display:flex;align-items:center;gap:6px}
 
-/* Modal */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:center;justify-content:center;padding:20px}
 .modal-overlay.show{display:flex}
 .modal{background:var(--card);border:2px solid var(--red);border-radius:20px;padding:36px;text-align:center;max-width:400px;width:100%}
@@ -86,7 +76,6 @@ a:hover{text-decoration:underline}
 .modal-cancel{background:var(--border);color:var(--text)}
 .modal-confirm{background:var(--red);color:#fff}
 
-/* Toast */
 .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--card);border:1px solid var(--border);padding:12px 24px;border-radius:12px;font-size:.9rem;font-weight:500;z-index:150;transition:transform .3s,opacity .3s;opacity:0;pointer-events:none;white-space:nowrap}
 .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 </style>
@@ -102,7 +91,6 @@ a:hover{text-decoration:underline}
   </div>
 </div>
 
-<!-- Master Controls -->
 <div class="master">
   <div class="master-row">
     <button class="master-btn btn-kill" onclick="killAll()">🔴 KILL ALL</button>
@@ -119,21 +107,13 @@ a:hover{text-decoration:underline}
 </div>
 
 <div class="container" id="agentContainer"></div>
+<div class="container" id="botContainer"></div>
 
-<div class="container">
-  <div class="bot-section">
-    <h2>🤖 Bots</h2>
-    <div class="bot-grid" id="botContainer"></div>
-  </div>
-</div>
-
-<!-- Status Bar -->
 <div class="status-bar">
-  <span>🤖 <span id="agentCount">0</span> of 32 agents active</span>
-  <span>⚙️ <span id="botCount">0</span> of 9 bots active</span>
+  <span>🤖 <span id="agentCount">0</span> agents active</span>
+  <span>⚙️ <span id="botCount">0</span> bots active</span>
 </div>
 
-<!-- Kill All Modal -->
 <div class="modal-overlay" id="killModal">
   <div class="modal">
     <h3>🔴 KILL ALL</h3>
@@ -145,100 +125,50 @@ a:hover{text-decoration:underline}
   </div>
 </div>
 
-<!-- Toast -->
 <div class="toast" id="toast"></div>
 
 <script>
-const PHASES = [
-  { name:'Phase 1 — Intake', color:'#3b82f6', agents:[
-    {id:'new_lead_pipeline',emoji:'🔍',name:'New Lead Pipeline',desc:'Detects new contacts and kicks off intake'},
-    {id:'lead_scorer',emoji:'🎯',name:'Lead Scorer',desc:'Scores leads based on motivation signals'},
-    {id:'lead_tagger',emoji:'🏷️',name:'Lead Tagger',desc:'Applies tags based on lead attributes'},
-    {id:'lead_noter',emoji:'📝',name:'Lead Noter',desc:'Adds contextual notes to contact records'},
-    {id:'lead_task_creator',emoji:'✅',name:'Lead Task Creator',desc:'Creates follow-up tasks for the team'}
-  ]},
-  { name:'Phase 2 — Outreach', color:'#06b6d4', agents:[
-    {id:'initial_outreach',emoji:'📱',name:'Initial Outreach',desc:'Sends first contact SMS/call sequence'},
-    {id:'outbound_manager',emoji:'📤',name:'Outbound Manager',desc:'Manages outbound campaign timing'},
-    {id:'working_drip',emoji:'💧',name:'Working Drip',desc:'Drip sequences for working leads'}
-  ]},
-  { name:'Phase 3 — Conversations', color:'#22c55e', agents:[
-    {id:'response_agent',emoji:'💬',name:'Response Agent',desc:'Handles inbound message responses'},
-    {id:'lm_assistant',emoji:'📞',name:'LM Assistant',desc:'Assists live message conversations'},
-    {id:'call_coaching',emoji:'🎓',name:'Call Coaching',desc:'Grades and coaches on call quality'},
-    {id:'ghosted_agent',emoji:'👻',name:'Ghosted Agent',desc:'Re-engages leads that went silent'},
-    {id:'bucket_reeval',emoji:'🔄',name:'Bucket Re-eval',desc:'Reassigns leads to better buckets'}
-  ]},
-  { name:'Phase 4 — Appointments', color:'#eab308', agents:[
-    {id:'apt_prep',emoji:'📅',name:'Apt Prep',desc:'Prepares appointment briefs and comps'},
-    {id:'apt_reminder',emoji:'⏰',name:'Apt Reminder',desc:'Sends appointment reminders'},
-    {id:'am_assistant',emoji:'🤝',name:'AM Assistant',desc:'Assists acquisition managers in-field'}
-  ]},
-  { name:'Phase 5 — Follow-Up', color:'#f97316', agents:[
-    {id:'followup_organizer',emoji:'📊',name:'Follow-Up Organizer',desc:'Prioritizes and schedules follow-ups'},
-    {id:'followup_messenger',emoji:'💌',name:'Follow-Up Messenger',desc:'Sends follow-up messages'},
-    {id:'followup_closer',emoji:'🔥',name:'Follow-Up Closer',desc:'Pushes warm leads toward commitment'}
-  ]},
-  { name:'Phase 6 — Closing', color:'#a855f7', agents:[
-    {id:'offer_chase',emoji:'💰',name:'Offer Chase',desc:'Follows up on outstanding offers'},
-    {id:'offer_reply',emoji:'📩',name:'Offer Reply',desc:'Handles seller responses to offers'},
-    {id:'contract_bot',emoji:'🏗️',name:'Contract Bot',desc:'Manages contract creation and tracking'},
-    {id:'tc_packager',emoji:'📦',name:'TC Packager',desc:'Packages files for title company'},
-    {id:'dispo_packager',emoji:'📦',name:'Dispo Packager',desc:'Packages deals for disposition'},
-    {id:'uc_monitor',emoji:'📡',name:'UC Monitor',desc:'Monitors under-contract deal progress'},
-    {id:'post_close_bot',emoji:'🎉',name:'Post-Close Bot',desc:'Handles post-closing tasks and reviews'}
-  ]},
-  { name:'Phase 7 — Oversight', color:'#ef4444', agents:[
-    {id:'accountability',emoji:'⚖️',name:'Accountability',desc:'Tracks team accountability metrics'},
-    {id:'reality_check',emoji:'🔬',name:'Reality Check',desc:'Validates pipeline accuracy'},
-    {id:'reality_check_poller',emoji:'🔬',name:'Reality Check Poller',desc:'Polls for reality check triggers'}
-  ]}
+// Agent grouping by toggle ID
+const AGENT_GROUPS = [
+  { name:'Phase 1 — Intake', color:'#3b82f6', emoji:'🔍', ids:['new-lead-pipeline','lead-scorer','lead-tagger','lead-noter','lead-task-creator'] },
+  { name:'Phase 2 — Outreach', color:'#06b6d4', emoji:'📱', ids:['initial-outreach','outbound-manager','working-drip'] },
+  { name:'Phase 3 — Conversations', color:'#22c55e', emoji:'💬', ids:['response-agent','lm-assistant','call-coaching','ghosted-agent','bucket-reeval','callback-capture','stage-change-router','already-sold-agent'] },
+  { name:'Phase 4 — Appointments', color:'#eab308', emoji:'📅', ids:['apt-prep','apt-reminder-poller','am-assistant'] },
+  { name:'Phase 5 — Follow-Up', color:'#f97316', emoji:'💌', ids:['follow-up-organizer','follow-up-messenger','follow-up-closer'] },
+  { name:'Phase 6 — Closing', color:'#a855f7', emoji:'💰', ids:['offer-chase','offer-reply','contract-bot','tc-packager','dispo-packager','uc-monitor','post-close-bot'] },
+  { name:'Phase 7 — Oversight', color:'#ef4444', emoji:'⚖️', ids:['accountability-agent','reality-check','reality-check-poller'] },
+  { name:'Dispo Pipeline', color:'#ec4899', emoji:'🏘️', ids:['deal-blaster','buyer-matcher','buyer-response','showing-manager','offer-collector','dispo-closer','jv-router','deal-terminator','dispo-accountability'] },
+  { name:'Intelligence', color:'#06b6d4', emoji:'🧠', ids:['intelligence-poller','intelligence-researcher','intelligence-feedback'] },
 ];
 
-const BOTS = [
-  {id:'contact_bot',emoji:'📇',name:'Contact Bot',desc:'Manages contact records',warning:'Disabling breaks most agents'},
-  {id:'scorer_bot',emoji:'🎯',name:'Scorer Bot',desc:'Runs lead scoring calculations'},
-  {id:'sms_bot',emoji:'📱',name:'SMS Bot',desc:'Sends and receives SMS messages'},
-  {id:'note_bot',emoji:'📝',name:'Note Bot',desc:'Creates and updates notes'},
-  {id:'task_bot',emoji:'✅',name:'Task Bot',desc:'Creates and manages tasks'},
-  {id:'tag_bot',emoji:'🏷️',name:'Tag Bot',desc:'Applies and removes tags'},
-  {id:'field_bot',emoji:'📊',name:'Field Bot',desc:'Updates custom field values'},
-  {id:'stage_bot',emoji:'🔀',name:'Stage Bot',desc:'Moves contacts between pipeline stages'},
-  {id:'assign_bot',emoji:'👤',name:'Assign Bot',desc:'Assigns contacts to team members'}
+const BOT_GROUPS = [
+  { name:'Core Bots', emoji:'⚙️', ids:['bot-assign','bot-contact','bot-field','bot-note','bot-scorer','bot-sms','bot-stage','bot-tag','bot-task'] },
+  { name:'Read Bots', emoji:'📖', ids:['bot-contact-search','bot-task-reader','bot-note-reader','bot-opportunity','bot-pipeline-reader'] },
+  { name:'AI Bots', emoji:'🤖', ids:['bot-ai-writer','bot-ai-classifier'] },
+  { name:'Communication Bots', emoji:'📧', ids:['bot-email'] },
+  { name:'Logic Bots', emoji:'🧩', ids:['bot-classifier','bot-template','bot-scheduler','bot-guard','bot-compliance'] },
+  { name:'Intelligence Bots', emoji:'🧠', ids:['bot-memory-writer','bot-memory-reader','bot-outcome-tracker','bot-learning-builder','bot-pattern-analyzer','bot-briefing-writer','bot-feedback-writer'] },
 ];
 
-// State — loaded from API, cached locally
-let _state = {};
+let allToggles = []; // from API
+
 async function loadState() {
   try {
     const res = await fetch('/api/control/state');
     const data = await res.json();
-    _state = {};
-    if (data.toggles) {
-      for (const t of data.toggles) { _state[t.id] = t.enabled; }
-    }
-    _state._dryRun = data.dryRun || false;
-  } catch (e) { console.warn('Failed to load state from API, using defaults', e); }
+    allToggles = data.toggles || [];
+    document.getElementById('dryRunToggle').checked = data.dryRun || false;
+  } catch (e) { console.warn('Failed to load state', e); }
 }
-function isOn(id) { return _state[id] !== false; }
-function setOn(id, val) { _state[id] = val; }
-function isDryRun() { return _state._dryRun === true; }
+
+function getToggle(id) { return allToggles.find(t => t.id === id); }
+function isOn(id) { const t = getToggle(id); return t ? t.enabled : false; }
 
 function apiToggle(id, enabled) {
-  fetch('/api/control/toggle', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({id, enabled}) }).catch(e => console.error('toggle error', e));
+  const t = getToggle(id);
+  if (t) t.enabled = enabled;
+  fetch('/api/control/toggle', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id,enabled}) }).catch(e => console.error('toggle error',e));
 }
-function apiKillAll() {
-  const allIds = [...PHASES.flatMap(p=>p.agents), ...BOTS];
-  allIds.forEach(a => apiToggle(a.id, false));
-}
-function apiEnableAll() {
-  const allIds = [...PHASES.flatMap(p=>p.agents), ...BOTS];
-  allIds.forEach(a => apiToggle(a.id, true));
-}
-function apiSetDryRun(val) { console.log('DRY_RUN changes require env var update'); }
-
-const mockTimes = ['2 min ago','5 min ago','12 min ago','1 hr ago','3 hrs ago'];
-function randTime() { return mockTimes[Math.floor(Math.random()*mockTimes.length)]; }
 
 function showToast(msg) {
   const t = document.getElementById('toast');
@@ -249,11 +179,10 @@ function showToast(msg) {
 }
 
 function updateCounts() {
-  const allAgents = PHASES.flatMap(p => p.agents);
-  const ac = allAgents.filter(a => isOn(a.id)).length;
-  const bc = BOTS.filter(b => isOn(b.id)).length;
-  document.getElementById('agentCount').textContent = ac;
-  document.getElementById('botCount').textContent = bc;
+  const agents = allToggles.filter(t => t.kind === 'agent');
+  const bots = allToggles.filter(t => t.kind === 'bot');
+  document.getElementById('agentCount').textContent = agents.filter(t => t.enabled).length + '/' + agents.length;
+  document.getElementById('botCount').textContent = bots.filter(t => t.enabled).length + '/' + bots.length;
 }
 
 function refreshCard(id) {
@@ -261,75 +190,104 @@ function refreshCard(id) {
   if (card) { card.classList.toggle('active', isOn(id)); card.classList.toggle('inactive', !isOn(id)); }
 }
 
-function handleToggle(id, name, checked) {
-  setOn(id, checked);
+function handleToggle(id, checked) {
   apiToggle(id, checked);
   refreshCard(id);
   updateCounts();
-  showToast(`${name} ${checked ? 'enabled' : 'disabled'} ✅`);
+  const t = getToggle(id);
+  showToast(`${t ? t.label : id} ${checked ? 'enabled' : 'disabled'} ✅`);
 }
 
 function killAll() { document.getElementById('killModal').classList.add('show'); }
 function closeModal() { document.getElementById('killModal').classList.remove('show'); }
 function confirmKillAll() {
   closeModal();
-  const allIds = [...PHASES.flatMap(p=>p.agents), ...BOTS];
-  allIds.forEach(a => { setOn(a.id, false); refreshCard(a.id); const cb=document.getElementById('cb_'+a.id); if(cb) cb.checked=false; });
-  apiKillAll();
+  allToggles.forEach(t => { apiToggle(t.id, false); refreshCard(t.id); const cb=document.getElementById('cb_'+t.id); if(cb) cb.checked=false; });
   updateCounts();
   showToast('All agents and bots disabled 🔴');
 }
 function enableAll() {
-  const allIds = [...PHASES.flatMap(p=>p.agents), ...BOTS];
-  allIds.forEach(a => { setOn(a.id, true); refreshCard(a.id); const cb=document.getElementById('cb_'+a.id); if(cb) cb.checked=true; });
-  apiEnableAll();
+  allToggles.forEach(t => { apiToggle(t.id, true); refreshCard(t.id); const cb=document.getElementById('cb_'+t.id); if(cb) cb.checked=true; });
   updateCounts();
   showToast('All agents and bots enabled 🟢');
 }
 function toggleDryRun(val) {
-  const s = getState(); s._dryRun = val; saveState(s);
-  apiSetDryRun(val);
-  showToast(`DRY RUN ${val ? 'ON 🟡' : 'OFF'}`);
+  showToast(`DRY RUN ${val ? 'ON 🟡' : 'OFF'} (env var change required)`);
 }
 
-// Render
-function render() {
-  const ac = document.getElementById('agentContainer');
-  ac.innerHTML = PHASES.map(phase => `
-    <div class="phase-section">
-      <div class="phase-title"><span class="dot" style="background:${phase.color}"></span>${phase.name}</div>
-      <div class="agent-grid">
-        ${phase.agents.map(a => `
-          <div class="agent-card ${isOn(a.id)?'active':'inactive'}" data-id="${a.id}">
-            <span class="agent-emoji">${a.emoji}</span>
-            <div class="agent-info">
-              <div class="agent-name">${a.name}</div>
-              <div class="agent-desc">${a.desc}</div>
-              <div class="agent-time">${randTime()}</div>
-            </div>
-            <div class="agent-right">
-              <label class="toggle"><input type="checkbox" id="cb_${a.id}" ${isOn(a.id)?'checked':''} onchange="handleToggle('${a.id}','${a.name}',this.checked)"><span class="slider"></span></label>
-            </div>
-          </div>
-        `).join('')}
-      </div>
-    </div>
-  `).join('');
-
-  const bc = document.getElementById('botContainer');
-  bc.innerHTML = BOTS.map(b => `
-    <div class="bot-card ${isOn(b.id)?'active':'inactive'}" data-id="${b.id}">
-      <span class="agent-emoji">${b.emoji}</span>
+function renderCard(t, type) {
+  const on = t.enabled;
+  if (type === 'bot') {
+    return `<div class="bot-card ${on?'active':'inactive'}" data-id="${t.id}">
       <div class="agent-info">
-        <div class="agent-name">${b.name}</div>
-        <div class="agent-desc">${b.desc}</div>
-        ${b.warning ? `<div class="bot-warning">⚠️ ${b.warning}</div>` : ''}
+        <div class="agent-name">${t.label}</div>
+        <div class="agent-desc">${t.description}</div>
       </div>
-      <label class="toggle"><input type="checkbox" id="cb_${b.id}" ${isOn(b.id)?'checked':''} onchange="handleToggle('${b.id}','${b.name}',this.checked)"><span class="slider"></span></label>
+      <label class="toggle"><input type="checkbox" id="cb_${t.id}" ${on?'checked':''} onchange="handleToggle('${t.id}',this.checked)"><span class="slider"></span></label>
+    </div>`;
+  }
+  return `<div class="agent-card ${on?'active':'inactive'}" data-id="${t.id}">
+    <div class="agent-info">
+      <div class="agent-name">${t.label}</div>
+      <div class="agent-desc">${t.description}</div>
     </div>
-  `).join('');
+    <div class="agent-right">
+      <label class="toggle"><input type="checkbox" id="cb_${t.id}" ${on?'checked':''} onchange="handleToggle('${t.id}',this.checked)"><span class="slider"></span></label>
+    </div>
+  </div>`;
+}
 
-  document.getElementById('dryRunToggle').checked = isDryRun();
+function render() {
+  // Build lookup of all toggles by id
+  const byId = {};
+  allToggles.forEach(t => byId[t.id] = t);
+  const renderedAgentIds = new Set();
+  const renderedBotIds = new Set();
+
+  // Render agent groups
+  const ac = document.getElementById('agentContainer');
+  let agentHtml = '';
+  AGENT_GROUPS.forEach(g => {
+    const togglesInGroup = g.ids.map(id => byId[id]).filter(Boolean);
+    if (!togglesInGroup.length) return;
+    togglesInGroup.forEach(t => renderedAgentIds.add(t.id));
+    agentHtml += `<div class="phase-section">
+      <div class="phase-title"><span class="dot" style="background:${g.color}"></span>${g.emoji} ${g.name}</div>
+      <div class="agent-grid">${togglesInGroup.map(t => renderCard(t,'agent')).join('')}</div>
+    </div>`;
+  });
+  // Any ungrouped agents
+  const ungroupedAgents = allToggles.filter(t => t.kind === 'agent' && !renderedAgentIds.has(t.id));
+  if (ungroupedAgents.length) {
+    agentHtml += `<div class="phase-section">
+      <div class="phase-title"><span class="dot" style="background:var(--dim)"></span>🔧 Other Agents</div>
+      <div class="agent-grid">${ungroupedAgents.map(t => renderCard(t,'agent')).join('')}</div>
+    </div>`;
+  }
+  ac.innerHTML = agentHtml;
+
+  // Render bot groups
+  const bc = document.getElementById('botContainer');
+  let botHtml = '';
+  BOT_GROUPS.forEach(g => {
+    const togglesInGroup = g.ids.map(id => byId[id]).filter(Boolean);
+    if (!togglesInGroup.length) return;
+    togglesInGroup.forEach(t => renderedBotIds.add(t.id));
+    botHtml += `<div class="bot-section">
+      <h2>${g.emoji} ${g.name}</h2>
+      <div class="bot-grid">${togglesInGroup.map(t => renderCard(t,'bot')).join('')}</div>
+    </div>`;
+  });
+  // Any ungrouped bots
+  const ungroupedBots = allToggles.filter(t => t.kind === 'bot' && !renderedBotIds.has(t.id));
+  if (ungroupedBots.length) {
+    botHtml += `<div class="bot-section">
+      <h2>🔧 Other Bots</h2>
+      <div class="bot-grid">${ungroupedBots.map(t => renderCard(t,'bot')).join('')}</div>
+    </div>`;
+  }
+  bc.innerHTML = botHtml;
+
   updateCounts();
 }
 
