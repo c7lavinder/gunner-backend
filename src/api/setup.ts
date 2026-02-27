@@ -5,6 +5,7 @@
 import { Router } from 'express';
 import { exchangeCodeForTokens, loadTokens } from '../integrations/ghl/oauth-store';
 import { registerWebhooks } from '../integrations/ghl/webhook-register';
+import pipelineRoutes from './pipelines';
 
 const router = Router();
 
@@ -95,5 +96,8 @@ router.get('/oauth/status', (_req, res) => {
     expired: Date.now() > tokens.expires_at,
   });
 });
+
+// Pipeline discovery
+router.use('/pipelines', pipelineRoutes);
 
 export default router;
