@@ -29,38 +29,45 @@ const DEFAULT_SEQUENCE: PostCloseTouchConfig[] = [
 export async function runPostCloseBot(event: GunnerEvent): Promise<void> {
   if (!isEnabled(AGENT_ID)) return;
 
-  const { contactId, opportunityId, tenantId } = event;
-  const start = Date.now();
-  const playbook = await loadPlaybook(tenantId);
-  const sequence = playbook?.postClose?.sequence ?? DEFAULT_SEQUENCE;
-  const currentTouch = (event.metadata?.touchNumber as number) ?? 1;
+  try {
+    const { contactId, opportunityId, tenantId } = event;
+    const start = Date.now();
+    const playbook = await loadPlaybook(tenantId);
+    const sequence = playbook?.postClose?.sequence ?? DEFAULT_SEQUENCE;
+    const currentTouch = (event.metadata?.touchNumber as number) ?? 1;
 
-  const touchConfig = sequence.find((t: PostCloseTouchConfig) => t.touchNumber === currentTouch);
-  if (!touchConfig) {
-    auditLog({ agent: AGENT_ID, contactId, opportunityId, action: 'sequence.complete', result: 'success', durationMs: 0 });
-    return;
-  }
+    const touchConfig = sequence.find((t: PostCloseTouchConfig) => t.touchNumber === currentTouch);
+    if (!touchConfig) {
+      auditLog({ agent: AGENT_ID, contactId, opportunityId, action: 'sequence.complete', result: 'success', durationMs: 0 });
+      return;
+    }
 
-  // Guard: don't double-send
-  const sentGuards = (event.metadata?.sentGuards as string[]) ?? [];
-  const guardKey = `post_close_t${currentTouch}`;
-  if (sentGuards.includes(guardKey)) {
-    auditLog({ agent: AGENT_ID, contactId, opportunityId, action: 'skip', result: 'skipped', durationMs: 0 });
-    return;
-  }
+    const sentGuards = (event.metadata?.sentGuards as string[]) ?? [];
+    const guardKey = `post_close_t${currentTouch}`;
+    if (sentGuards.includes(guardKey)) {
+      auditLog({ agent: AGENT_ID, contactId, opportunityId, action: 'skip', result: 'skipped', durationMs: 0 });
+      return;
+    }
 
-  if (!isDryRun()) {
-    // TODO: wire smsBot to template system
-    await smsBot(contactId, `Post-close touch ${currentTouch}`);
-    await fieldBot(contactId, { post_close_touch: String(currentTouch), post_close_last_sent: new Date().toISOString() });
-  }
+    if (!isDryRun()) {
+      await smsBot(contactId, `Post-close touch ${currentTouch}`).catch(err => {
+        auditLog({ agent: AGENT_ID, contactId, action: 'smsBot:failed', result: 'error', reason: err?.message });
+      });
+      await fieldBot(contactId, { post_close_touch: String(currentTouch), post_close_last_sent: new Date().toISOString() }).catch(err => {
+        auditLog({ agent: AGENT_ID, contactId, action: 'fieldBot:failed', result: 'error', reason: err?.message });
+      });
+    }
 
-  auditLog({ agent: AGENT_ID, contactId, opportunityId, action: `post_close.touch_${currentTouch}`, result: 'success', durationMs: Date.now() - start });
+    auditLog({ agent: AGENT_ID, contactId, opportunityId, action: `post_close.touch_${currentTouch}`, result: 'success', durationMs: Date.now() - start });
 
-  // Schedule next touch
-  const nextTouch = currentTouch + 1;
-  const nextConfig = sequence.find((t: PostCloseTouchConfig) => t.touchNumber === nextTouch);
-  if (nextConfig) {
-    await emit({ kind: 'post_close.scheduled', tenantId, contactId, opportunityId, metadata: { touchNumber: nextTouch, delayHours: nextConfig.delayHours } });
+    const nextTouch = currentTouch + 1;
+    const nextConfig = sequence.find((t: PostCloseTouchConfig) => t.touchNumber === nextTouch);
+    if (nextConfig) {
+      await emit({ kind: 'post_close.scheduled', tenantId, contactId, opportunityId, metadata: { touchNumber: nextTouch, delayHours: nextConfig.delayHours } }).catch(err => {
+        auditLog({ agent: AGENT_ID, contactId, action: 'emit:post_close.scheduled:failed', result: 'error', reason: err?.message });
+      });
+    }
+  } catch (err: any) {
+    auditLog({ agent: AGENT_ID, contactId: event.contactId, action: 'agent:crashed', result: 'error', reason: err?.message });
   }
 }

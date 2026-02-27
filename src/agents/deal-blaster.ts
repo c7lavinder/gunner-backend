@@ -92,7 +92,7 @@ End with "Reply INTERESTED or call us"`,
       auditLog({ agent: AGENT_ID, contactId, action: 'emit:dispo.blast.sent:failed', result: 'error', reason: err?.message });
     });
 
-    await memoryWriterBot.recordAction('sms-performance', { contactId, context: 'deal-blast', propertyAddress }, { message: blastMessage, buyerCount: buyerContactIds.length, sentAt: Date.now() }, tenantId);
+    await memoryWriterBot.recordAction('sms-performance', { contactId, context: 'deal-blast', propertyAddress }, { message: blastMessage, buyerCount: buyerContactIds.length, sentAt: Date.now() }, tenantId).catch((err) => { console.error(`[${AGENT_ID}] memoryWriterBot:failed`, (err as Error).message); });
 
     auditLog({
       agent: AGENT_ID,

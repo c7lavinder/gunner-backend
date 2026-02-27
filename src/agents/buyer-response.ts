@@ -125,7 +125,7 @@ Return JSON: {intent, confidence (0-1), summary}`,
       auditLog({ agent: AGENT_ID, contactId, action: 'emit:buyer.response:failed', result: 'error', reason: err?.message });
     });
 
-    await memoryWriterBot.recordAction('classification-corrections', { contactId, message: inboundMessage, context: 'buyer-response' }, { classification: classification.intent, confidence: classification.confidence }, tenantId);
+    await memoryWriterBot.recordAction('classification-corrections', { contactId, message: inboundMessage, context: 'buyer-response' }, { classification: classification.intent, confidence: classification.confidence }, tenantId).catch((err) => { console.error(`[${AGENT_ID}] memoryWriterBot:failed`, (err as Error).message); });
 
     auditLog({
       agent: AGENT_ID,

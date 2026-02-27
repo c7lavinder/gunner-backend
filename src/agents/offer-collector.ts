@@ -26,43 +26,56 @@ interface Offer {
 export async function runOfferCollector(event: GunnerEvent): Promise<void> {
   if (!isEnabled(AGENT_ID)) return;
 
-  const { contactId, opportunityId, tenantId } = event;
-  const start = Date.now();
+  try {
+    const { contactId, opportunityId, tenantId } = event;
+    const start = Date.now();
 
-  const contact = await contactBot(contactId);
-  const cf = (contact as any)?.customFields ?? {};
-  const propertyAddress = cf.property_address ?? 'N/A';
-
-  const offers: Offer[] = (event.metadata as any)?.offers ?? [];
-  const newOffer: Partial<Offer> = (event.metadata as any)?.newOffer ?? {};
-
-  const allOffers = [...offers];
-  if (newOffer.price) {
-    allOffers.push({
-      buyerName: newOffer.buyerName ?? 'Unknown',
-      buyerId: newOffer.buyerId ?? '',
-      price: newOffer.price,
-      terms: newOffer.terms ?? 'Cash',
-      proofOfFunds: newOffer.proofOfFunds ?? false,
-      closingTimeline: newOffer.closingTimeline ?? 'TBD',
+    const contact = await contactBot(contactId).catch(err => {
+      auditLog({ agent: AGENT_ID, contactId, action: 'contactBot:failed', result: 'error', reason: err?.message });
+      return null;
     });
-  }
+    const cf = (contact as any)?.customFields ?? {};
+    const propertyAddress = cf.property_address ?? 'N/A';
 
-  allOffers.sort((a, b) => b.price - a.price);
+    const offers: Offer[] = (event.metadata as any)?.offers ?? [];
+    const newOffer: Partial<Offer> = (event.metadata as any)?.newOffer ?? {};
 
-  if (!isDryRun()) {
-    await noteBot(contactId, templateBot.buildComparisonNote(allOffers, propertyAddress));
+    const allOffers = [...offers];
+    if (newOffer.price) {
+      allOffers.push({
+        buyerName: newOffer.buyerName ?? 'Unknown',
+        buyerId: newOffer.buyerId ?? '',
+        price: newOffer.price,
+        terms: newOffer.terms ?? 'Cash',
+        proofOfFunds: newOffer.proofOfFunds ?? false,
+        closingTimeline: newOffer.closingTimeline ?? 'TBD',
+      });
+    }
 
-    const highest = allOffers[0];
-    await taskBot(contactId, {
-      title: `📋 Review ${allOffers.length} offer(s) on ${propertyAddress}`,
-      body: `Highest: $${highest?.price?.toLocaleString() ?? 'N/A'} from ${highest?.buyerName ?? 'N/A'}\nTotal offers: ${allOffers.length}`,
-      assignedTo: ESTEBAN_USER_ID,
-      dueDate: new Date(Date.now() + 4 * 60 * 60_000).toISOString(),
+    allOffers.sort((a, b) => b.price - a.price);
+
+    if (!isDryRun()) {
+      await noteBot(contactId, templateBot.buildComparisonNote(allOffers, propertyAddress)).catch(err => {
+        auditLog({ agent: AGENT_ID, contactId, action: 'noteBot:failed', result: 'error', reason: err?.message });
+      });
+
+      const highest = allOffers[0];
+      await taskBot(contactId, {
+        title: `📋 Review ${allOffers.length} offer(s) on ${propertyAddress}`,
+        body: `Highest: $${highest?.price?.toLocaleString() ?? 'N/A'} from ${highest?.buyerName ?? 'N/A'}\nTotal offers: ${allOffers.length}`,
+        assignedTo: ESTEBAN_USER_ID,
+        dueDate: new Date(Date.now() + 4 * 60 * 60_000).toISOString(),
+      }).catch(err => {
+        auditLog({ agent: AGENT_ID, contactId, action: 'taskBot:failed', result: 'error', reason: err?.message });
+      });
+    }
+
+    await emit({ kind: 'dispo.offer.received', tenantId, contactId, opportunityId, metadata: { offerCount: allOffers.length, highestPrice: allOffers[0]?.price } }).catch(err => {
+      auditLog({ agent: AGENT_ID, contactId, action: 'emit:dispo.offer.received:failed', result: 'error', reason: err?.message });
     });
+
+    auditLog({ agent: AGENT_ID, contactId, opportunityId, action: 'dispo.offer.collected', result: 'success', metadata: { offerCount: allOffers.length }, durationMs: Date.now() - start });
+  } catch (err: any) {
+    auditLog({ agent: AGENT_ID, contactId: event.contactId, action: 'agent:crashed', result: 'error', reason: err?.message });
   }
-
-  await emit({ kind: 'dispo.offer.received', tenantId, contactId, opportunityId, metadata: { offerCount: allOffers.length, highestPrice: allOffers[0]?.price } });
-
-  auditLog({ agent: AGENT_ID, contactId, opportunityId, action: 'dispo.offer.collected', result: 'success', metadata: { offerCount: allOffers.length }, durationMs: Date.now() - start });
 }

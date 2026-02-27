@@ -10,6 +10,7 @@ import { getFieldName } from '../config';
 import { aiWriterBot } from '../bots/ai-writer';
 import { classifierBot } from '../bots/classifier';
 import { templateBot } from '../bots/template';
+import { memoryWriterBot } from '../bots/memory-writer';
 
 const AGENT_ID = 'follow-up-messenger';
 
@@ -76,6 +77,10 @@ export async function runFollowUpMessenger(req: FollowUpMessageRequest): Promise
       [fTouchCount]: String(touchNumber),
     }).catch(err => {
       auditLog({ agent: AGENT_ID, contactId, action: 'fieldBot:failed', result: 'error', reason: err?.message });
+    });
+
+    await memoryWriterBot.recordAction('sms-performance', { contactId, tone, bucket: bucketName, touchNumber }, { message, sentAt: Date.now() }, tenantId).catch((err) => {
+      auditLog({ agent: AGENT_ID, contactId, action: 'memoryWriterBot:failed', result: 'error', reason: (err as Error)?.message });
     });
 
     auditLog({ agent: AGENT_ID, contactId, action: 'sms:sent', result: 'success', durationMs: Date.now() - start, metadata: { tone, bucketName, touchNumber, messageLength: message.length } });

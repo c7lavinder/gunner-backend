@@ -12,6 +12,7 @@ import auditRouter from './api/audit';
 import webhookRouter from './api/webhooks';
 import intelligenceRouter from './api/intelligence';
 import { startIntelligencePoller } from './agents/intelligence-poller';
+import { startIntelligenceResearcher } from './agents/intelligence-researcher';
 
 async function main() {
   // 1. Load config (all env vars → typed config object)
@@ -40,8 +41,9 @@ async function main() {
   const port = Number(process.env.PORT ?? 3000);
   app.listen(port, () => console.log(`[server] listening on port ${port}`));
 
-  // 6. Start intelligence poller
+  // 6. Start intelligence agents
   startIntelligencePoller();
+  startIntelligenceResearcher();
 
   // 7. Start CRM sync (5s after boot)
   startCrmSync();

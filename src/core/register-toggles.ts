@@ -90,4 +90,6 @@ registerToggle({ id: 'bot-learning-builder', kind: 'bot', label: 'Learning Build
 registerToggle({ id: 'bot-pattern-analyzer', kind: 'bot', label: 'Pattern Analyzer Bot', description: 'Analyzes response rates and team performance patterns', enabled: true });
 registerToggle({ id: 'bot-briefing-writer', kind: 'bot', label: 'Briefing Writer Bot', description: 'Generates daily intelligence briefings', enabled: true });
 registerToggle({ id: 'bot-feedback-writer', kind: 'bot', label: 'Feedback Writer Bot', description: 'Records human feedback on actions', enabled: true });
-registerToggle({ id: 'intelligence-poller', kind: 'agent', label: 'Intelligence Poller', description: 'Daily learning cycle — matches outcomes, generates briefings, identifies trends', enabled: true });
+registerToggle({ id: 'intelligence-poller', kind: 'agent', label: 'Intelligence Poller', description: 'Daily learning cycle — matches outcomes, updates learnings', enabled: true });
+registerToggle({ id: 'intelligence-researcher', kind: 'agent', label: 'Intelligence Researcher', description: 'Weekly deep analysis — patterns, team stats, briefings', enabled: true });
+registerToggle({ id: 'intelligence-feedback', kind: 'agent', label: 'Intelligence Feedback', description: 'Routes human feedback from API to feedback-writer bot', enabled: true });

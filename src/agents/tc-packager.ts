@@ -22,41 +22,52 @@ const REQUIRED_FIELDS = [
 export async function runTCPackager(event: GunnerEvent): Promise<void> {
   if (!isEnabled(AGENT_ID)) return;
 
-  const { contactId, opportunityId, tenantId } = event;
-  const start = Date.now();
-  const playbook = await loadPlaybook(tenantId);
+  try {
+    const { contactId, opportunityId, tenantId } = event;
+    const start = Date.now();
+    const playbook = await loadPlaybook(tenantId);
 
-  const [sellerNameField, propertyAddressField, contractPriceField, closingDateField, accessField] = await Promise.all([
-    getFieldName(tenantId, 'seller_name'),
-    getFieldName(tenantId, 'property_address'),
-    getFieldName(tenantId, 'contract_price'),
-    getFieldName(tenantId, 'closing_date'),
-    getFieldName(tenantId, 'access_instructions'),
-  ]);
+    const [sellerNameField, propertyAddressField, contractPriceField, closingDateField, accessField] = await Promise.all([
+      getFieldName(tenantId, 'seller_name'),
+      getFieldName(tenantId, 'property_address'),
+      getFieldName(tenantId, 'contract_price'),
+      getFieldName(tenantId, 'closing_date'),
+      getFieldName(tenantId, 'access_instructions'),
+    ]);
 
-  const contact = await contactBot(contactId);
-  const cf = (contact?.customFields ?? {}) as Record<string, string>;
+    const contact = await contactBot(contactId).catch(err => {
+      auditLog({ agent: AGENT_ID, contactId, action: 'contactBot:failed', result: 'error', reason: err?.message });
+      return null;
+    });
+    const cf = (contact?.customFields ?? {}) as Record<string, string>;
 
-  const requiredFields = playbook?.tcPackager?.requiredFields ?? REQUIRED_FIELDS;
-  const missing = requiredFields.filter((f: string) => !cf[f] && !(contact as any)?.[f]);
+    const requiredFields = playbook?.tcPackager?.requiredFields ?? REQUIRED_FIELDS;
+    const missing = requiredFields.filter((f: string) => !cf[f] && !(contact as any)?.[f]);
 
-  if (!isDryRun()) {
-    await noteBot(contactId, templateBot.buildTcPackage(contact as Record<string, unknown>, {
-      sellerName: contact?.name ?? cf[sellerNameField] ?? 'Unknown',
-      propertyAddress: cf[propertyAddressField] ?? 'N/A',
-      contractPrice: cf[contractPriceField] ?? 'N/A',
-      closingDate: cf[closingDateField] ?? 'N/A',
-      accessInstructions: cf[accessField] ?? 'N/A',
-    }, missing));
-
-    if (missing.length > 0) {
-      await taskBot(contactId, {
-        title: `TC Package incomplete — missing: ${missing.join(', ')}`,
-        assignedTo: playbook?.roles?.acquisitionManager ?? 'am',
-        dueDate: new Date(Date.now() + 60 * 60_000).toISOString(),
+    if (!isDryRun()) {
+      await noteBot(contactId, templateBot.buildTcPackage(contact as Record<string, unknown>, {
+        sellerName: contact?.name ?? cf[sellerNameField] ?? 'Unknown',
+        propertyAddress: cf[propertyAddressField] ?? 'N/A',
+        contractPrice: cf[contractPriceField] ?? 'N/A',
+        closingDate: cf[closingDateField] ?? 'N/A',
+        accessInstructions: cf[accessField] ?? 'N/A',
+      }, missing)).catch(err => {
+        auditLog({ agent: AGENT_ID, contactId, action: 'noteBot:failed', result: 'error', reason: err?.message });
       });
-    }
-  }
 
-  auditLog({ agent: AGENT_ID, contactId, opportunityId, action: 'tc.packaged', result: missing.length > 0 ? 'error' : 'success', durationMs: Date.now() - start, metadata: missing.length > 0 ? { missing } : undefined });
+      if (missing.length > 0) {
+        await taskBot(contactId, {
+          title: `TC Package incomplete — missing: ${missing.join(', ')}`,
+          assignedTo: playbook?.roles?.acquisitionManager ?? 'am',
+          dueDate: new Date(Date.now() + 60 * 60_000).toISOString(),
+        }).catch(err => {
+          auditLog({ agent: AGENT_ID, contactId, action: 'taskBot:failed', result: 'error', reason: err?.message });
+        });
+      }
+    }
+
+    auditLog({ agent: AGENT_ID, contactId, opportunityId, action: 'tc.packaged', result: missing.length > 0 ? 'error' : 'success', durationMs: Date.now() - start, metadata: missing.length > 0 ? { missing } : undefined });
+  } catch (err: any) {
+    auditLog({ agent: AGENT_ID, contactId: event.contactId, action: 'agent:crashed', result: 'error', reason: err?.message });
+  }
 }

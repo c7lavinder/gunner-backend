@@ -49,7 +49,7 @@ export async function runLeadScorer(event: GunnerEvent): Promise<void> {
       auditLog({ agent: AGENT_ID, contactId, action: 'emit:lead.scored:failed', result: 'error', reason: err?.message });
     });
 
-    await memoryWriterBot.recordAction('scoring-accuracy', { contactId, contact }, { tier: score.tier, score: score.score, factors: score.factors }, tenantId);
+    await memoryWriterBot.recordAction('scoring-accuracy', { contactId, contact }, { tier: score.tier, score: score.score, factors: score.factors }, tenantId).catch((err) => { console.error(`[${AGENT_ID}] memoryWriterBot:failed`, (err as Error).message); });
 
     auditLog({
       agent: AGENT_ID,

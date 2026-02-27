@@ -48,7 +48,7 @@ export async function runCallCoaching(event: CallEvent): Promise<CallScore | nul
       });
     }
 
-    await memoryWriterBot.recordAction('coaching-patterns', { contactId, callId, teamMember: (event as any).teamMember ?? 'unknown' }, { overall: score.overall, factors: score.factors, coachingFlags: score.coachingFlags }, event.tenantId);
+    await memoryWriterBot.recordAction('coaching-patterns', { contactId, callId, teamMember: (event as any).teamMember ?? 'unknown' }, { overall: score.overall, factors: score.factors, coachingFlags: score.coachingFlags }, event.tenantId).catch((err) => { console.error(`[${AGENT_ID}] memoryWriterBot:failed`, (err as Error).message); });
 
     auditLog({ agent: AGENT_ID, contactId, opportunityId, action: 'coaching:scored', result: 'success', metadata: { callId, overall: score.overall, factors: score.factors.length, flags: score.coachingFlags }, durationMs: Date.now() - start });
 

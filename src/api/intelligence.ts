@@ -1,18 +1,19 @@
 /**
  * Intelligence API — feedback, briefing, stats, patterns.
+ *
  * POST /api/intelligence/feedback — { actionId, feedback, score }
  * GET  /api/intelligence/briefing  — latest briefing
  * GET  /api/intelligence/stats     — learning stats by category
  * GET  /api/intelligence/patterns  — SMS pattern analysis
- * GET  /api/intelligence/entry/:id — single entry by ID
+ * GET  /api/intelligence/entry/:id — single entry lookup
  */
 
 import { Router } from 'express';
-import { feedbackWriterBot } from '../bots/feedback-writer';
-import { briefingWriterBot } from '../bots/briefing-writer';
+import { runIntelligenceFeedback } from '../agents/intelligence-feedback';
 import { memoryReaderBot } from '../bots/memory-reader';
+import { briefingWriterBot } from '../bots/briefing-writer';
 import { patternAnalyzerBot } from '../bots/pattern-analyzer';
-import { getAllCategories, getById } from '../intelligence/memory';
+import { getById, getAllCategories } from '../intelligence/memory';
 
 const router = Router();
 
@@ -25,16 +26,16 @@ router.post('/feedback', async (req, res) => {
     return res.status(400).json({ error: 'feedback (string) or score (number) required' });
   }
   try {
-    await feedbackWriterBot.recordFeedback(actionId, feedback ?? '', score);
+    await runIntelligenceFeedback(actionId, feedback ?? '', score);
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: (err as Error).message });
   }
 });
 
-router.get('/briefing', async (_req, res) => {
+router.get('/briefing', async (req, res) => {
   try {
-    const tenantId = (_req.query.tenantId as string) ?? 'default';
+    const tenantId = (req.query.tenantId as string) ?? 'default';
     const briefing = await briefingWriterBot.writeBriefing(tenantId);
     res.json({ briefing });
   } catch (err) {
@@ -55,9 +56,9 @@ router.get('/stats', async (_req, res) => {
   }
 });
 
-router.get('/patterns', async (_req, res) => {
+router.get('/patterns', async (req, res) => {
   try {
-    const tenantId = (_req.query.tenantId as string) ?? 'default';
+    const tenantId = (req.query.tenantId as string) ?? 'default';
     const patterns = await patternAnalyzerBot.analyzeResponseRates(tenantId);
     res.json({ patterns });
   } catch (err) {

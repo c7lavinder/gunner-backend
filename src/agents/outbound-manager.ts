@@ -86,84 +86,94 @@ export async function sendOutbound(req: OutboundRequest): Promise<OutboundResult
   const { tenantId, contactId, opportunityId, message, fromAgent } = req;
   const start = Date.now();
 
-  if (!isEnabled(AGENT_ID)) {
-    auditLog({
-      agent: AGENT_ID,
-      contactId,
-      opportunityId,
-      action: 'outbound:blocked',
-      result: 'skipped',
-      reason: `agent-disabled (requested by ${fromAgent})`,
-      durationMs: Date.now() - start,
+  try {
+    if (!isEnabled(AGENT_ID)) {
+      auditLog({
+        agent: AGENT_ID,
+        contactId,
+        opportunityId,
+        action: 'outbound:blocked',
+        result: 'skipped',
+        reason: `agent-disabled (requested by ${fromAgent})`,
+        durationMs: Date.now() - start,
+      });
+      return { result: 'disabled', reason: 'outbound-manager is disabled' };
+    }
+
+    // Rate limit check first — fast path, no network call needed
+    if (isRateLimited(contactId)) {
+      auditLog({
+        agent: AGENT_ID,
+        contactId,
+        opportunityId,
+        action: 'outbound:blocked',
+        result: 'skipped',
+        reason: `rate-limited (>${MAX_PER_24H} messages in 24h, requested by ${fromAgent})`,
+        durationMs: Date.now() - start,
+      });
+      return { result: 'rate-limited', reason: `max ${MAX_PER_24H} messages per 24h exceeded` };
+    }
+
+    // Fetch contact for timezone — needed before send window check
+    const contact = await contactBot(contactId).catch(err => {
+      auditLog({ agent: AGENT_ID, contactId, action: 'contactBot:failed', result: 'error', reason: err?.message });
+      return {} as Record<string, unknown>;
     });
-    return { result: 'disabled', reason: 'outbound-manager is disabled' };
-  }
+    const localHour = getLeadLocalHour(contact);
+    const sendWindow = await getSendWindow(tenantId);
+    const startHour = parseInt(sendWindow.start.split(':')[0], 10);
+    const endHour = parseInt(sendWindow.end.split(':')[0], 10);
 
-  // Rate limit check first — fast path, no network call needed
-  if (isRateLimited(contactId)) {
-    auditLog({
-      agent: AGENT_ID,
-      contactId,
-      opportunityId,
-      action: 'outbound:blocked',
-      result: 'skipped',
-      reason: `rate-limited (>${MAX_PER_24H} messages in 24h, requested by ${fromAgent})`,
-      durationMs: Date.now() - start,
+    if (localHour < startHour || localHour >= endHour) {
+      auditLog({
+        agent: AGENT_ID,
+        contactId,
+        opportunityId,
+        action: 'outbound:blocked',
+        result: 'skipped',
+        reason: `outside-send-window (lead local hour: ${localHour}, window: ${startHour}–${endHour}, requested by ${fromAgent})`,
+        durationMs: Date.now() - start,
+      });
+      return { result: 'outside-window', reason: `lead local hour ${localHour} is outside send window` };
+    }
+
+    if (isDryRun()) {
+      auditLog({
+        agent: AGENT_ID,
+        contactId,
+        opportunityId,
+        action: 'outbound:sent',
+        result: 'skipped',
+        reason: `dry-run (requested by ${fromAgent})`,
+        durationMs: Date.now() - start,
+        metadata: { messageLength: message.length, localHour },
+      });
+      return { result: 'dry-run' };
+    }
+
+    await smsBot(contactId, message).catch(err => {
+      auditLog({ agent: AGENT_ID, contactId, action: 'smsBot:failed', result: 'error', reason: err?.message });
     });
-    return { result: 'rate-limited', reason: `max ${MAX_PER_24H} messages per 24h exceeded` };
-  }
+    recordSend(contactId);
 
-  // Fetch contact for timezone — needed before send window check
-  const contact = await contactBot(contactId);
-  const localHour = getLeadLocalHour(contact);
-  const sendWindow = await getSendWindow(tenantId);
-  const startHour = parseInt(sendWindow.start.split(':')[0], 10);
-  const endHour = parseInt(sendWindow.end.split(':')[0], 10);
-
-  if (localHour < startHour || localHour >= endHour) {
-    auditLog({
-      agent: AGENT_ID,
-      contactId,
-      opportunityId,
-      action: 'outbound:blocked',
-      result: 'skipped',
-      reason: `outside-send-window (lead local hour: ${localHour}, window: ${startHour}–${endHour}, requested by ${fromAgent})`,
-      durationMs: Date.now() - start,
-    });
-    return { result: 'outside-window', reason: `lead local hour ${localHour} is outside send window` };
-  }
-
-  if (isDryRun()) {
     auditLog({
       agent: AGENT_ID,
       contactId,
       opportunityId,
       action: 'outbound:sent',
-      result: 'skipped',
-      reason: `dry-run (requested by ${fromAgent})`,
+      result: 'success',
       durationMs: Date.now() - start,
-      metadata: { messageLength: message.length, localHour },
+      metadata: {
+        fromAgent,
+        messageLength: message.length,
+        localHour,
+        recentSendCount: pruneHistory(contactId).length,
+      },
     });
-    return { result: 'dry-run' };
+
+    return { result: 'sent' };
+  } catch (err: any) {
+    auditLog({ agent: AGENT_ID, contactId, action: 'agent:crashed', result: 'error', reason: err?.message });
+    return { result: 'disabled', reason: `unexpected error: ${err?.message}` };
   }
-
-  await smsBot(contactId, message);
-  recordSend(contactId);
-
-  auditLog({
-    agent: AGENT_ID,
-    contactId,
-    opportunityId,
-    action: 'outbound:sent',
-    result: 'success',
-    durationMs: Date.now() - start,
-    metadata: {
-      fromAgent,
-      messageLength: message.length,
-      localHour,
-      recentSendCount: pruneHistory(contactId).length,
-    },
-  });
-
-  return { result: 'sent' };
 }
