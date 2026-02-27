@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gunner Control Room</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0f172a;--card:#1e293b;--border:#334155;--glow:rgba(59,130,246,.15);--blue:#3b82f6;--cyan:#06b6d4;--green:#22c55e;--yellow:#eab308;--orange:#f97316;--red:#ef4444;--purple:#a855f7;--pink:#ec4899;--text:#f1f5f9;--muted:#94a3b8;--dim:#64748b}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;padding-bottom:80px}
+a{color:var(--cyan);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* Header */
+.header{text-align:center;padding:40px 20px 24px;position:relative}
+.header::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:600px;height:400px;background:radial-gradient(circle,rgba(59,130,246,.08),transparent 70%);pointer-events:none}
+.header h1{font-size:clamp(1.6rem,4vw,2.4rem);font-weight:800;background:linear-gradient(135deg,#fff,var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px}
+.header p{color:var(--muted);font-size:.95rem;margin-bottom:16px}
+.header-links{display:flex;justify-content:center;gap:20px;font-size:.9rem}
+
+/* Master Controls */
+.master{max-width:800px;margin:0 auto 32px;padding:0 16px}
+.master-row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:16px}
+.master-btn{padding:12px 28px;border-radius:12px;font-weight:700;font-size:.95rem;border:none;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:8px}
+.master-btn:active{transform:scale(.96)}
+.btn-kill{background:rgba(239,68,68,.15);color:var(--red);border:2px solid rgba(239,68,68,.4)}
+.btn-kill:hover{background:rgba(239,68,68,.25)}
+.btn-enable{background:rgba(34,197,94,.15);color:var(--green);border:2px solid rgba(34,197,94,.4)}
+.btn-enable:hover{background:rgba(34,197,94,.25)}
+.dry-run-box{background:var(--card);border:2px solid rgba(234,179,8,.4);border-radius:16px;padding:20px 28px;display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap}
+.dry-run-box .label{font-size:1.1rem;font-weight:700;color:var(--yellow)}
+.dry-run-box .hint{color:var(--muted);font-size:.8rem;width:100%;text-align:center}
+
+/* Toggle Switch */
+.toggle{position:relative;width:52px;height:28px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.toggle .slider{position:absolute;inset:0;background:#475569;border-radius:28px;cursor:pointer;transition:all .3s}
+.toggle .slider::before{content:'';position:absolute;width:22px;height:22px;left:3px;top:3px;background:#fff;border-radius:50%;transition:all .3s}
+.toggle input:checked+.slider{background:var(--green);box-shadow:0 0 12px rgba(34,197,94,.5)}
+.toggle input:checked+.slider::before{transform:translateX(24px)}
+.toggle-big{width:64px;height:34px}
+.toggle-big .slider::before{width:28px;height:28px}
+.toggle-big input:checked+.slider::before{transform:translateX(30px)}
+.toggle-big input:checked+.slider{background:var(--yellow);box-shadow:0 0 12px rgba(234,179,8,.5)}
+
+/* Sections */
+.container{max-width:1200px;margin:0 auto;padding:0 16px}
+.phase-section{margin-bottom:32px}
+.phase-title{font-size:1.15rem;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:10px}
+.phase-title .dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+
+/* Agent Cards Grid */
+.agent-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.agent-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;display:flex;align-items:flex-start;gap:12px;transition:all .3s;position:relative;overflow:hidden}
+.agent-card.active{border-color:rgba(34,197,94,.3);box-shadow:0 0 20px rgba(34,197,94,.08)}
+.agent-card.inactive{opacity:.5}
+.agent-info{flex:1;min-width:0}
+.agent-emoji{font-size:1.3rem;line-height:1}
+.agent-name{font-weight:600;font-size:.9rem;margin-bottom:2px}
+.agent-desc{color:var(--muted);font-size:.78rem;line-height:1.4}
+.agent-time{color:var(--dim);font-size:.7rem;margin-top:4px}
+.agent-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+
+/* Bot Grid */
+.bot-section{margin-top:40px;margin-bottom:32px}
+.bot-section h2{font-size:1.4rem;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:10px}
+.bot-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.bot-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;align-items:center;gap:12px;transition:all .3s}
+.bot-card.active{border-color:rgba(34,197,94,.3);box-shadow:0 0 16px rgba(34,197,94,.06)}
+.bot-card.inactive{opacity:.5}
+.bot-warning{font-size:.7rem;color:var(--orange);margin-top:2px}
+
+/* Status Bar */
+.status-bar{position:fixed;bottom:0;left:0;right:0;background:rgba(15,23,42,.95);backdrop-filter:blur(12px);border-top:1px solid var(--border);padding:14px 20px;text-align:center;font-weight:600;font-size:.9rem;z-index:100;display:flex;justify-content:center;gap:24px}
+.status-bar span{display:flex;align-items:center;gap:6px}
+
+/* Modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.show{display:flex}
+.modal{background:var(--card);border:2px solid var(--red);border-radius:20px;padding:36px;text-align:center;max-width:400px;width:100%}
+.modal h3{font-size:1.3rem;margin-bottom:12px;color:var(--red)}
+.modal p{color:var(--muted);margin-bottom:24px;font-size:.95rem}
+.modal-btns{display:flex;gap:12px;justify-content:center}
+.modal-btns button{padding:10px 28px;border-radius:10px;font-weight:700;font-size:.9rem;border:none;cursor:pointer}
+.modal-cancel{background:var(--border);color:var(--text)}
+.modal-confirm{background:var(--red);color:#fff}
+
+/* Toast */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--card);border:1px solid var(--border);padding:12px 24px;border-radius:12px;font-size:.9rem;font-weight:500;z-index:150;transition:transform .3s,opacity .3s;opacity:0;pointer-events:none;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🔫 Gunner Control Room</h1>
+  <p>Toggle agents and bots on/off. Changes take effect immediately.</p>
+  <div class="header-links">
+    <a href="index.html">← Dashboard</a>
+    <a href="audit.html">📋 Audit Log</a>
+  </div>
+</div>
+
+<!-- Master Controls -->
+<div class="master">
+  <div class="master-row">
+    <button class="master-btn btn-kill" onclick="killAll()">🔴 KILL ALL</button>
+    <button class="master-btn btn-enable" onclick="enableAll()">🟢 ENABLE ALL</button>
+  </div>
+  <div class="dry-run-box">
+    <span class="label">🟡 DRY RUN</span>
+    <label class="toggle toggle-big">
+      <input type="checkbox" id="dryRunToggle" onchange="toggleDryRun(this.checked)">
+      <span class="slider"></span>
+    </label>
+    <span class="hint">When ON, agents log actions but don't execute</span>
+  </div>
+</div>
+
+<div class="container" id="agentContainer"></div>
+
+<div class="container">
+  <div class="bot-section">
+    <h2>🤖 Bots</h2>
+    <div class="bot-grid" id="botContainer"></div>
+  </div>
+</div>
+
+<!-- Status Bar -->
+<div class="status-bar">
+  <span>🤖 <span id="agentCount">0</span> of 32 agents active</span>
+  <span>⚙️ <span id="botCount">0</span> of 9 bots active</span>
+</div>
+
+<!-- Kill All Modal -->
+<div class="modal-overlay" id="killModal">
+  <div class="modal">
+    <h3>🔴 KILL ALL</h3>
+    <p>This will disable ALL agents and bots. Are you sure?</p>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeModal()">Cancel</button>
+      <button class="modal-confirm" onclick="confirmKillAll()">Yes, Kill All</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+const PHASES = [
+  { name:'Phase 1 — Intake', color:'#3b82f6', agents:[
+    {id:'new_lead_pipeline',emoji:'🔍',name:'New Lead Pipeline',desc:'Detects new contacts and kicks off intake'},
+    {id:'lead_scorer',emoji:'🎯',name:'Lead Scorer',desc:'Scores leads based on motivation signals'},
+    {id:'lead_tagger',emoji:'🏷️',name:'Lead Tagger',desc:'Applies tags based on lead attributes'},
+    {id:'lead_noter',emoji:'📝',name:'Lead Noter',desc:'Adds contextual notes to contact records'},
+    {id:'lead_task_creator',emoji:'✅',name:'Lead Task Creator',desc:'Creates follow-up tasks for the team'}
+  ]},
+  { name:'Phase 2 — Outreach', color:'#06b6d4', agents:[
+    {id:'initial_outreach',emoji:'📱',name:'Initial Outreach',desc:'Sends first contact SMS/call sequence'},
+    {id:'outbound_manager',emoji:'📤',name:'Outbound Manager',desc:'Manages outbound campaign timing'},
+    {id:'working_drip',emoji:'💧',name:'Working Drip',desc:'Drip sequences for working leads'}
+  ]},
+  { name:'Phase 3 — Conversations', color:'#22c55e', agents:[
+    {id:'response_agent',emoji:'💬',name:'Response Agent',desc:'Handles inbound message responses'},
+    {id:'lm_assistant',emoji:'📞',name:'LM Assistant',desc:'Assists live message conversations'},
+    {id:'call_coaching',emoji:'🎓',name:'Call Coaching',desc:'Grades and coaches on call quality'},
+    {id:'ghosted_agent',emoji:'👻',name:'Ghosted Agent',desc:'Re-engages leads that went silent'},
+    {id:'bucket_reeval',emoji:'🔄',name:'Bucket Re-eval',desc:'Reassigns leads to better buckets'}
+  ]},
+  { name:'Phase 4 — Appointments', color:'#eab308', agents:[
+    {id:'apt_prep',emoji:'📅',name:'Apt Prep',desc:'Prepares appointment briefs and comps'},
+    {id:'apt_reminder',emoji:'⏰',name:'Apt Reminder',desc:'Sends appointment reminders'},
+    {id:'am_assistant',emoji:'🤝',name:'AM Assistant',desc:'Assists acquisition managers in-field'}
+  ]},
+  { name:'Phase 5 — Follow-Up', color:'#f97316', agents:[
+    {id:'followup_organizer',emoji:'📊',name:'Follow-Up Organizer',desc:'Prioritizes and schedules follow-ups'},
+    {id:'followup_messenger',emoji:'💌',name:'Follow-Up Messenger',desc:'Sends follow-up messages'},
+    {id:'followup_closer',emoji:'🔥',name:'Follow-Up Closer',desc:'Pushes warm leads toward commitment'}
+  ]},
+  { name:'Phase 6 — Closing', color:'#a855f7', agents:[
+    {id:'offer_chase',emoji:'💰',name:'Offer Chase',desc:'Follows up on outstanding offers'},
+    {id:'offer_reply',emoji:'📩',name:'Offer Reply',desc:'Handles seller responses to offers'},
+    {id:'contract_bot',emoji:'🏗️',name:'Contract Bot',desc:'Manages contract creation and tracking'},
+    {id:'tc_packager',emoji:'📦',name:'TC Packager',desc:'Packages files for title company'},
+    {id:'dispo_packager',emoji:'📦',name:'Dispo Packager',desc:'Packages deals for disposition'},
+    {id:'uc_monitor',emoji:'📡',name:'UC Monitor',desc:'Monitors under-contract deal progress'},
+    {id:'post_close_bot',emoji:'🎉',name:'Post-Close Bot',desc:'Handles post-closing tasks and reviews'}
+  ]},
+  { name:'Phase 7 — Oversight', color:'#ef4444', agents:[
+    {id:'accountability',emoji:'⚖️',name:'Accountability',desc:'Tracks team accountability metrics'},
+    {id:'reality_check',emoji:'🔬',name:'Reality Check',desc:'Validates pipeline accuracy'},
+    {id:'reality_check_poller',emoji:'🔬',name:'Reality Check Poller',desc:'Polls for reality check triggers'}
+  ]}
+];
+
+const BOTS = [
+  {id:'contact_bot',emoji:'📇',name:'Contact Bot',desc:'Manages contact records',warning:'Disabling breaks most agents'},
+  {id:'scorer_bot',emoji:'🎯',name:'Scorer Bot',desc:'Runs lead scoring calculations'},
+  {id:'sms_bot',emoji:'📱',name:'SMS Bot',desc:'Sends and receives SMS messages'},
+  {id:'note_bot',emoji:'📝',name:'Note Bot',desc:'Creates and updates notes'},
+  {id:'task_bot',emoji:'✅',name:'Task Bot',desc:'Creates and manages tasks'},
+  {id:'tag_bot',emoji:'🏷️',name:'Tag Bot',desc:'Applies and removes tags'},
+  {id:'field_bot',emoji:'📊',name:'Field Bot',desc:'Updates custom field values'},
+  {id:'stage_bot',emoji:'🔀',name:'Stage Bot',desc:'Moves contacts between pipeline stages'},
+  {id:'assign_bot',emoji:'👤',name:'Assign Bot',desc:'Assigns contacts to team members'}
+];
+
+// State from localStorage
+function getState() {
+  try { return JSON.parse(localStorage.getItem('gunner_controls') || '{}'); } catch { return {}; }
+}
+function saveState(s) { localStorage.setItem('gunner_controls', JSON.stringify(s)); }
+function isOn(id) { const s = getState(); return s[id] !== false; } // default ON
+function setOn(id, val) { const s = getState(); s[id] = val; saveState(s); }
+function isDryRun() { return getState()._dryRun === true; }
+
+// TODO: Replace with Gunner API calls
+function apiToggle(id, enabled) { console.log(`TODO: API call — toggle ${id} to ${enabled}`); }
+function apiKillAll() { console.log('TODO: API call — kill all'); }
+function apiEnableAll() { console.log('TODO: API call — enable all'); }
+function apiSetDryRun(val) { console.log(`TODO: API call — set DRY_RUN to ${val}`); }
+
+const mockTimes = ['2 min ago','5 min ago','12 min ago','1 hr ago','3 hrs ago'];
+function randTime() { return mockTimes[Math.floor(Math.random()*mockTimes.length)]; }
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function updateCounts() {
+  const allAgents = PHASES.flatMap(p => p.agents);
+  const ac = allAgents.filter(a => isOn(a.id)).length;
+  const bc = BOTS.filter(b => isOn(b.id)).length;
+  document.getElementById('agentCount').textContent = ac;
+  document.getElementById('botCount').textContent = bc;
+}
+
+function refreshCard(id) {
+  const card = document.querySelector(`[data-id="${id}"]`);
+  if (card) { card.classList.toggle('active', isOn(id)); card.classList.toggle('inactive', !isOn(id)); }
+}
+
+function handleToggle(id, name, checked) {
+  setOn(id, checked);
+  apiToggle(id, checked);
+  refreshCard(id);
+  updateCounts();
+  showToast(`${name} ${checked ? 'enabled' : 'disabled'} ✅`);
+}
+
+function killAll() { document.getElementById('killModal').classList.add('show'); }
+function closeModal() { document.getElementById('killModal').classList.remove('show'); }
+function confirmKillAll() {
+  closeModal();
+  const allIds = [...PHASES.flatMap(p=>p.agents), ...BOTS];
+  allIds.forEach(a => { setOn(a.id, false); refreshCard(a.id); const cb=document.getElementById('cb_'+a.id); if(cb) cb.checked=false; });
+  apiKillAll();
+  updateCounts();
+  showToast('All agents and bots disabled 🔴');
+}
+function enableAll() {
+  const allIds = [...PHASES.flatMap(p=>p.agents), ...BOTS];
+  allIds.forEach(a => { setOn(a.id, true); refreshCard(a.id); const cb=document.getElementById('cb_'+a.id); if(cb) cb.checked=true; });
+  apiEnableAll();
+  updateCounts();
+  showToast('All agents and bots enabled 🟢');
+}
+function toggleDryRun(val) {
+  const s = getState(); s._dryRun = val; saveState(s);
+  apiSetDryRun(val);
+  showToast(`DRY RUN ${val ? 'ON 🟡' : 'OFF'}`);
+}
+
+// Render
+function render() {
+  const ac = document.getElementById('agentContainer');
+  ac.innerHTML = PHASES.map(phase => `
+    <div class="phase-section">
+      <div class="phase-title"><span class="dot" style="background:${phase.color}"></span>${phase.name}</div>
+      <div class="agent-grid">
+        ${phase.agents.map(a => `
+          <div class="agent-card ${isOn(a.id)?'active':'inactive'}" data-id="${a.id}">
+            <span class="agent-emoji">${a.emoji}</span>
+            <div class="agent-info">
+              <div class="agent-name">${a.name}</div>
+              <div class="agent-desc">${a.desc}</div>
+              <div class="agent-time">${randTime()}</div>
+            </div>
+            <div class="agent-right">
+              <label class="toggle"><input type="checkbox" id="cb_${a.id}" ${isOn(a.id)?'checked':''} onchange="handleToggle('${a.id}','${a.name}',this.checked)"><span class="slider"></span></label>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+
+  const bc = document.getElementById('botContainer');
+  bc.innerHTML = BOTS.map(b => `
+    <div class="bot-card ${isOn(b.id)?'active':'inactive'}" data-id="${b.id}">
+      <span class="agent-emoji">${b.emoji}</span>
+      <div class="agent-info">
+        <div class="agent-name">${b.name}</div>
+        <div class="agent-desc">${b.desc}</div>
+        ${b.warning ? `<div class="bot-warning">⚠️ ${b.warning}</div>` : ''}
+      </div>
+      <label class="toggle"><input type="checkbox" id="cb_${b.id}" ${isOn(b.id)?'checked':''} onchange="handleToggle('${b.id}','${b.name}',this.checked)"><span class="slider"></span></label>
+    </div>
+  `).join('');
+
+  document.getElementById('dryRunToggle').checked = isDryRun();
+  updateCounts();
+}
+
+render();
+</script>
+</body>
+</html>
