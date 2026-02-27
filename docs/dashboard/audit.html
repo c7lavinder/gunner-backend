@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gunner Audit Log</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0f172a;--card:#1e293b;--border:#334155;--glow:rgba(59,130,246,.15);--blue:#3b82f6;--cyan:#06b6d4;--green:#22c55e;--yellow:#eab308;--orange:#f97316;--red:#ef4444;--purple:#a855f7;--pink:#ec4899;--text:#f1f5f9;--muted:#94a3b8;--dim:#64748b}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden}
+a{color:var(--cyan);text-decoration:none;transition:color .2s}
+a:hover{color:#fff}
+
+.container{max-width:1400px;margin:0 auto;padding:0 20px}
+
+/* Header */
+.header{padding:24px 0;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;background:rgba(15,23,42,.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.header-inner{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.header-left{display:flex;align-items:center;gap:16px}
+.header-title{font-size:1.5rem;font-weight:800;background:linear-gradient(135deg,#fff,var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header-sub{color:var(--muted);font-size:.85rem}
+.live-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);color:var(--green);padding:6px 14px;border-radius:999px;font-size:.8rem;font-weight:600}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
+.back-link{color:var(--muted);font-size:.85rem;display:flex;align-items:center;gap:4px}
+
+/* Error Spotlight */
+.error-spotlight{margin-top:20px}
+.error-card{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:14px;padding:20px;margin-bottom:12px;animation:errorGlow 3s infinite;position:relative;overflow:hidden}
+.error-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--red)}
+@keyframes errorGlow{0%,100%{box-shadow:0 0 20px rgba(239,68,68,.1)}50%{box-shadow:0 0 30px rgba(239,68,68,.25)}}
+.error-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-weight:700;color:var(--red)}
+.error-desc{color:var(--text);font-size:.95rem;margin-bottom:6px}
+.error-explain{color:var(--muted);font-size:.85rem;font-style:italic}
+.error-meta{display:flex;gap:16px;margin-top:10px;font-size:.8rem;color:var(--dim)}
+
+/* Stats Bar */
+.stats-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin:20px 0}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;box-shadow:0 0 20px var(--glow);transition:transform .2s}
+.stat-card:hover{transform:translateY(-2px)}
+.stat-label{color:var(--muted);font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.stat-value{font-size:1.8rem;font-weight:800}
+.stat-sub{color:var(--dim);font-size:.75rem;margin-top:4px}
+.stat-card.has-errors .stat-value{color:var(--red)}
+.stat-sparkline{display:flex;align-items:flex-end;gap:2px;height:24px;margin-top:8px}
+.stat-sparkline span{flex:1;background:var(--cyan);border-radius:2px;opacity:.6;min-width:4px}
+
+/* Filter Bar */
+.filter-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:20px 0;padding:16px;background:var(--card);border:1px solid var(--border);border-radius:14px}
+.filter-bar select,.filter-bar input{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:8px 14px;border-radius:10px;font-size:.85rem;font-family:inherit;outline:none;transition:border-color .2s}
+.filter-bar select:focus,.filter-bar input:focus{border-color:var(--cyan)}
+.filter-bar input{flex:1;min-width:180px}
+.filter-label{color:var(--muted);font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.time-btn{padding:6px 14px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:.8rem;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit}
+.time-btn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.time-btn:hover:not(.active){background:rgba(255,255,255,.05)}
+
+/* Main Layout */
+.main-layout{display:grid;grid-template-columns:1fr 380px;gap:20px;margin:0 0 40px}
+@media(max-width:1024px){.main-layout{grid-template-columns:1fr}}
+
+/* Feed */
+.feed-entry{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:10px;animation:slideIn .4s ease-out;transition:transform .15s,box-shadow .15s}
+.feed-entry:hover{transform:translateX(4px);box-shadow:0 0 20px var(--glow)}
+@keyframes slideIn{from{opacity:0;transform:translateX(-30px)}to{opacity:1;transform:translateX(0)}}
+.feed-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.feed-agent{display:flex;align-items:center;gap:8px}
+.feed-agent-emoji{font-size:1.3rem}
+.feed-agent-name{font-weight:700;font-size:.9rem}
+.feed-time{color:var(--dim);font-size:.78rem;white-space:nowrap}
+.feed-action{margin:10px 0 8px;font-size:.95rem;color:var(--text);line-height:1.5}
+.feed-bottom{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.feed-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;font-size:.75rem;font-weight:600}
+.badge-success{background:rgba(34,197,94,.15);color:var(--green);border:1px solid rgba(34,197,94,.25)}
+.badge-skipped{background:rgba(234,179,8,.15);color:var(--yellow);border:1px solid rgba(234,179,8,.25)}
+.badge-error{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.25)}
+.feed-duration{color:var(--dim);font-size:.78rem}
+.feed-contact{color:var(--cyan);font-size:.82rem;font-weight:600}
+.feed-expand{background:none;border:none;color:var(--dim);cursor:pointer;font-size:.8rem;margin-left:auto;padding:4px 8px;border-radius:6px;transition:all .2s;font-family:inherit}
+.feed-expand:hover{color:var(--text);background:rgba(255,255,255,.05)}
+.feed-details{display:none;margin-top:12px;padding:12px;background:var(--bg);border-radius:10px;font-family:'SF Mono',Monaco,monospace;font-size:.75rem;color:var(--dim);overflow-x:auto;white-space:pre-wrap;word-break:break-all;border:1px solid var(--border)}
+.feed-details.open{display:block}
+.feed-entry.is-error{border-color:rgba(239,68,68,.3)}
+
+/* Sidebar: Scoreboard */
+.scoreboard{position:sticky;top:100px}
+.scoreboard-title{font-size:1.1rem;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.sb-agent{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;transition:transform .15s}
+.sb-agent:hover{transform:translateY(-1px)}
+.sb-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.sb-name{font-weight:700;font-size:.85rem;display:flex;align-items:center;gap:6px}
+.sb-count{color:var(--muted);font-size:.78rem}
+.sb-bar-bg{height:6px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;margin-bottom:6px}
+.sb-bar{height:100%;border-radius:3px;transition:width .6s ease}
+.sb-stats{display:flex;gap:14px;font-size:.72rem;color:var(--dim)}
+.sb-stats span{display:flex;align-items:center;gap:3px}
+
+/* Print */
+@media print{.header,.filter-bar,.feed-expand,.back-link,.live-badge{display:none!important}.feed-details{display:block!important}.main-layout{grid-template-columns:1fr}.feed-entry{break-inside:avoid;page-break-inside:avoid;border:1px solid #ccc}body{background:#fff;color:#000}.stat-card,.sb-agent,.feed-entry,.filter-bar,.error-card{background:#fff;border-color:#ddd;color:#000;box-shadow:none}.stat-label,.feed-time,.sb-stats,.feed-duration,.error-meta{color:#666}}
+
+/* Mobile */
+@media(max-width:640px){
+.header-title{font-size:1.2rem}
+.stats-bar{grid-template-columns:repeat(2,1fr);gap:10px}
+.stat-value{font-size:1.4rem}
+.stat-card{padding:14px}
+.filter-bar{flex-direction:column}
+.feed-entry{padding:14px}
+.main-layout{gap:14px}
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+<div class="container">
+<div class="header-inner">
+<div class="header-left">
+<div>
+<div class="header-title">🔫 Gunner Audit Log</div>
+<div class="header-sub">Everything the system does, in real-time</div>
+</div>
+<div class="live-badge"><span class="live-dot"></span> Live</div>
+</div>
+<div><a href="index.html" class="back-link">← Back to Dashboard</a></div>
+</div>
+</div>
+</div>
+
+<div class="container">
+
+<!-- Error Spotlight (populated by JS) -->
+<div class="error-spotlight" id="errorSpotlight"></div>
+
+<!-- Stats Bar -->
+<div class="stats-bar" id="statsBar">
+<div class="stat-card">
+<div class="stat-label">Actions Today</div>
+<div class="stat-value" id="statActions">—</div>
+<div class="stat-sparkline" id="sparkActions"></div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Leads Processed</div>
+<div class="stat-value" id="statLeads">—</div>
+<div class="stat-sub">unique contacts</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Agents Active</div>
+<div class="stat-value" id="statAgents">—</div>
+<div class="stat-sub" id="statAgentsSub"></div>
+</div>
+<div class="stat-card" id="statErrorCard">
+<div class="stat-label">Errors Caught</div>
+<div class="stat-value" id="statErrors">—</div>
+<div class="stat-sub">see details above ↑</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Avg Response</div>
+<div class="stat-value" id="statAvg">—</div>
+<div class="stat-sub">seconds per action</div>
+</div>
+</div>
+
+<!-- Filter Bar -->
+<div class="filter-bar">
+<div>
+<div class="filter-label">Agent</div>
+<select id="filterAgent"><option value="">All Agents</option></select>
+</div>
+<div>
+<div class="filter-label">Result</div>
+<select id="filterResult">
+<option value="">All</option>
+<option value="success">✅ Success</option>
+<option value="skipped">⏭️ Skipped</option>
+<option value="error">❌ Error</option>
+</select>
+</div>
+<div>
+<div class="filter-label">Time Range</div>
+<div style="display:flex;gap:4px">
+<button class="time-btn" data-range="1">1h</button>
+<button class="time-btn" data-range="4">4h</button>
+<button class="time-btn active" data-range="12">12h</button>
+<button class="time-btn" data-range="24">24h</button>
+<button class="time-btn" data-range="168">7d</button>
+</div>
+</div>
+<div style="flex:1;min-width:180px">
+<div class="filter-label">Search</div>
+<input type="text" id="filterSearch" placeholder="Search by contact name...">
+</div>
+</div>
+
+<!-- Main Layout -->
+<div class="main-layout">
+<div id="feedContainer"></div>
+<div>
+<div class="scoreboard" id="scoreboard">
+<div class="scoreboard-title">📊 Agent Scoreboard</div>
+<div id="sbList"></div>
+</div>
+</div>
+</div>
+
+</div>
+
+<script>
+// Agent definitions
+const AGENTS = {
+'new-lead-pipeline': {emoji:'🔍',name:'New Lead Pipeline'},
+'lead-scorer': {emoji:'🎯',name:'Lead Scorer'},
+'lead-tagger': {emoji:'🏷️',name:'Lead Tagger'},
+'lead-noter': {emoji:'📝',name:'Lead Noter'},
+'lead-task-creator': {emoji:'✅',name:'Lead Task Creator'},
+'initial-outreach': {emoji:'📱',name:'Initial Outreach'},
+'outbound-manager': {emoji:'📤',name:'Outbound Manager'},
+'response-agent': {emoji:'💬',name:'Response Agent'},
+'lm-assistant': {emoji:'📞',name:'LM Assistant'},
+'call-coaching': {emoji:'🎓',name:'Call Coaching'},
+'working-drip': {emoji:'💧',name:'Working Drip'},
+'ghosted-agent': {emoji:'👻',name:'Ghosted Agent'},
+'bucket-reeval': {emoji:'🔄',name:'Bucket Re-eval'},
+'apt-prep': {emoji:'📅',name:'Apt Prep'},
+'apt-reminder': {emoji:'⏰',name:'Apt Reminder'},
+'am-assistant': {emoji:'🤝',name:'AM Assistant'},
+'follow-up-organizer': {emoji:'📊',name:'Follow-Up Organizer'},
+'follow-up-messenger': {emoji:'💌',name:'Follow-Up Messenger'},
+'follow-up-closer': {emoji:'🔥',name:'Follow-Up Closer'},
+'offer-chase': {emoji:'💰',name:'Offer Chase'},
+'offer-reply': {emoji:'📩',name:'Offer Reply'},
+'tc-packager': {emoji:'📦',name:'TC Packager'},
+'dispo-packager': {emoji:'📦',name:'Dispo Packager'},
+'contract-bot': {emoji:'🏗️',name:'Contract Bot'},
+'uc-monitor': {emoji:'📡',name:'UC Monitor'},
+'post-close-bot': {emoji:'🎉',name:'Post-Close Bot'},
+'accountability': {emoji:'⚖️',name:'Accountability'},
+'reality-check': {emoji:'🔬',name:'Reality Check'}
+};
+
+const CONTACTS = [
+'Marcus Johnson','Tiffany Reynolds','Robert Williams','DeShawn Carter','Patricia Gomez',
+'James Mitchell','Angela Foster','David Chen','Brenda Washington','Kevin O\'Brien',
+'Sandra Phillips','Tyrone Baker','Lisa Hernandez','William Park','Denise Thompson',
+'Jerome Davis','Carla Nguyen','Michael Scott','Tamika Brown','Russell Adams'
+];
+const ADDRESSES = [
+'1423 Shelby Ave, Nashville','308 S 11th St, Nashville','742 Boscobel St, Nashville',
+'215 Ewing Dr, Nashville','1809 5th Ave N, Nashville','3312 Clarksville Pike, Nashville',
+'604 Creek Trail Dr, Goodlettsville','118 Creekside Ct, Columbia','2240 Murfreesboro Pike, Nashville',
+'917 Drummond Dr, Nashville','445 Harding Pl, Nashville','1620 Eastland Ave, Nashville',
+'3009 Linden Ave, Nashville','824 Meridian St, Nashville','201 Edgehill Ave, Columbia',
+'507 Weakley Ave, Columbia','1105 Burchwood Ave, Nashville'
+];
+const TEAM = ['Kyle Barks (AM)','Chris Segura (LM - Nashville)','Daniel Lozano (LM - Columbia)','Esteban Leiva (Dispo)'];
+
+function rand(a,b){return Math.floor(Math.random()*(b-a+1))+a}
+function pick(arr){return arr[rand(0,arr.length-1)]}
+
+const NOW = Date.now();
+function ago(ms){
+const s=Math.floor(ms/1000),m=Math.floor(s/60),h=Math.floor(m/60);
+if(s<60) return 'Just now';
+if(m<60) return m+' min ago';
+if(h<24) return h+'h '+Math.floor((m%60))+'m ago';
+return Math.floor(h/24)+'d ago';
+}
+
+// Generate mock data
+function generateEntries(){
+const entries = [];
+const templates = [
+{agent:'new-lead-pipeline',gen:c=>`New lead received: ${c} at ${pick(ADDRESSES)}`},
+{agent:'lead-scorer',gen:c=>{const s=rand(20,98);const tier=s>=75?'HOT':s>=50?'WARM':'COLD';return `Scored new lead as ${tier} (${s} points)`}},
+{agent:'lead-tagger',gen:c=>`Tagged lead as "${pick(['Motivated Seller','Absentee Owner','Pre-Foreclosure','Probate','Vacant','Tired Landlord'])}"`},
+{agent:'lead-noter',gen:c=>`Added note: "Seller mentioned they need to move by March. ${pick(['Inherited property','Behind on taxes','Relocating for work','Going through divorce'])}"`},
+{agent:'lead-task-creator',gen:c=>`Created task: Call this lead within ${pick(['30 minutes','1 hour','2 hours'])} — assigned to ${pick(TEAM)}`},
+{agent:'initial-outreach',gen:c=>{const h=rand(8,17);const m=rand(0,59);return `Sent first text to ${c.split(' ')[0]} at ${h>12?h-12:h}:${String(m).padStart(2,'0')} ${h>=12?'PM':'AM'}`}},
+{agent:'outbound-manager',gen:c=>`Queued ${pick(['follow-up call','ringless voicemail','SMS sequence'])} for ${c} — next touch ${pick(['tomorrow morning','in 2 days','Thursday at 10 AM'])}`},
+{agent:'response-agent',gen:c=>`Replied to incoming text from ${c.split(' ')[0]}: "${pick(['Thanks for reaching out! When is a good time to chat?','Got it — I\'ll have someone call you shortly.','Are you still interested in selling?'])}"`},
+{agent:'lm-assistant',gen:c=>`Prepared call brief for ${pick(TEAM)}: ${c} — ${pick(['seller is motivated, wants to close fast','property needs major repairs','seller testing the market, lowball risk'])}`},
+{agent:'call-coaching',gen:c=>`Graded call with ${c}: ${pick(['A — Great rapport, strong close','B+ — Good discovery, missed urgency signal','C — Needs to ask about timeline earlier','B — Solid objection handling'])}`},
+{agent:'follow-up-organizer',gen:c=>`Organized follow-up queue: ${rand(3,12)} leads ready for outreach today`},
+{agent:'follow-up-messenger',gen:c=>`Sent follow-up text to ${c.split(' ')[0]}: "${pick(['Just checking in — any update on your timeline?','Hey! Still thinking about that offer?','Wanted to make sure you got my message last week.'])}"`},
+{agent:'follow-up-closer',gen:c=>`Escalated ${c} to urgent follow-up — ${pick(['seller responded positively','appointment window closing','competing offer detected'])}`},
+{agent:'ghosted-agent',gen:c=>`Re-engaged ${c} after ${rand(5,21)} days of silence — sent "${pick(['breakup text','new comp email','voicemail drop'])}"`},
+{agent:'bucket-reeval',gen:c=>`Moved lead to ${pick(['Warm','Hot','Working','Nurture','Dead'])} stage — ${pick(['engagement score increased','no response in 14 days','seller called back','new activity detected'])}`},
+{agent:'apt-prep',gen:c=>`Prepped appointment package for ${c} at ${pick(ADDRESSES)} — ${pick(['comps pulled, ARV estimated at $'+rand(180,420)+'K','title search complete','sent appointment confirmation to seller'])}`},
+{agent:'apt-reminder',gen:c=>`Sent appointment reminder to ${c} — meeting ${pick(['tomorrow at 10 AM','today at 2 PM','Wednesday at 3:30 PM'])} with ${pick(TEAM)}`},
+{agent:'am-assistant',gen:c=>`Briefed Kyle Barks on ${c}: ${pick(['offer range $'+rand(120,350)+'K - $'+rand(150,380)+'K based on comps','seller motivated — probate situation','property has title issues, proceed with caution'])}`},
+{agent:'offer-chase',gen:c=>`Following up on pending offer to ${c} — sent ${rand(1,3)}${pick(['st','nd','rd'])} reminder`},
+{agent:'dispo-packager',gen:c=>`Created dispo package for ${pick(ADDRESSES)} — ${pick(['3 bed/2 bath, ARV $280K, asking $175K','wholesale fee target: $12K','sent to 47 buyers on the list'])}`},
+{agent:'accountability',gen:c=>`Daily check: ${pick(TEAM)} has ${rand(2,8)} overdue tasks — sent nudge notification`},
+{agent:'reality-check',gen:c=>`Verified lead data for ${c}: ${pick(['phone number confirmed active','address matches county records','seller identity verified via skip trace'])}`},
+];
+
+// Normal entries
+for(let i=0;i<35;i++){
+const t=templates[rand(0,templates.length-1)];
+const contact=pick(CONTACTS);
+const msAgo=rand(60000, 4*3600000);
+const duration=(Math.random()*3+0.2).toFixed(1);
+entries.push({
+id:'evt-'+rand(10000,99999),
+timestamp: NOW - msAgo,
+agent: t.agent,
+action: t.gen(contact),
+result: Math.random()>.08?'success':'skipped',
+duration: parseFloat(duration),
+contact,
+raw:{eventId:'evt-'+rand(10000,99999),agentId:t.agent,contactName:contact,durationMs:Math.round(duration*1000),result:'success',metadata:{source:'mock'}}
+});
+}
+
+// Error entries
+const errors = [
+{agent:'initial-outreach',action:'SMS failed to Jerome Davis — outside allowed send window (after 9 PM CST)',contact:'Jerome Davis',
+explain:'Text messages can only be sent between 8 AM and 9 PM to comply with TCPA regulations. This text will automatically retry tomorrow morning.'},
+{agent:'lead-scorer',action:'Lead score missing for Patricia Gomez — contact had no phone number on file',contact:'Patricia Gomez',
+explain:'The scoring system needs a phone number to verify the lead. This contact was imported without one. A team member should manually add the phone number in GHL.'},
+{agent:'response-agent',action:'Failed to reply to Robert Williams — GHL API returned timeout after 30 seconds',contact:'Robert Williams',
+explain:'GoHighLevel\'s servers were slow and didn\'t respond in time. The system will automatically retry in 5 minutes. If this keeps happening, it may be a GHL outage.'},
+];
+errors.forEach(e=>{
+entries.push({
+id:'evt-'+rand(10000,99999),
+timestamp: NOW - rand(300000,7200000),
+agent:e.agent,
+action:e.action,
+result:'error',
+duration:null,
+contact:e.contact,
+explain:e.explain,
+raw:{eventId:'evt-'+rand(10000,99999),agentId:e.agent,contactName:e.contact,error:e.action,metadata:{source:'mock'}}
+});
+});
+
+entries.sort((a,b)=>b.timestamp-a.timestamp);
+return entries;
+}
+
+const allEntries = generateEntries();
+let selectedRange = 12;
+
+// Populate agent filter dropdown
+const agentSelect = document.getElementById('filterAgent');
+const usedAgents = [...new Set(allEntries.map(e=>e.agent))].sort();
+usedAgents.forEach(a=>{
+const o=document.createElement('option');o.value=a;o.textContent=AGENTS[a].emoji+' '+AGENTS[a].name;agentSelect.appendChild(o);
+});
+
+function getFiltered(){
+const fa=document.getElementById('filterAgent').value;
+const fr=document.getElementById('filterResult').value;
+const fs=document.getElementById('filterSearch').value.toLowerCase();
+const cutoff=NOW - selectedRange*3600000;
+return allEntries.filter(e=>{
+if(e.timestamp<cutoff) return false;
+if(fa && e.agent!==fa) return false;
+if(fr && e.result!==fr) return false;
+if(fs && !(e.contact||'').toLowerCase().includes(fs) && !e.action.toLowerCase().includes(fs)) return false;
+return true;
+});
+}
+
+function renderErrors(entries){
+const el=document.getElementById('errorSpotlight');
+const errs=entries.filter(e=>e.result==='error');
+if(!errs.length){el.innerHTML='';return;}
+el.innerHTML=errs.map(e=>`
+<div class="error-card">
+<div class="error-header">❌ Error — ${AGENTS[e.agent].emoji} ${AGENTS[e.agent].name}</div>
+<div class="error-desc">${e.action}</div>
+<div class="error-explain">💡 What this means: ${e.explain||'An unexpected error occurred.'}</div>
+<div class="error-meta"><span>${ago(NOW-e.timestamp)}</span><span>Contact: ${e.contact||'—'}</span></div>
+</div>`).join('');
+}
+
+function renderStats(entries){
+const all=allEntries.filter(e=>e.timestamp>NOW-selectedRange*3600000);
+document.getElementById('statActions').textContent=all.length;
+const leads=new Set(all.filter(e=>e.contact).map(e=>e.contact));
+document.getElementById('statLeads').textContent=leads.size;
+const active=new Set(all.map(e=>e.agent));
+document.getElementById('statAgents').textContent=active.size+' / '+Object.keys(AGENTS).length;
+document.getElementById('statAgentsSub').textContent='out of '+Object.keys(AGENTS).length+' total agents';
+const errCount=all.filter(e=>e.result==='error').length;
+document.getElementById('statErrors').textContent=errCount;
+const card=document.getElementById('statErrorCard');
+if(errCount>0)card.classList.add('has-errors');else card.classList.remove('has-errors');
+const durations=all.filter(e=>e.duration).map(e=>e.duration);
+document.getElementById('statAvg').textContent=durations.length?(durations.reduce((a,b)=>a+b,0)/durations.length).toFixed(1)+'s':'—';
+// Sparkline
+const sp=document.getElementById('sparkActions');
+const bars=[5,8,12,6,9,14,11,7,13,10,8,15];
+sp.innerHTML=bars.map(b=>`<span style="height:${Math.round(b/15*100)}%"></span>`).join('');
+}
+
+function renderFeed(entries){
+const el=document.getElementById('feedContainer');
+if(!entries.length){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--dim)">No entries match your filters.</div>';return;}
+el.innerHTML=entries.map((e,i)=>{
+const a=AGENTS[e.agent];
+const badgeCls=e.result==='success'?'badge-success':e.result==='skipped'?'badge-skipped':'badge-error';
+const badgeIcon=e.result==='success'?'✅':e.result==='skipped'?'⏭️':'❌';
+return `<div class="feed-entry${e.result==='error'?' is-error':''}" style="animation-delay:${i*30}ms">
+<div class="feed-top">
+<div class="feed-agent"><span class="feed-agent-emoji">${a.emoji}</span><span class="feed-agent-name">${a.name}</span></div>
+<span class="feed-time">${ago(NOW-e.timestamp)}</span>
+</div>
+<div class="feed-action">${e.action}</div>
+<div class="feed-bottom">
+<span class="feed-badge ${badgeCls}">${badgeIcon} ${e.result}</span>
+${e.duration?`<span class="feed-duration">took ${e.duration}s</span>`:''}
+${e.contact?`<span class="feed-contact">${e.contact}</span>`:''}
+<button class="feed-expand" onclick="this.parentElement.parentElement.querySelector('.feed-details').classList.toggle('open');this.textContent=this.textContent.includes('▶')?'▼ Hide details':'▶ Raw details'">▶ Raw details</button>
+</div>
+<div class="feed-details">${JSON.stringify(e.raw,null,2)}</div>
+</div>`}).join('');
+}
+
+function renderScoreboard(entries){
+const stats={};
+entries.forEach(e=>{
+if(!stats[e.agent])stats[e.agent]={total:0,success:0,durations:[]};
+stats[e.agent].total++;
+if(e.result==='success')stats[e.agent].success++;
+if(e.duration)stats[e.agent].durations.push(e.duration);
+});
+const sorted=Object.entries(stats).sort((a,b)=>b[1].total-a[1].total);
+const maxTotal=sorted.length?sorted[0][1].total:1;
+const el=document.getElementById('sbList');
+el.innerHTML=sorted.map(([id,s])=>{
+const a=AGENTS[id];
+const rate=s.total?Math.round(s.success/s.total*100):0;
+const avgD=s.durations.length?(s.durations.reduce((a,b)=>a+b,0)/s.durations.length).toFixed(1):'-';
+const pct=Math.round(s.total/maxTotal*100);
+const color=rate>=90?'var(--green)':rate>=70?'var(--yellow)':'var(--red)';
+return `<div class="sb-agent">
+<div class="sb-header"><span class="sb-name">${a.emoji} ${a.name}</span><span class="sb-count">${s.total} actions</span></div>
+<div class="sb-bar-bg"><div class="sb-bar" style="width:${pct}%;background:${color}"></div></div>
+<div class="sb-stats"><span>✅ ${rate}% success</span><span>⏱ ${avgD}s avg</span></div>
+</div>`}).join('');
+}
+
+function renderAll(){
+const filtered=getFiltered();
+renderErrors(filtered);
+renderStats(filtered);
+renderFeed(filtered);
+renderScoreboard(filtered);
+}
+
+// Event listeners
+document.getElementById('filterAgent').addEventListener('change',renderAll);
+document.getElementById('filterResult').addEventListener('change',renderAll);
+document.getElementById('filterSearch').addEventListener('input',renderAll);
+document.querySelectorAll('.time-btn').forEach(btn=>{
+btn.addEventListener('click',()=>{
+document.querySelectorAll('.time-btn').forEach(b=>b.classList.remove('active'));
+btn.classList.add('active');
+selectedRange=parseInt(btn.dataset.range);
+renderAll();
+});
+});
+
+renderAll();
+</script>
+</body>
+</html>
