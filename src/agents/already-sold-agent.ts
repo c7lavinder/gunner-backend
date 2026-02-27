@@ -19,7 +19,7 @@ import { isDryRun } from '../core/dry-run';
 import { stageBot } from '../bots/stage';
 import { taskBot } from '../bots/task';
 import { noteBot } from '../bots/note';
-import { getPlaybook } from '../core/playbook';
+import { loadPlaybook, getStageId, getTaskTemplate } from '../config';
 
 const AGENT_ID = 'already-sold-agent';
 

@@ -7,7 +7,7 @@
  *
  * Rules:
  *   - Respects send windows (playbook.sms.sendWindow)
- *   - Skips Sundays
+ *   - Skips configured days (e.g. Sundays)
  *   - Stops on real conversation or stage change
  *   - Day 14 no contact → fires Ghosted Agent
  */
@@ -17,9 +17,11 @@ import { auditLog } from '../core/audit';
 import { isEnabled } from '../core/toggles';
 import { isDryRun } from '../core/dry-run';
 import { smsBot } from '../bots/sms';
-import { getPlaybook } from '../core/playbook';
+import { getDripSchedule, getSendWindow, getTag, loadPlaybook } from '../config';
 
 const AGENT_ID = 'working-drip';
+
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 interface DripEvent extends GunnerEvent {
   dripStartDate: string; // ISO date drip began
@@ -28,23 +30,22 @@ interface DripEvent extends GunnerEvent {
   currentStage?: string;
 }
 
-// Default 24-step schedule: day offsets from drip start
-const DEFAULT_SCHEDULE = [
-  1, 2, 3, 4, 5, 7, 9, 11, 14, 17,
-  21, 25, 30, 37, 44, 51, 58, 65, 72, 80,
-  88, 96, 100, 104,
-];
-
 export async function runWorkingDrip(event: DripEvent): Promise<void> {
   if (!isEnabled(AGENT_ID)) return;
 
   const { contactId, opportunityId, tenantId, currentStage } = event;
   const start = Date.now();
-  const playbook = getPlaybook(tenantId);
-  const schedule = playbook?.drip?.schedule ?? DEFAULT_SCHEDULE;
+
+  const [{ days: schedule, ghostedDay }, sendWindow, workingTag, ghostedTag, pb] = await Promise.all([
+    getDripSchedule(tenantId),
+    getSendWindow(tenantId),
+    getTag(tenantId, 'working'),
+    getTag(tenantId, 'ghosted'),
+    loadPlaybook(tenantId),
+  ]);
 
   // Guard: stop on stage change to non-working stage
-  const workingStages = playbook?.stages?.working ?? ['Working', 'Ghosted'];
+  const workingStages = [workingTag, ghostedTag];
   if (currentStage && !workingStages.includes(currentStage)) {
     auditLog({
       agent: AGENT_ID,
@@ -76,23 +77,24 @@ export async function runWorkingDrip(event: DripEvent): Promise<void> {
 
   const now = new Date();
 
-  // Guard: skip Sundays
-  if (now.getDay() === 0) {
+  // Guard: skip configured days (e.g. Sundays)
+  if (sendWindow.skipDays.includes(DAY_NAMES[now.getDay()])) {
     auditLog({
       agent: AGENT_ID,
       contactId,
       opportunityId,
       action: 'drip:skipped',
-      result: 'sunday',
+      result: 'skip-day',
       durationMs: Date.now() - start,
     });
     return;
   }
 
   // Guard: respect send window
-  const sendWindow = playbook?.sms?.sendWindow ?? { startHour: 9, endHour: 19 };
+  const startHour = parseInt(sendWindow.start.split(':')[0], 10);
+  const endHour = parseInt(sendWindow.end.split(':')[0], 10);
   const hour = now.getHours();
-  if (hour < sendWindow.startHour || hour >= sendWindow.endHour) {
+  if (hour < startHour || hour >= endHour) {
     auditLog({
       agent: AGENT_ID,
       contactId,
@@ -129,8 +131,8 @@ export async function runWorkingDrip(event: DripEvent): Promise<void> {
     return;
   }
 
-  // Day 14 no contact check → fire Ghosted Agent
-  if (dayOffset >= 14 && !event.lastRealContact) {
+  // Ghosted check → fire Ghosted Agent
+  if (dayOffset >= ghostedDay && !event.lastRealContact) {
     await emit({
       kind: 'lead.ghosted',
       tenantId,
@@ -141,7 +143,7 @@ export async function runWorkingDrip(event: DripEvent): Promise<void> {
   }
 
   // Get template for this step from playbook
-  const templates = playbook?.drip?.templates ?? [];
+  const templates = pb?.drip?.templates ?? [];
   const template = templates[stepIndex] ?? `Follow-up message (step ${stepIndex + 1} of ${schedule.length})`;
 
   // Send SMS via bot

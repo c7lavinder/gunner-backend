@@ -6,7 +6,7 @@
  * Does NOT: template blast — every message is personalized to the individual.
  *
  * Rules:
- *   - Enforces 9AM–6PM send window in the lead's timezone (skips if outside)
+ *   - Enforces send window from playbook.communication.send_window in the lead's timezone
  *   - Tone shifts by time of day: morning / afternoon / evening / overnight
  *   - Includes company name only for inbound leads (they came to us — we reinforce the brand)
  *   - Idempotent: skips if initial_sms_sent is already set on the contact
@@ -21,7 +21,7 @@ import { smsBot } from '../bots/sms';
 import { contactBot } from '../bots/contact';
 import { fieldBot } from '../bots/field';
 import { noteBot } from '../bots/note';
-import { getConfig } from '../playbook/config';
+import { loadPlaybook } from '../config/loader';
 
 const AGENT_ID = 'initial-outreach';
 
@@ -52,22 +52,30 @@ function getLeadLocalHour(contact: Record<string, unknown>): number {
   return new Date().getHours();
 }
 
-/**
- * Returns true when the lead's local time is inside the 9AM–6PM send window.
- */
-function isInLeadSendWindow(localHour: number): boolean {
-  const config = getConfig();
-  return localHour >= config.sendWindow.startHour && localHour < config.sendWindow.endHour;
+/** Parse "HH:MM" string → integer hour. */
+function parseHour(timeStr: string): number {
+  return parseInt(timeStr.split(':')[0], 10);
 }
 
 /**
- * Determines whether this is an inbound lead.
- * GHL surfaces this as the lead's source. Treat any form/web/chat/referral as inbound.
+ * Returns true when the lead's local time is inside the playbook send window.
  */
-function isInboundLead(contact: Record<string, unknown>): boolean {
+function isInLeadSendWindow(localHour: number, playbook: any): boolean {
+  const sw = playbook.communication?.send_window ?? { start: '09:00', end: '18:00' };
+  return localHour >= parseHour(sw.start) && localHour < parseHour(sw.end);
+}
+
+/**
+ * Determines whether this is an inbound lead by checking playbook leadSources.
+ */
+function isInboundLead(contact: Record<string, unknown>, playbook: any): boolean {
   const source = ((contact.source as string) || '').toLowerCase();
-  const inboundSources = ['website', 'web', 'form', 'chat', 'referral', 'google', 'facebook', 'seo'];
-  return inboundSources.some((s) => source.includes(s));
+  const inboundKeys = Object.entries(playbook.leadSources ?? {})
+    .filter(([, cfg]: [string, any]) => cfg.type === 'inbound')
+    .map(([key]) => key.toLowerCase());
+  // Also keep fallback web/form/chat/google/facebook/seo patterns
+  const fallback = ['website', 'web', 'form', 'chat', 'referral', 'google', 'facebook', 'seo'];
+  return [...inboundKeys, ...fallback].some((s) => source.includes(s));
 }
 
 /**
@@ -78,11 +86,14 @@ function buildPrompt(
   contact: Record<string, unknown>,
   tone: TimeTone,
   includeCompanyName: boolean,
-  companyName: string
+  companyName: string,
+  playbook: any
 ): string {
+  const cf = playbook.customFields;
   const firstName = (contact.firstName as string) || '';
-  const address = ((contact.customFields as Record<string, string>) || {}).property_address || '';
-  const motivation = ((contact.customFields as Record<string, string>) || {}).motivation || '';
+  const customFields = (contact.customFields as Record<string, string>) || {};
+  const address = customFields[cf.property_address] || '';
+  const motivation = customFields[cf.motivation] || '';
 
   const lines = [
     `You are a real estate acquisitions rep texting a seller lead for the first time.`,
@@ -114,14 +125,16 @@ async function generateSMS(prompt: string): Promise<string> {
 export async function runInitialOutreach(event: GunnerEvent): Promise<void> {
   if (!isEnabled(AGENT_ID)) return;
 
-  const { contactId, opportunityId } = event;
+  const { contactId, opportunityId, tenantId } = event;
   const start = Date.now();
+  const playbook = await loadPlaybook(tenantId);
 
   // Fetch full lead data
   const contact = await contactBot(contactId);
 
   // Idempotency guard — don't double-send
-  const alreadySent = ((contact.customFields as Record<string, string>) || {}).initial_sms_sent;
+  const cf = playbook.customFields;
+  const alreadySent = ((contact.customFields as Record<string, string>) || {})[cf.initial_sms_sent];
   if (alreadySent) {
     auditLog({
       agent: AGENT_ID,
@@ -135,9 +148,9 @@ export async function runInitialOutreach(event: GunnerEvent): Promise<void> {
     return;
   }
 
-  // Enforce 9AM–6PM in lead's timezone
+  // Enforce send window in lead's timezone
   const localHour = getLeadLocalHour(contact);
-  if (!isInLeadSendWindow(localHour)) {
+  if (!isInLeadSendWindow(localHour, playbook)) {
     auditLog({
       agent: AGENT_ID,
       contactId,
@@ -151,23 +164,23 @@ export async function runInitialOutreach(event: GunnerEvent): Promise<void> {
   }
 
   const tone = getTimeTone(localHour);
-  const inbound = isInboundLead(contact);
-  const config = getConfig();
-  // Company name lives in env; fall back gracefully
-  const companyName = process.env.COMPANY_NAME ?? 'our company';
+  const inbound = isInboundLead(contact, playbook);
+  const companyName = playbook.company?.name ?? 'our company';
 
-  const prompt = buildPrompt(contact, tone, inbound, companyName);
+  const prompt = buildPrompt(contact, tone, inbound, companyName, playbook);
   const message = await generateSMS(prompt);
 
   if (!isDryRun()) {
     await smsBot(contactId, message);
 
     await fieldBot(contactId, {
-      initial_sms_sent: new Date().toISOString(),
+      [cf.initial_sms_sent]: new Date().toISOString(),
     });
 
     await noteBot(contactId, `[initial-outreach] First SMS sent (tone: ${tone}, inbound: ${inbound}):\n\n${message}`);
   }
+
+  const defaultLM = playbook.team.routing.default_assignee;
 
   auditLog({
     agent: AGENT_ID,
@@ -182,7 +195,7 @@ export async function runInitialOutreach(event: GunnerEvent): Promise<void> {
       inbound,
       localHour,
       messageLength: message.length,
-      lmUserId: config.team.defaultLM,
+      lmUserId: defaultLM,
     },
   });
 }

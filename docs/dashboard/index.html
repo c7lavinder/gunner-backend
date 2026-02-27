@@ -176,6 +176,8 @@ a{color:var(--cyan);text-decoration:none}
     <a href="#phase7">Purchased</a>
     <a href="#rules">Rules</a>
     <a href="#agents">Agents</a>
+    <a href="#tenant">Tenant</a>
+    <a href="#triggers">Triggers</a>
   </div>
 </nav>
 
@@ -195,27 +197,29 @@ a{color:var(--cyan);text-decoration:none}
   </div>
   <div class="journey-track">
     <div style="width:24px"></div>
-    <div class="journey-step journey-auto"><div class="journey-icon">📥</div><div class="journey-label">Lead Arrives</div></div>
+    <div class="journey-step journey-auto"><div class="journey-icon">📥</div><div class="journey-label">New Lead</div></div>
     <div class="journey-arrow">→</div>
-    <div class="journey-step journey-auto"><div class="journey-icon">🧹</div><div class="journey-label">Data Cleaned ~30s</div></div>
+    <div class="journey-step journey-auto"><div class="journey-icon">🧠</div><div class="journey-label">Warm Leads(2)</div></div>
     <div class="journey-arrow">→</div>
-    <div class="journey-step journey-auto"><div class="journey-icon">🧠</div><div class="journey-label">Lead Scored HOT / WARM</div></div>
+    <div class="journey-step journey-auto"><div class="journey-icon">🔥</div><div class="journey-label">Hot Leads(3)</div></div>
     <div class="journey-arrow">→</div>
-    <div class="journey-step journey-auto"><div class="journey-icon">💬</div><div class="journey-label">Text Sent from LM's #</div></div>
+    <div class="journey-step"><div class="journey-icon">📅</div><div class="journey-label">Pending Apt</div></div>
     <div class="journey-arrow">→</div>
-    <div class="journey-step"><div class="journey-icon">📞</div><div class="journey-label">LM Double Dials 15 min</div></div>
+    <div class="journey-step"><div class="journey-icon">🏠</div><div class="journey-label">Walkthrough Apt</div></div>
     <div class="journey-arrow">→</div>
-    <div class="journey-step journey-auto"><div class="journey-icon">💧</div><div class="journey-label">Drip Fires 5 min after</div></div>
+    <div class="journey-step"><div class="journey-icon">📊</div><div class="journey-label">Offer Apt</div></div>
     <div class="journey-arrow">→</div>
-    <div class="journey-step journey-auto"><div class="journey-icon">🔀</div><div class="journey-label">Outcome Routing 6 paths</div></div>
-    <div class="journey-arrow">→</div>
-    <div class="journey-step"><div class="journey-icon">🏠</div><div class="journey-label">Apt Execution</div></div>
-    <div class="journey-arrow">→</div>
-    <div class="journey-step journey-auto"><div class="journey-icon">🔄</div><div class="journey-label">Follow-Up 1mo/4mo/1yr</div></div>
+    <div class="journey-step"><div class="journey-icon">💰</div><div class="journey-label">Made Offer</div></div>
     <div class="journey-arrow">→</div>
     <div class="journey-step"><div class="journey-icon">📝</div><div class="journey-label">Under Contract</div></div>
     <div class="journey-arrow">→</div>
     <div class="journey-step"><div class="journey-icon" style="border-color:var(--green)">🎉</div><div class="journey-label" style="color:var(--green);font-weight:700">Purchased</div></div>
+    <div class="journey-arrow">→</div>
+    <div class="journey-step journey-auto"><div class="journey-icon">🔄</div><div class="journey-label">Follow Up 1mo</div></div>
+    <div class="journey-arrow">→</div>
+    <div class="journey-step journey-auto"><div class="journey-icon">🔄</div><div class="journey-label">Follow Up 4mo</div></div>
+    <div class="journey-arrow">→</div>
+    <div class="journey-step journey-auto"><div class="journey-icon">🔄</div><div class="journey-label">Follow Up 1yr</div></div>
     <div style="width:24px"></div>
   </div>
 </section>
@@ -777,6 +781,170 @@ a{color:var(--cyan);text-decoration:none}
         <div class="agent-item"><h4>📊 Dispo Packager</h4><p>Builds the deal package for disposition — creates the Dispo Pipeline opportunity.</p></div>
         <div class="agent-item"><h4>🙏 Post-Close Bot</h4><p>Sends the thank-you, review request, and referral ask after closing.</p></div>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- TENANT CONFIG -->
+<section class="section" id="tenant">
+  <div class="container">
+    <h2 class="section-title">🏢 Tenant Config</h2>
+    <p class="section-subtitle">New Again Houses — real-estate-wholesale tenant. Team, markets, lead sources, and tags powering the system.</p>
+
+    <!-- Team Roster -->
+    <h3 style="font-size:1.2rem;font-weight:700;margin-bottom:20px;display:flex;align-items:center;gap:8px;color:var(--cyan)">👥 Team Roster</h3>
+    <div class="agent-list" style="margin-bottom:40px">
+      <div class="agent-item"><h4>👑 Corey Lavinder</h4><p><strong>CEO</strong><br>corey@newagainhouses.com</p></div>
+      <div class="agent-item"><h4>🎯 Kyle Barks</h4><p><strong>Acquisition Manager</strong><br>Nashville · Columbia · Knoxville<br>kbarks@newagainhouses.com</p></div>
+      <div class="agent-item"><h4>📞 Chris Segura</h4><p><strong>Lead Manager</strong><br>Nashville<br>c.segura9393@gmail.com</p></div>
+      <div class="agent-item"><h4>📞 Daniel Lozano</h4><p><strong>Lead Manager</strong><br>Columbia · Knoxville<br>Alvarez.lozano@hotmail.com</p></div>
+      <div class="agent-item"><h4>📊 Esteban Leiva</h4><p><strong>Dispo Manager</strong><br>Nashville · Columbia · Knoxville<br>estebanldv1999@gmail.com</p></div>
+      <div class="agent-item"><h4>📋 Jessica Guzman</h4><p><strong>Data Manager</strong><br>KPI entry, channel routing, escalation contact</p></div>
+    </div>
+
+    <!-- Markets -->
+    <h3 style="font-size:1.2rem;font-weight:700;margin-bottom:20px;display:flex;align-items:center;gap:8px;color:var(--cyan)">📍 Markets</h3>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:40px">
+      <div class="signal"><div class="signal-icon">🏙️</div><div class="signal-name">Nashville</div></div>
+      <div class="signal"><div class="signal-icon">🏘️</div><div class="signal-name">Columbia</div></div>
+      <div class="signal"><div class="signal-icon">⛰️</div><div class="signal-name">Knoxville</div></div>
+    </div>
+
+    <!-- Lead Sources -->
+    <h3 style="font-size:1.2rem;font-weight:700;margin-bottom:20px;display:flex;align-items:center;gap:8px;color:var(--cyan)">📡 Lead Sources</h3>
+    <div class="signals" style="margin-bottom:40px">
+      <div class="signal"><div class="signal-icon">💵</div><div class="signal-name">PPL</div><div class="signal-desc">Outbound · Leadzolo, PropertyLeads, MotivatedSellers</div></div>
+      <div class="signal"><div class="signal-icon">📺</div><div class="signal-name">TV</div><div class="signal-desc">Inbound · Includes company name</div></div>
+      <div class="signal"><div class="signal-icon">✉️</div><div class="signal-name">Direct Mail</div><div class="signal-desc">Outbound</div></div>
+      <div class="signal"><div class="signal-icon">📞</div><div class="signal-name">Cold Call</div><div class="signal-desc">Outbound</div></div>
+      <div class="signal"><div class="signal-icon">🌐</div><div class="signal-name">Website</div><div class="signal-desc">Inbound · Includes company name</div></div>
+      <div class="signal"><div class="signal-icon">🤝</div><div class="signal-name">Referral</div><div class="signal-desc">Inbound · Includes company name</div></div>
+    </div>
+
+    <!-- Tags -->
+    <h3 style="font-size:1.2rem;font-weight:700;margin-bottom:20px;display:flex;align-items:center;gap:8px;color:var(--cyan)">🏷️ System Tags</h3>
+    <div style="display:flex;flex-wrap:wrap;gap:8px">
+      <span class="badge" style="background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3)">hot-lead</span>
+      <span class="badge" style="background:rgba(234,179,8,.15);color:var(--yellow);border:1px solid rgba(234,179,8,.3)">warm-lead</span>
+      <span class="badge" style="background:rgba(148,163,184,.15);color:var(--muted);border:1px solid var(--border)">ghosted</span>
+      <span class="badge" style="background:rgba(59,130,246,.15);color:var(--blue);border:1px solid rgba(59,130,246,.3)">callback-appointment</span>
+      <span class="badge" style="background:rgba(34,197,94,.15);color:var(--green);border:1px solid rgba(34,197,94,.3)">offer-accepted</span>
+      <span class="badge" style="background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3)">offer-rejected</span>
+      <span class="badge" style="background:rgba(249,115,22,.15);color:var(--orange);border:1px solid rgba(249,115,22,.3)">no-show</span>
+      <span class="badge" style="background:rgba(249,115,22,.15);color:var(--orange);border:1px solid rgba(249,115,22,.3)">overdue-task</span>
+      <span class="badge" style="background:rgba(168,85,247,.15);color:var(--purple);border:1px solid rgba(168,85,247,.3)">ppl</span>
+      <span class="badge" style="background:rgba(168,85,247,.15);color:var(--purple);border:1px solid rgba(168,85,247,.3)">tv</span>
+      <span class="badge" style="background:rgba(168,85,247,.15);color:var(--purple);border:1px solid rgba(168,85,247,.3)">direct-mail</span>
+      <span class="badge" style="background:rgba(168,85,247,.15);color:var(--purple);border:1px solid rgba(168,85,247,.3)">cold-call</span>
+      <span class="badge" style="background:rgba(168,85,247,.15);color:var(--purple);border:1px solid rgba(168,85,247,.3)">website</span>
+      <span class="badge" style="background:rgba(168,85,247,.15);color:var(--purple);border:1px solid rgba(168,85,247,.3)">referral</span>
+      <span class="badge" style="background:rgba(6,182,212,.15);color:var(--cyan);border:1px solid rgba(6,182,212,.3)">nashville</span>
+      <span class="badge" style="background:rgba(6,182,212,.15);color:var(--cyan);border:1px solid rgba(6,182,212,.3)">columbia</span>
+      <span class="badge" style="background:rgba(6,182,212,.15);color:var(--cyan);border:1px solid rgba(6,182,212,.3)">knoxville</span>
+      <span class="badge" style="background:rgba(6,182,212,.15);color:var(--cyan);border:1px solid rgba(6,182,212,.3)">tennessee</span>
+      <span class="badge" style="background:rgba(34,197,94,.15);color:var(--green);border:1px solid rgba(34,197,94,.3)">returning-lead</span>
+      <span class="badge" style="background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3)">dnc</span>
+    </div>
+  </div>
+</section>
+
+<!-- TRIGGERS -->
+<section class="section" id="triggers">
+  <div class="container">
+    <h2 class="section-title">⚡ Triggers</h2>
+    <p class="section-subtitle">Which events fire which agents. Every automation in the system is driven by these triggers from nah.json.</p>
+
+    <div class="card" style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:.9rem">
+        <thead>
+          <tr style="border-bottom:2px solid var(--border)">
+            <th style="text-align:left;padding:12px 16px;color:var(--cyan);font-weight:700">Event</th>
+            <th style="text-align:left;padding:12px 16px;color:var(--cyan);font-weight:700">Type</th>
+            <th style="text-align:left;padding:12px 16px;color:var(--cyan);font-weight:700">Stage / Channel</th>
+            <th style="text-align:left;padding:12px 16px;color:var(--cyan);font-weight:700">Fires Agent</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:12px 16px">📥 New lead enters Sales</td>
+            <td style="padding:12px 16px;color:var(--muted)">Stage Change</td>
+            <td style="padding:12px 16px"><span class="badge" style="background:rgba(59,130,246,.15);color:var(--blue);border:1px solid rgba(59,130,246,.3)">New Lead</span></td>
+            <td style="padding:12px 16px;color:var(--green);font-weight:600">new-lead-pipeline</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:12px 16px">🟡 Lead moves to Warm</td>
+            <td style="padding:12px 16px;color:var(--muted)">Stage Change</td>
+            <td style="padding:12px 16px"><span class="badge badge-warm">Warm</span></td>
+            <td style="padding:12px 16px;color:var(--green);font-weight:600">lm-assistant</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:12px 16px">🏠 Walkthrough Apt set</td>
+            <td style="padding:12px 16px;color:var(--muted)">Stage Change</td>
+            <td style="padding:12px 16px"><span class="badge" style="background:rgba(249,115,22,.15);color:var(--orange);border:1px solid rgba(249,115,22,.3)">Walkthrough Apt</span></td>
+            <td style="padding:12px 16px;color:var(--green);font-weight:600">apt-prep</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:12px 16px">📊 Offer Apt set</td>
+            <td style="padding:12px 16px;color:var(--muted)">Stage Change</td>
+            <td style="padding:12px 16px"><span class="badge" style="background:rgba(249,115,22,.15);color:var(--orange);border:1px solid rgba(249,115,22,.3)">Offer Apt</span></td>
+            <td style="padding:12px 16px;color:var(--green);font-weight:600">apt-prep</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:12px 16px">💰 Made Offer</td>
+            <td style="padding:12px 16px;color:var(--muted)">Stage Change</td>
+            <td style="padding:12px 16px"><span class="badge" style="background:rgba(234,179,8,.15);color:var(--yellow);border:1px solid rgba(234,179,8,.3)">Made Offer</span></td>
+            <td style="padding:12px 16px;color:var(--green);font-weight:600">offer-chase</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:12px 16px">📝 Under Contract</td>
+            <td style="padding:12px 16px;color:var(--muted)">Stage Change</td>
+            <td style="padding:12px 16px"><span class="badge" style="background:rgba(34,197,94,.15);color:var(--green);border:1px solid rgba(34,197,94,.3)">Under Contract</span></td>
+            <td style="padding:12px 16px;color:var(--green);font-weight:600">contract-bot</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:12px 16px">🎉 Purchased</td>
+            <td style="padding:12px 16px;color:var(--muted)">Stage Change</td>
+            <td style="padding:12px 16px"><span class="badge" style="background:rgba(34,197,94,.15);color:var(--green);border:1px solid rgba(34,197,94,.3)">Purchased</span></td>
+            <td style="padding:12px 16px;color:var(--green);font-weight:600">post-close-bot</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:12px 16px">👻 Ghosted</td>
+            <td style="padding:12px 16px;color:var(--muted)">Stage Change</td>
+            <td style="padding:12px 16px"><span class="badge" style="background:rgba(148,163,184,.15);color:var(--muted);border:1px solid var(--border)">Ghosted</span></td>
+            <td style="padding:12px 16px;color:var(--green);font-weight:600">ghosted-agent</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:12px 16px">🔄 Follow Up 1mo</td>
+            <td style="padding:12px 16px;color:var(--muted)">Stage Change</td>
+            <td style="padding:12px 16px"><span class="badge" style="background:rgba(168,85,247,.15);color:var(--purple);border:1px solid rgba(168,85,247,.3)">Follow Up 1mo</span></td>
+            <td style="padding:12px 16px;color:var(--green);font-weight:600">follow-up-organizer</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:12px 16px">🔄 Follow Up 4mo</td>
+            <td style="padding:12px 16px;color:var(--muted)">Stage Change</td>
+            <td style="padding:12px 16px"><span class="badge" style="background:rgba(168,85,247,.15);color:var(--purple);border:1px solid rgba(168,85,247,.3)">Follow Up 4mo</span></td>
+            <td style="padding:12px 16px;color:var(--green);font-weight:600">follow-up-organizer</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:12px 16px">🔄 Follow Up 1yr</td>
+            <td style="padding:12px 16px;color:var(--muted)">Stage Change</td>
+            <td style="padding:12px 16px"><span class="badge" style="background:rgba(168,85,247,.15);color:var(--purple);border:1px solid rgba(168,85,247,.3)">Follow Up 1yr</span></td>
+            <td style="padding:12px 16px;color:var(--green);font-weight:600">follow-up-organizer</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:12px 16px">💬 Inbound SMS</td>
+            <td style="padding:12px 16px;color:var(--muted)">Inbound Message</td>
+            <td style="padding:12px 16px"><span class="badge" style="background:rgba(6,182,212,.15);color:var(--cyan);border:1px solid rgba(6,182,212,.3)">SMS</span></td>
+            <td style="padding:12px 16px;color:var(--green);font-weight:600">response-agent</td>
+          </tr>
+          <tr>
+            <td style="padding:12px 16px">📞 Inbound Call</td>
+            <td style="padding:12px 16px;color:var(--muted)">Inbound Call</td>
+            <td style="padding:12px 16px"><span class="badge" style="background:rgba(6,182,212,.15);color:var(--cyan);border:1px solid rgba(6,182,212,.3)">Phone</span></td>
+            <td style="padding:12px 16px;color:var(--green);font-weight:600">callback-capture</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </section>

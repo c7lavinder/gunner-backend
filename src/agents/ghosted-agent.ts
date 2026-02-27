@@ -13,7 +13,7 @@ import { isDryRun } from '../core/dry-run';
 import { stageBot } from '../bots/stage';
 import { tagBot } from '../bots/tag';
 import { taskBot } from '../bots/task';
-import { getPlaybook } from '../core/playbook';
+import { getStageId, getTag, getTaskTemplate } from '../config';
 
 const AGENT_ID = 'ghosted-agent';
 
@@ -27,10 +27,9 @@ export async function runGhostedAgent(event: GhostedEvent): Promise<void> {
 
   const { contactId, opportunityId, tenantId } = event;
   const start = Date.now();
-  const playbook = getPlaybook(tenantId);
 
   // Guard: already ghosted
-  const ghostedStage = playbook?.stages?.ghosted ?? 'Ghosted';
+  const ghostedStage = await getStageId(tenantId, 'sales', 'ghosted') ?? 'Ghosted';
   if (event.currentStage === ghostedStage) {
     auditLog({
       agent: AGENT_ID,
@@ -48,11 +47,11 @@ export async function runGhostedAgent(event: GhostedEvent): Promise<void> {
     await stageBot(opportunityId, { stage: ghostedStage });
 
     // Apply ghosted tag
-    const ghostedTag = playbook?.tags?.ghosted ?? 'Ghosted';
+    const ghostedTag = await getTag(tenantId, 'ghosted');
     await tagBot(contactId, { tag: ghostedTag });
 
     // Check off Lead IQ task
-    const leadIqTask = playbook?.tasks?.leadIq ?? 'Lead IQ';
+    const leadIqTask = (await getTaskTemplate(tenantId, 'leadIq'))?.title ?? 'Lead IQ';
     await taskBot(contactId, { action: 'complete', taskName: leadIqTask });
   }
 
