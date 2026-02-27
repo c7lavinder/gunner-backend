@@ -65,6 +65,21 @@ router.get('/oauth/callback', async (req, res) => {
   });
 });
 
+// POST /setup/oauth/register-webhooks — manually trigger webhook registration
+router.post('/oauth/register-webhooks', async (_req, res) => {
+  const tokens = loadTokens();
+  if (!tokens) {
+    res.status(400).json({ error: 'Not connected — authorize OAuth first' });
+    return;
+  }
+  try {
+    await registerWebhooks(tokens.access_token, tokens.locationId);
+    res.json({ success: true, message: 'Webhook registration triggered' });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /setup/oauth/status — check token status
 router.get('/oauth/status', (_req, res) => {
   const tokens = loadTokens();
