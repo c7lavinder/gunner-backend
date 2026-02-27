@@ -4,7 +4,7 @@
  */
 
 import { isDryRun } from '../core/dry-run';
-import { ghlPost, getLocationId } from '../integrations/ghl/client';
+import { ghlPost } from '../integrations/ghl/client';
 
 export interface TaskInput {
   title: string;
