@@ -113,10 +113,22 @@ async function scoreCall(
 
 async function evaluateFactor(
   name: string,
-  _transcript: string,
-  _criteria: any,
+  transcript: string,
+  criteria: any,
 ): Promise<ScoringFactor> {
-  return { name, grade: 'B', notes: 'pending AI scoring integration' };
+  const systemPrompt = `You grade real estate sales calls. Grade this call on the factor "${name}" from A to F. ${criteria ? `Criteria: ${JSON.stringify(criteria)}` : ''} Return JSON only: {"grade": "A"|"B"|"C"|"D"|"F", "notes": "brief explanation"}`;
+
+  try {
+    const result = await generateJSON<{ grade: Grade; notes: string }>(
+      `Grade this call transcript on "${name}":\n\n${transcript.slice(0, 4000)}`,
+      systemPrompt,
+    );
+    const grade = (['A', 'B', 'C', 'D', 'F'] as Grade[]).includes(result.grade) ? result.grade : 'B';
+    return { name, grade, notes: result.notes || '' };
+  } catch (err) {
+    console.error(`[call-coaching] Gemini failed for ${name}:`, (err as Error).message);
+    return { name, grade: 'B', notes: 'AI scoring unavailable — default grade' };
+  }
 }
 
 function computeOverall(factors: ScoringFactor[]): Grade {
