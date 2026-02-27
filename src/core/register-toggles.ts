@@ -93,3 +93,4 @@ registerToggle({ id: 'bot-feedback-writer', kind: 'bot', label: 'Feedback Writer
 registerToggle({ id: 'intelligence-poller', kind: 'agent', label: 'Intelligence Poller', description: 'Daily learning cycle — matches outcomes, updates learnings', enabled: true });
 registerToggle({ id: 'intelligence-researcher', kind: 'agent', label: 'Intelligence Researcher', description: 'Weekly deep analysis — patterns, team stats, briefings', enabled: true });
 registerToggle({ id: 'intelligence-feedback', kind: 'agent', label: 'Intelligence Feedback', description: 'Routes human feedback from API to feedback-writer bot', enabled: true });
+registerToggle({ id: 'morning-briefing', kind: 'agent', label: 'Morning Briefing', description: 'Daily 8AM CST briefing — gathers stats and sends Telegram summary', enabled: true });

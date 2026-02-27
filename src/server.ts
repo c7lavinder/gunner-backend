@@ -16,6 +16,8 @@ import intelligenceRouter from './api/intelligence';
 import setupRouter from './api/setup';
 import { startIntelligencePoller } from './agents/intelligence-poller';
 import { startIntelligenceResearcher } from './agents/intelligence-researcher';
+import { startMorningBriefing } from './agents/morning-briefing';
+import briefingRouter from './api/briefing';
 import { setupWebSocket } from './core/ws';
 
 async function main() {
@@ -48,6 +50,7 @@ async function main() {
   app.use('/api/audit', auditRouter);
   app.use('/webhooks', webhookRouter);
   app.use('/api/intelligence', intelligenceRouter);
+  app.use('/api/briefing', briefingRouter);
   app.use('/setup', setupRouter);
 
   const port = Number(process.env.PORT ?? 3000);
@@ -58,6 +61,7 @@ async function main() {
   // 6. Start intelligence agents
   startIntelligencePoller();
   startIntelligenceResearcher();
+  startMorningBriefing();
 
   // 7. Start CRM sync (5s after boot)
   startCrmSync();

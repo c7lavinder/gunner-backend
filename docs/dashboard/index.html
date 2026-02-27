@@ -1073,6 +1073,35 @@ a{color:var(--cyan);text-decoration:none}
   </div>
 </section>
 
+<!-- Morning Briefing Section -->
+<section style="max-width:900px;margin:0 auto 40px;padding:0 20px">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:32px">
+    <h2 style="margin:0 0 20px;font-size:1.4rem">🌅 Morning Briefing</h2>
+    <div id="briefing-content" style="font-family:'JetBrains Mono',monospace;font-size:0.9rem;white-space:pre-wrap;color:var(--muted);line-height:1.6">
+      Loading briefing...
+    </div>
+    <div id="briefing-meta" style="margin-top:16px;font-size:0.8rem;color:var(--dim)"></div>
+  </div>
+</section>
+<script>
+(function() {
+  fetch('/api/briefing/latest')
+    .then(r => r.json())
+    .then(data => {
+      if (data.briefing) {
+        document.getElementById('briefing-content').textContent = data.briefing.telegram;
+        const gen = new Date(data.briefing.generatedAt);
+        document.getElementById('briefing-meta').textContent = 'Generated: ' + gen.toLocaleString() + (data.briefing.isDryRun ? ' (DRY RUN)' : '');
+      } else {
+        document.getElementById('briefing-content').textContent = data.error || 'No briefing available yet.';
+      }
+    })
+    .catch(() => {
+      document.getElementById('briefing-content').textContent = 'Failed to load briefing.';
+    });
+})();
+</script>
+
 <!-- Footer -->
 <footer class="footer">
   <p>🔫 Gunner — Built to close more deals with less effort.</p>
