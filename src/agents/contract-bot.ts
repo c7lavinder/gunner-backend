@@ -2,10 +2,7 @@
  * Contract Bot (Agent)
  *
  * Fires on: opportunity.stage.under_contract
- * Does:
- *   1. AI confirmation SMS to seller via smsBot
- *   2. AM task: "Get deal details to TC and Dispo" (1 hour)
- *   3. Fires TC Packager and Dispo Packager in parallel
+ * Does: SMS to seller, AM task, fires TC/Dispo packagers
  */
 
 import { GunnerEvent, emit } from '../core/event-bus';
@@ -25,44 +22,34 @@ export async function runContractBot(event: GunnerEvent): Promise<void> {
   const playbook = await loadPlaybook(tenantId);
   const am = playbook?.roles?.acquisitionManager ?? 'am';
 
-  // Guard: check if already processed
-  if (event.metadata?.contractBotProcessed) {
-    auditLog({ agent: AGENT_ID, contactId, opportunityId, action: 'skip', result: 'already_processed', durationMs: 0 });
+  if ((event.metadata as any)?.contractBotProcessed) {
+    auditLog({ agent: AGENT_ID, contactId, opportunityId, action: 'skip', result: 'skipped', durationMs: 0 });
     return;
   }
 
   if (!isDryRun()) {
-    // 1. Confirmation SMS to seller
-    await smsBot({
-      contactId,
-      tenantId,
-      templateKey: 'uc_confirmation',
-      context: { opportunityId },
-    });
+    await smsBot(contactId, `Thank you! We're excited to move forward. Our team will be in touch shortly with next steps.`);
 
-    // 2. AM task
-    await taskBot({
-      contactId,
-      opportunityId,
-      tenantId,
+    await taskBot(contactId, {
       title: 'Get deal details to TC and Dispo',
-      assignTo: am,
-      dueMins: 60,
+      assignedTo: am,
+      dueDate: new Date(Date.now() + 60 * 60_000).toISOString(),
     });
 
-    // 3. Fire TC Packager and Dispo Packager in parallel
     await Promise.all([
       emit({
         kind: 'contract.package.tc',
         tenantId,
         contactId,
         opportunityId,
+        receivedAt: Date.now(),
       }),
       emit({
         kind: 'contract.package.dispo',
         tenantId,
         contactId,
         opportunityId,
+        receivedAt: Date.now(),
       }),
     ]);
   }
@@ -72,7 +59,7 @@ export async function runContractBot(event: GunnerEvent): Promise<void> {
     contactId,
     opportunityId,
     action: 'contract.processed',
-    result: 'sms_task_packagers_fired',
+    result: 'success',
     durationMs: Date.now() - start,
   });
 }

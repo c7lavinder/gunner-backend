@@ -3,31 +3,26 @@
  *
  * Fires on: call.inbound (seller calls back)
  * Does: classify call disposition, delegate to named handler.
- * Short call → note. Real conversation → LM task (30 min).
- * Appointment set → cancel drip, confirm, move stage.
  */
 
 import { GunnerEvent } from '../core/event-bus';
 import { auditLog } from '../core/audit';
 import { isEnabled } from '../core/toggles';
 import { stageBot, taskBot, noteBot, tagBot, fieldBot, contactBot } from '../bots';
+import { getTag, getFieldName } from '../config/helpers';
 
 const AGENT_ID = 'callback-capture';
 
 interface CallbackPlaybook {
-  shortCallThresholdSec: number;  // e.g. 60
-  lmTaskDueMinutes: number;       // 30
+  shortCallThresholdSec: number;
+  lmTaskDueMinutes: number;
   warmStageId: string;
   appointmentStageId: string;
-  dripCancelTag: string;          // tag that signals drip cancellation
+  dripCancelTag: string;
 }
 
 type Disposition = 'short-call' | 'conversation' | 'appointment';
 
-/**
- * Classify call disposition — mirrors LM Assistant logic.
- * TODO: replace with AI transcript analysis.
- */
 function classifyDisposition(event: GunnerEvent, thresholdSec: number): Disposition {
   const duration = (event.raw?.duration as number) || 0;
   const notes = ((event.raw?.notes as string) || '').toLowerCase();
@@ -38,44 +33,28 @@ function classifyDisposition(event: GunnerEvent, thresholdSec: number): Disposit
     notes.includes('walkthrough') ||
     notes.includes('scheduled') ||
     disposition.includes('appointment')
-  ) {
-    return 'appointment';
-  }
+  ) return 'appointment';
 
   if (duration < thresholdSec) return 'short-call';
-
   return 'conversation';
 }
 
-// ── Handlers ─────────────────────────────────────────────────────────────────
-
-async function handleShortCall(
-  contactId: string,
-  duration: number,
-  notes: string
-): Promise<void> {
+async function handleShortCall(contactId: string, duration: number, notes: string): Promise<void> {
   await noteBot(contactId, [
     `📞 Inbound callback (${duration}s) — short call.`,
     notes ? `Notes: ${notes.slice(0, 300)}` : 'No notes captured.',
   ].join('\n'));
 }
 
-async function handleConversation(
-  contactId: string,
-  duration: number,
-  notes: string,
-  playbook: CallbackPlaybook
-): Promise<void> {
+async function handleConversation(contactId: string, duration: number, notes: string, playbook: CallbackPlaybook): Promise<void> {
   await stageBot(contactId, playbook.warmStageId);
-
   const taskDue = new Date(Date.now() + playbook.lmTaskDueMinutes * 60 * 1000);
   await taskBot(contactId, {
     title: 'Seller called back — follow up NOW',
-    description: `Inbound call ${duration}s. ${notes ? 'Notes: ' + notes.slice(0, 200) : 'Review call recording.'}`,
+    body: `Inbound call ${duration}s. ${notes ? 'Notes: ' + notes.slice(0, 200) : 'Review call recording.'}`,
     dueDate: taskDue.toISOString(),
     assignedTo: 'lm',
   });
-
   await noteBot(contactId, [
     `📞 Inbound callback (${duration}s) — real conversation.`,
     `Moved to Warm. LM task created (${playbook.lmTaskDueMinutes}min).`,
@@ -83,28 +62,18 @@ async function handleConversation(
   ].filter(Boolean).join('\n'));
 }
 
-async function handleAppointment(
-  contactId: string,
-  duration: number,
-  notes: string,
-  playbook: CallbackPlaybook
-): Promise<void> {
-  await tagBot(contactId, playbook.dripCancelTag);
+async function handleAppointment(contactId: string, duration: number, notes: string, playbook: CallbackPlaybook): Promise<void> {
+  await tagBot(contactId, [playbook.dripCancelTag]);
   await stageBot(contactId, playbook.appointmentStageId);
   await noteBot(contactId, [
     `📞 Inbound callback (${duration}s) — APPOINTMENT SET.`,
     `Drip cancelled. Moved to appointment stage.`,
     notes ? `Notes: ${notes.slice(0, 300)}` : '',
   ].filter(Boolean).join('\n'));
-  await tagBot(contactId, 'callback-appointment');
+  await tagBot(contactId, ['callback-appointment']);
 }
 
-// ── Router ────────────────────────────────────────────────────────────────────
-
-export async function runCallbackCapture(
-  event: GunnerEvent,
-  playbook: CallbackPlaybook
-): Promise<void> {
+export async function runCallbackCapture(event: GunnerEvent, playbook: CallbackPlaybook): Promise<void> {
   if (!isEnabled(AGENT_ID)) return;
   if (event.kind !== 'call.inbound') return;
 
@@ -114,7 +83,6 @@ export async function runCallbackCapture(
   const { contactId } = event;
   const start = Date.now();
 
-  // Idempotency — skip if we already processed this call
   const contact = await contactBot(contactId) as Record<string, any>;
   if (contact.customFields?.last_processed_callback === callId) {
     auditLog({
@@ -131,7 +99,6 @@ export async function runCallbackCapture(
   const duration = (event.raw?.duration as number) || 0;
   const notes = (event.raw?.notes as string) || '';
 
-  // Mark call as processed before delegating
   await fieldBot(contactId, { last_processed_callback: callId });
 
   if (disposition === 'short-call') {

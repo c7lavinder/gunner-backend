@@ -2,14 +2,14 @@
  * AM Assistant (Acquisition Manager)
  *
  * Fires on: call.completed for walkthrough or offer calls
- * Does: classifies outcome (no-show, accepted, pending, rejected), routes accordingly.
- * Routes: UC stage, Offer stage, bucket placement, AM follow-up task.
+ * Does: classifies outcome, routes accordingly.
  */
 
 import { GunnerEvent } from '../core/event-bus';
 import { auditLog } from '../core/audit';
 import { isEnabled } from '../core/toggles';
 import { stageBot, taskBot, noteBot, tagBot } from '../bots';
+import { getTag } from '../config/helpers';
 
 const AGENT_ID = 'am-assistant';
 
@@ -18,59 +18,47 @@ type CallType = 'walkthrough' | 'offer-call';
 
 interface AMPlaybook {
   offerStageId: string;
-  ucStageId: string;         // Under Contract
+  ucStageId: string;
   followUp1MonthStageId: string;
   deadStageId: string;
   walkthroughStageIds: string[];
   offerCallStageIds: string[];
-  amTaskDueHours: number;    // 24
+  amTaskDueHours: number;
 }
 
-/**
- * Classify call outcome from call data.
- * TODO: replace with AI classification from transcript.
- */
 function classifyOutcome(event: GunnerEvent): Outcome {
   const duration = (event.raw?.duration as number) || 0;
   const disposition = ((event.raw?.disposition as string) || '').toLowerCase();
   const notes = ((event.raw?.notes as string) || '').toLowerCase();
 
-  if (duration < 30 || disposition.includes('no-show') || disposition.includes('no answer')) {
-    return 'no-show';
-  }
-  if (disposition.includes('accepted') || notes.includes('accepted') || notes.includes('signed')) {
-    return 'accepted';
-  }
-  if (disposition.includes('rejected') || notes.includes('not interested') || notes.includes('declined')) {
-    return 'rejected';
-  }
+  if (duration < 30 || disposition.includes('no-show') || disposition.includes('no answer')) return 'no-show';
+  if (disposition.includes('accepted') || notes.includes('accepted') || notes.includes('signed')) return 'accepted';
+  if (disposition.includes('rejected') || notes.includes('not interested') || notes.includes('declined')) return 'rejected';
   return 'pending';
 }
-
-// --- Outcome handlers (CRM writes live here, not in the router) ---
 
 async function handleAccepted(contactId: string, callType: CallType, playbook: AMPlaybook) {
   await stageBot(contactId, playbook.ucStageId);
   await noteBot(contactId, `Offer ACCEPTED after ${callType}. Moved to Under Contract.`);
-  await tagBot(contactId, 'offer-accepted');
+  await tagBot(contactId, ['offer-accepted']);
 }
 
 async function handleNoShow(contactId: string, callType: CallType) {
-  const due = new Date(Date.now() + 2 * 60 * 60 * 1000); // 2h
+  const due = new Date(Date.now() + 2 * 60 * 60 * 1000);
   await taskBot(contactId, {
     title: `${callType.toUpperCase()} no-show — reschedule`,
-    description: `Seller did not show for ${callType}. Attempt to reschedule.`,
+    body: `Seller did not show for ${callType}. Attempt to reschedule.`,
     dueDate: due.toISOString(),
     assignedTo: 'am',
   });
   await noteBot(contactId, `No-show for ${callType}. Reschedule task created.`);
-  await tagBot(contactId, 'no-show');
+  await tagBot(contactId, ['no-show']);
 }
 
 async function handleRejected(contactId: string, callType: CallType, playbook: AMPlaybook) {
   await stageBot(contactId, playbook.followUp1MonthStageId);
   await noteBot(contactId, `Offer REJECTED after ${callType}. Moved to 1-month follow-up.`);
-  await tagBot(contactId, 'offer-rejected');
+  await tagBot(contactId, ['offer-rejected']);
 }
 
 async function handlePending(contactId: string, callType: CallType, playbook: AMPlaybook) {
@@ -80,7 +68,7 @@ async function handlePending(contactId: string, callType: CallType, playbook: AM
     await stageBot(contactId, playbook.offerStageId);
     await taskBot(contactId, {
       title: 'Walkthrough complete — send offer',
-      description: `Walkthrough done, no same-day offer. Prepare and send offer within ${playbook.amTaskDueHours}h.`,
+      body: `Walkthrough done, no same-day offer. Prepare and send offer within ${playbook.amTaskDueHours}h.`,
       dueDate: due.toISOString(),
       assignedTo: 'am',
     });
@@ -88,15 +76,13 @@ async function handlePending(contactId: string, callType: CallType, playbook: AM
   } else {
     await taskBot(contactId, {
       title: 'Offer call — seller thinking. Follow up.',
-      description: `Offer presented, seller wants time. Follow up within ${playbook.amTaskDueHours}h.`,
+      body: `Offer presented, seller wants time. Follow up within ${playbook.amTaskDueHours}h.`,
       dueDate: due.toISOString(),
       assignedTo: 'am',
     });
     await noteBot(contactId, `Offer pending after offer call. AM follow-up task created.`);
   }
 }
-
-// --- Router ---
 
 export async function runAMAssistant(
   event: GunnerEvent,

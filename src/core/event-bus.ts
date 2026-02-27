@@ -10,8 +10,30 @@ export type EventKind =
   | 'inbound.message'
   | 'call.completed'
   | 'call.inbound'
-  | 'lead.new'       // new lead detected and contact data fetched — downstream agents fire here
-  | 'lead.scored';   // lead has been scored — tagging/noting/tasking fire here
+  | 'lead.new'
+  | 'lead.scored'
+  | 'lead.dnc'
+  | 'lead.re-engage'
+  | 'lead.responded'
+  | 'lead.ghosted'
+  | 'call.appointment'
+  | 'call.conversation'
+  | 'call.voicemail'
+  | 'call.no-answer'
+  | 'call.wrong-number'
+  | 'coaching.flag'
+  | 'contract.package.tc'
+  | 'contract.package.dispo'
+  | 'drip.step-sent'
+  | 'followup.closer'
+  | 'offer.reply'
+  | 'offer.accepted'
+  | 'offer.countered'
+  | 'offer.rejected'
+  | 'offer.stall'
+  | 'offer.chase.scheduled'
+  | 'bucket.reeval'
+  | 'post_close.scheduled';
 
 export interface GunnerEvent {
   kind: EventKind;
@@ -22,10 +44,12 @@ export interface GunnerEvent {
   stageName?: string;
   callId?: string;
   messageId?: string;
-  contact?: Record<string, unknown>; // populated by new-lead-pipeline for downstream agents
+  contact?: Record<string, unknown>;
   score?: { tier: 'HOT' | 'WARM'; score: number; factors: Array<{ name: string; passed: boolean; reason: string }> };
+  message?: string;
   raw?: Record<string, unknown>;
-  receivedAt: number;
+  metadata?: Record<string, unknown>;
+  receivedAt?: number;
 }
 
 type Handler = (event: GunnerEvent) => Promise<void>;

@@ -2,10 +2,7 @@
  * Dispo Packager Agent
  *
  * Fires on: contract.package.dispo
- * Does:
- *   1. Pulls ARV, repairs, contract price, deal summary
- *   2. AI-writes a deal package note via noteBot
- *   3. Creates new opportunity in Dispo Pipeline via stageBot
+ * Does: pulls deal data, writes note, creates dispo opportunity
  */
 
 import { GunnerEvent, emit } from '../core/event-bus';
@@ -24,46 +21,31 @@ export async function runDispoPackager(event: GunnerEvent): Promise<void> {
   const { contactId, opportunityId, tenantId } = event;
   const start = Date.now();
   const playbook = await loadPlaybook(tenantId);
-  const dispoPipelineId = playbook?.pipelines?.dispo ?? 'dispo';
   const dispoStage = playbook?.stages?.dispoNew ?? 'New Deal';
 
-  // Pull contact/deal data
   const contact = await contactBot(contactId);
-  const cf = contact?.customFields ?? {};
+  const cf = (contact as any)?.customFields ?? {};
 
   const arv = cf.arv ?? 'N/A';
   const repairs = cf.repair_estimate ?? 'N/A';
   const contractPrice = cf.contract_price ?? 'N/A';
   const propertyAddress = cf.property_address ?? 'N/A';
+  const spread = arv !== 'N/A' && contractPrice !== 'N/A'
+    ? `$${Number(arv) - Number(contractPrice)}`
+    : 'N/A';
 
   if (!isDryRun()) {
-    // AI-write deal package note
-    await noteBot({
-      contactId,
-      opportunityId,
-      tenantId,
-      templateKey: 'dispo_deal_package',
-      context: {
-        propertyAddress,
-        arv,
-        repairs,
-        contractPrice,
-        spread: arv !== 'N/A' && contractPrice !== 'N/A'
-          ? `$${Number(arv) - Number(contractPrice)}`
-          : 'N/A',
-        dealSummary: cf.deal_summary ?? '',
-      },
-    });
+    await noteBot(contactId, [
+      `📦 Dispo Deal Package`,
+      `Property: ${propertyAddress}`,
+      `ARV: ${arv} | Repairs: ${repairs} | Contract: ${contractPrice} | Spread: ${spread}`,
+      cf.deal_summary ? `Summary: ${cf.deal_summary}` : '',
+    ].filter(Boolean).join('\n'));
 
-    // Create new opportunity in Dispo Pipeline
-    await stageBot({
-      contactId,
-      tenantId,
-      pipelineId: dispoPipelineId,
-      stageName: dispoStage,
-      createOpportunity: true,
-      opportunityName: `Dispo: ${propertyAddress}`,
-    });
+    // Stage move for dispo pipeline — using opportunityId
+    if (opportunityId) {
+      await stageBot(opportunityId, dispoStage);
+    }
   }
 
   auditLog({
@@ -71,7 +53,7 @@ export async function runDispoPackager(event: GunnerEvent): Promise<void> {
     contactId,
     opportunityId,
     action: 'dispo.packaged',
-    result: 'note_and_opportunity_created',
+    result: 'success',
     durationMs: Date.now() - start,
   });
 }

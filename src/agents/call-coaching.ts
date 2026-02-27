@@ -3,7 +3,6 @@
  *
  * Fires on: every LM call (invoked by lm-assistant)
  * Does: scores call A-F across 6 factors, writes summary note to CRM via noteBot
- * Does NOT: store scores in CRM (scores stay in Gunner)
  */
 
 import { GunnerEvent } from '../core/event-bus';
@@ -11,7 +10,7 @@ import { auditLog } from '../core/audit';
 import { isEnabled } from '../core/toggles';
 import { isDryRun } from '../core/dry-run';
 import { noteBot } from '../bots/note';
-import { getPlaybook } from '../core/playbook';
+import { loadPlaybook } from '../config';
 
 const AGENT_ID = 'call-coaching';
 
@@ -53,7 +52,7 @@ export async function runCallCoaching(event: CallEvent): Promise<CallScore | nul
 
   const { contactId, opportunityId, callId, transcript } = event;
   const start = Date.now();
-  const playbook = getPlaybook(event.tenantId);
+  const playbook = await loadPlaybook(event.tenantId);
 
   if (!transcript) {
     auditLog({
@@ -61,20 +60,17 @@ export async function runCallCoaching(event: CallEvent): Promise<CallScore | nul
       contactId,
       opportunityId,
       action: 'coaching:skipped',
-      result: 'no-transcript',
+      result: 'skipped',
+      reason: 'no-transcript',
       durationMs: Date.now() - start,
     });
     return null;
   }
 
-  // Score the call across all 6 factors
   const score = await scoreCall(callId, contactId, transcript, playbook);
 
-  // Write summary note to CRM (not the scores — those stay in Gunner)
   if (!isDryRun()) {
-    await noteBot(contactId, {
-      body: `📞 Call Summary (${callId})\n${score.summary}`,
-    });
+    await noteBot(contactId, `📞 Call Summary (${callId})\n${score.summary}`);
   }
 
   auditLog({
@@ -82,10 +78,9 @@ export async function runCallCoaching(event: CallEvent): Promise<CallScore | nul
     contactId,
     opportunityId,
     action: 'coaching:scored',
-    result: score.overall,
-    meta: { callId, factors: score.factors.length, flags: score.coachingFlags },
+    result: 'success',
+    metadata: { callId, overall: score.overall, factors: score.factors.length, flags: score.coachingFlags },
     durationMs: Date.now() - start,
-    dryRun: isDryRun(),
   });
 
   return score;
@@ -100,7 +95,6 @@ async function scoreCall(
   const factors: ScoringFactor[] = [];
   const coachingFlags: string[] = [];
 
-  // Each factor is scored by intelligence layer
   for (const factorName of SCORING_FACTORS) {
     const criteria = playbook?.coaching?.factors?.[factorName];
     const result = await evaluateFactor(factorName, transcript, criteria);
@@ -118,17 +112,15 @@ async function scoreCall(
 
 async function evaluateFactor(
   name: string,
-  transcript: string,
+  _transcript: string,
   _criteria: any,
 ): Promise<ScoringFactor> {
-  // TODO: wire to Gemini intelligence service
   return { name, grade: 'B', notes: 'pending AI scoring integration' };
 }
 
 function computeOverall(factors: ScoringFactor[]): Grade {
   const gradeValues: Record<Grade, number> = { A: 4, B: 3, C: 2, D: 1, F: 0 };
-  const avg =
-    factors.reduce((sum, f) => sum + gradeValues[f.grade], 0) / factors.length;
+  const avg = factors.reduce((sum, f) => sum + gradeValues[f.grade], 0) / factors.length;
   if (avg >= 3.5) return 'A';
   if (avg >= 2.5) return 'B';
   if (avg >= 1.5) return 'C';

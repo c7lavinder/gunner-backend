@@ -125,7 +125,7 @@ export async function runRealityCheck(
       agent: AGENT_ID,
       contactId: issue.contactId,
       action: `system-issue:${issue.issueType}`,
-      result: 'flagged',
+      result: 'error',
       metadata: { details: issue.details },
     });
   }
@@ -135,7 +135,7 @@ export async function runRealityCheck(
       agent: AGENT_ID,
       contactId: issue.contactId,
       action: `team-issue:${issue.issueType}`,
-      result: 'flagged',
+      result: 'error',
       metadata: { details: issue.details, assignee: issue.assignee },
     });
   }

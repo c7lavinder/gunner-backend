@@ -3,10 +3,6 @@
  *
  * Fires on: cron (every 15 min)
  * Does: monitors overdue tasks, escalates by SLA tier
- *   Yellow — flag task as overdue
- *   Orange — alert escalation contact
- *   Red — critical escalation, notify leadership
- * Cooldown windows prevent spam.
  */
 
 import { GunnerEvent } from '../core/event-bus';
@@ -41,7 +37,6 @@ const DEFAULT_TIERS: TierConfig[] = [
   { thresholdMins: 480, tier: 'red' },
 ];
 
-// In-memory cooldown map (per-task per-tier)
 const cooldowns = new Map<string, number>();
 
 function isOnCooldown(taskId: string, tier: EscalationTier, cooldownMins: number): boolean {
@@ -74,7 +69,7 @@ export async function runAccountabilityAgent(event: GunnerEvent): Promise<void> 
   const escalationContact = playbook?.roles?.escalationContact ?? playbook?.roles?.acquisitionManager ?? 'am';
   const leadership = playbook?.roles?.leadership ?? escalationContact;
 
-  const overdueTasks: OverdueTask[] = event.metadata?.overdueTasks ?? [];
+  const overdueTasks: OverdueTask[] = (event.metadata as any)?.overdueTasks ?? [];
 
   for (const task of overdueTasks) {
     const tier = resolveTier(task.overdueMinutes, tiers);
@@ -84,32 +79,22 @@ export async function runAccountabilityAgent(event: GunnerEvent): Promise<void> 
     if (!isDryRun()) {
       switch (tier) {
         case 'yellow':
-          await tagBot({
-            contactId: task.contactId,
-            tenantId,
-            tags: ['overdue-task'],
-          });
+          await tagBot(task.contactId, ['overdue-task']);
           break;
 
         case 'orange':
-          await taskBot({
-            contactId: task.contactId,
-            opportunityId: task.opportunityId,
-            tenantId,
+          await taskBot(task.contactId, {
             title: `⚠️ OVERDUE (${task.overdueMinutes}min): ${task.title}`,
-            assignTo: escalationContact,
-            dueMins: 30,
+            assignedTo: escalationContact,
+            dueDate: new Date(Date.now() + 30 * 60_000).toISOString(),
           });
           break;
 
         case 'red':
-          await taskBot({
-            contactId: task.contactId,
-            opportunityId: task.opportunityId,
-            tenantId,
+          await taskBot(task.contactId, {
             title: `🚨 CRITICAL OVERDUE (${task.overdueMinutes}min): ${task.title}`,
-            assignTo: leadership,
-            dueMins: 15,
+            assignedTo: leadership,
+            dueDate: new Date(Date.now() + 15 * 60_000).toISOString(),
           });
           break;
       }
@@ -122,7 +107,8 @@ export async function runAccountabilityAgent(event: GunnerEvent): Promise<void> 
       contactId: task.contactId,
       opportunityId: task.opportunityId,
       action: `escalation.${tier}`,
-      result: `overdue_${task.overdueMinutes}min`,
+      result: 'success',
+      metadata: { overdueMinutes: task.overdueMinutes },
       durationMs: Date.now() - start,
     });
   }

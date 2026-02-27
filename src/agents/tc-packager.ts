@@ -4,7 +4,7 @@
  * Fires on: contract.package.tc
  * Does:
  *   1. Pulls seller info, contract price, closing date, access instructions
- *   2. AI-writes a TC handoff note via noteBot
+ *   2. Writes a TC handoff note via noteBot
  *   3. Flags missing fields with a task
  */
 
@@ -12,8 +12,7 @@ import { GunnerEvent } from '../core/event-bus';
 import { auditLog } from '../core/audit';
 import { isEnabled } from '../core/toggles';
 import { isDryRun } from '../core/dry-run';
-import { loadPlaybook } from '../config/loader';
-import { getFieldName, getNoteTemplate } from '../config/helpers';
+import { loadPlaybook, getFieldName } from '../config';
 import { contactBot } from '../bots/contact';
 import { noteBot, taskBot } from '../bots';
 
@@ -35,62 +34,50 @@ export async function runTCPackager(event: GunnerEvent): Promise<void> {
   const { contactId, opportunityId, tenantId } = event;
   const start = Date.now();
   const playbook = await loadPlaybook(tenantId);
-  const tc = playbook?.roles?.transactionCoordinator ?? 'tc';
-  const am = playbook?.roles?.acquisitionManager ?? 'am';
 
-  // Resolve custom field names and note template from playbook
-  const [
-    sellerNameField,
-    propertyAddressField,
-    contractPriceField,
-    closingDateField,
-    accessField,
-    tcHandoffTemplate,
-  ] = await Promise.all([
-    getFieldName(tenantId, 'seller_name'),
-    getFieldName(tenantId, 'property_address'),
-    getFieldName(tenantId, 'contract_price'),
-    getFieldName(tenantId, 'closing_date'),
-    getFieldName(tenantId, 'access_instructions'),
-    getNoteTemplate(tenantId, 'tc_handoff'),
-  ]);
+  // Resolve custom field names from playbook
+  const sellerNameField = await getFieldName(tenantId, 'seller_name');
+  const propertyAddressField = await getFieldName(tenantId, 'property_address');
+  const contractPriceField = await getFieldName(tenantId, 'contract_price');
+  const closingDateField = await getFieldName(tenantId, 'closing_date');
+  const accessField = await getFieldName(tenantId, 'access_instructions');
 
-  // Pull contact/deal data via contactBot
+  // Pull contact/deal data
   const contact = await contactBot(contactId);
+  const cf = (contact?.customFields ?? {}) as Record<string, string>;
 
   // Check for missing fields
   const requiredFields = playbook?.tcPackager?.requiredFields ?? REQUIRED_FIELDS;
   const missing = requiredFields.filter(
-    (f: string) => !contact?.customFields?.[f] && !contact?.[f],
+    (f: string) => !cf[f] && !(contact as any)?.[f],
   );
 
   if (!isDryRun()) {
-    // AI-write TC handoff note
-    await noteBot({
-      contactId,
-      opportunityId,
-      tenantId,
-      template: tcHandoffTemplate,
-      context: {
-        sellerName: contact?.name ?? contact?.customFields?.[sellerNameField] ?? 'Unknown',
-        propertyAddress: contact?.customFields?.[propertyAddressField] ?? 'N/A',
-        contractPrice: contact?.customFields?.[contractPriceField] ?? 'N/A',
-        closingDate: contact?.customFields?.[closingDateField] ?? 'N/A',
-        accessInstructions: contact?.customFields?.[accessField] ?? 'N/A',
-        sellerPhone: contact?.phone ?? 'N/A',
-        sellerEmail: contact?.email ?? 'N/A',
-      },
-    });
+    // Write TC handoff note
+    const sellerName = contact?.name ?? cf[sellerNameField] ?? 'Unknown';
+    const propertyAddress = cf[propertyAddressField] ?? 'N/A';
+    const contractPrice = cf[contractPriceField] ?? 'N/A';
+    const closingDate = cf[closingDateField] ?? 'N/A';
+    const accessInstructions = cf[accessField] ?? 'N/A';
 
-    // Flag missing fields
+    await noteBot(contactId, [
+      `📋 TC HANDOFF PACKAGE`,
+      `Seller: ${sellerName}`,
+      `Property: ${propertyAddress}`,
+      `Contract Price: ${contractPrice}`,
+      `Closing Date: ${closingDate}`,
+      `Access: ${accessInstructions}`,
+      `Phone: ${contact?.phone ?? 'N/A'}`,
+      `Email: ${contact?.email ?? 'N/A'}`,
+      missing.length > 0 ? `⚠️ Missing: ${missing.join(', ')}` : '',
+    ].filter(Boolean).join('\n'));
+
+    // Flag missing fields with AM task
     if (missing.length > 0) {
-      await taskBot({
-        contactId,
-        opportunityId,
-        tenantId,
+      await taskBot(contactId, {
         title: `TC Package incomplete — missing: ${missing.join(', ')}`,
-        assignTo: am,
-        dueMins: 60,
+        assignedTo: playbook?.roles?.acquisitionManager ?? 'am',
+        dueDate: new Date(Date.now() + 60 * 60_000).toISOString(),
       });
     }
   }
@@ -100,7 +87,8 @@ export async function runTCPackager(event: GunnerEvent): Promise<void> {
     contactId,
     opportunityId,
     action: 'tc.packaged',
-    result: missing.length > 0 ? `missing:${missing.join(',')}` : 'complete',
+    result: missing.length > 0 ? 'error' : 'success',
     durationMs: Date.now() - start,
+    metadata: missing.length > 0 ? { missing } : undefined,
   });
 }

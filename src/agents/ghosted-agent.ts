@@ -2,7 +2,7 @@
  * Ghosted Agent
  *
  * Fires on: lead.ghosted (Day 14 with no real conversation)
- * Does: moves to Ghosted stage, applies tag, checks off Lead IQ task
+ * Does: moves to Ghosted stage, applies tag
  * Does NOT: stop the drip — drip keeps running
  */
 
@@ -12,13 +12,12 @@ import { isEnabled } from '../core/toggles';
 import { isDryRun } from '../core/dry-run';
 import { stageBot } from '../bots/stage';
 import { tagBot } from '../bots/tag';
-import { taskBot } from '../bots/task';
-import { getStageId, getTag, getTaskTemplate } from '../config';
+import { getStageId, getTag } from '../config';
 
 const AGENT_ID = 'ghosted-agent';
 
 interface GhostedEvent extends GunnerEvent {
-  dayOffset: number;
+  dayOffset?: number;
   currentStage?: string;
 }
 
@@ -28,31 +27,26 @@ export async function runGhostedAgent(event: GhostedEvent): Promise<void> {
   const { contactId, opportunityId, tenantId } = event;
   const start = Date.now();
 
-  // Guard: already ghosted
   const ghostedStage = await getStageId(tenantId, 'sales', 'ghosted') ?? 'Ghosted';
+
+  // Guard: already ghosted
   if (event.currentStage === ghostedStage) {
     auditLog({
       agent: AGENT_ID,
       contactId,
       opportunityId,
       action: 'ghosted:skipped',
-      result: 'already-ghosted',
+      result: 'skipped',
       durationMs: Date.now() - start,
     });
     return;
   }
 
-  if (!isDryRun()) {
-    // Move to Ghosted stage
-    await stageBot(opportunityId, { stage: ghostedStage });
+  if (!isDryRun() && opportunityId) {
+    await stageBot(opportunityId, ghostedStage);
 
-    // Apply ghosted tag
     const ghostedTag = await getTag(tenantId, 'ghosted');
-    await tagBot(contactId, { tag: ghostedTag });
-
-    // Check off Lead IQ task
-    const leadIqTask = (await getTaskTemplate(tenantId, 'leadIq'))?.title ?? 'Lead IQ';
-    await taskBot(contactId, { action: 'complete', taskName: leadIqTask });
+    await tagBot(contactId, [ghostedTag]);
   }
 
   auditLog({
@@ -61,8 +55,7 @@ export async function runGhostedAgent(event: GhostedEvent): Promise<void> {
     opportunityId,
     action: 'ghosted:processed',
     result: 'success',
-    meta: { dayOffset: event.dayOffset },
+    metadata: { dayOffset: event.dayOffset },
     durationMs: Date.now() - start,
-    dryRun: isDryRun(),
   });
 }

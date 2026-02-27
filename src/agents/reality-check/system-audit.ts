@@ -1,11 +1,11 @@
 /**
  * Reality Check — System Audit
  *
- * One job: check whether automations (scoring, outreach, tagging) actually fired.
- * All GHL reads go through bots.
+ * Checks whether automations (scoring, outreach, tagging) actually fired.
+ * Uses GHL API directly for read operations (auditing only).
  */
 
-import { contactBot, taskBot, noteBot } from '../../bots';
+import { ghlGet } from '../../integrations/ghl/client';
 import type { SystemIssue } from './types';
 
 function hoursAgo(ms: number): string {
@@ -22,18 +22,16 @@ export async function runSystemAudit(
   const issues: SystemIssue[] = [];
   const now = Date.now();
 
-  // Fetch recent leads via contactBot (read-only bot)
-  const recentLeads = await contactBot.search({
-    query: '',
-    filters: { dateAdded: { gte: new Date(windowStart).toISOString() } },
-  }).catch(() => [] as any[]);
+  // Fetch recent leads via GHL search
+  const res = await ghlGet<any>(`/contacts/search?query=&dateAdded_gte=${new Date(windowStart).toISOString()}`).catch(() => ({ contacts: [] }));
+  const recentLeads: any[] = res?.contacts ?? [];
 
   for (const lead of recentLeads) {
     const contactId: string = lead.id;
+    const cf = lead.customFields ?? {};
 
-    // 1. No score assigned → scoring agent didn't fire
-    const hasScore = lead.customFields?.lead_score != null;
-    if (!hasScore) {
+    // 1. No score assigned
+    if (cf.lead_score == null) {
       issues.push({
         contactId,
         issueType: 'no-score-assigned',
@@ -42,9 +40,8 @@ export async function runSystemAudit(
       });
     }
 
-    // 2. No initial text → outreach agent didn't fire
-    const hasInitialText = lead.customFields?.initial_sms_sent === 'true';
-    if (!hasInitialText) {
+    // 2. No initial text
+    if (cf.initial_sms_sent !== 'true') {
       issues.push({
         contactId,
         issueType: 'no-initial-outreach',
@@ -53,11 +50,9 @@ export async function runSystemAudit(
       });
     }
 
-    // 3. Pipeline stalled — in stage beyond SLA with no activity
+    // 3. Pipeline stalled
     const stageSlaMs = (playbook?.sla?.maxStageTimeHours ?? 48) * 3_600_000;
-    const stageEnteredAt: number | null = lead.customFields?.stage_entered_at
-      ? new Date(lead.customFields.stage_entered_at).getTime()
-      : null;
+    const stageEnteredAt = cf.stage_entered_at ? new Date(cf.stage_entered_at).getTime() : null;
     if (stageEnteredAt && now - stageEnteredAt > stageSlaMs) {
       issues.push({
         contactId,
@@ -68,7 +63,8 @@ export async function runSystemAudit(
     }
 
     // 4. Duplicate tasks
-    const tasks = await taskBot.getByContact(contactId).catch(() => [] as any[]);
+    const tasksRes = await ghlGet<any>(`/contacts/${contactId}/tasks`).catch(() => ({ tasks: [] }));
+    const tasks: any[] = tasksRes?.tasks ?? [];
     const titleCounts = new Map<string, number>();
     for (const t of tasks) {
       titleCounts.set(t.title, (titleCounts.get(t.title) ?? 0) + 1);
@@ -78,19 +74,20 @@ export async function runSystemAudit(
         issues.push({
           contactId,
           issueType: 'duplicate-tasks',
-          details: `Task "${title}" appears ${count} times. Possible duplicate bug.`,
+          details: `Task "${title}" appears ${count} times.`,
           detectedAt: now,
         });
       }
     }
 
-    // 5. Stage moved but no corresponding note
-    const notes = await noteBot.getByContact(contactId).catch(() => [] as any[]);
+    // 5. Stage moved but no notes
+    const notesRes = await ghlGet<any>(`/contacts/${contactId}/notes`).catch(() => ({ notes: [] }));
+    const notes: any[] = notesRes?.notes ?? [];
     if (stageEnteredAt && notes.length === 0) {
       issues.push({
         contactId,
         issueType: 'missing-stage-note-or-tag',
-        details: `Stage changed but no notes logged. Agent may have skipped steps.`,
+        details: `Stage changed but no notes logged.`,
         detectedAt: now,
       });
     }

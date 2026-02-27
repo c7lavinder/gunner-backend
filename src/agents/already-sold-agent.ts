@@ -4,12 +4,6 @@
  * Fires on: call outcome "sold" (via lm-assistant)
  * Does: audits transcript for UC vs Sold distinction, routes accordingly
  * Does NOT: touch CRM directly — uses bots
- *
- * Logic:
- *   - If LM asked "under contract or fully sold?" → route based on answer
- *     - Under Contract → re-engage (emit)
- *     - Fully Sold → move to Lost
- *   - If LM didn't ask → coaching flag + default to Lost with verification task
  */
 
 import { GunnerEvent, emit } from '../core/event-bus';
@@ -36,7 +30,7 @@ export async function runAlreadySoldAgent(event: SoldEvent): Promise<void> {
 
   const { contactId, opportunityId, tenantId, callId, transcript } = event;
   const start = Date.now();
-  const playbook = getPlaybook(tenantId);
+  const playbook = await loadPlaybook(tenantId);
 
   // Guard: need transcript to audit
   if (!transcript) {
@@ -45,7 +39,8 @@ export async function runAlreadySoldAgent(event: SoldEvent): Promise<void> {
       contactId,
       opportunityId,
       action: 'sold:skipped',
-      result: 'no-transcript',
+      result: 'skipped',
+      reason: 'no-transcript',
       durationMs: Date.now() - start,
     });
     return;
@@ -62,36 +57,31 @@ export async function runAlreadySoldAgent(event: SoldEvent): Promise<void> {
       tenantId,
       contactId,
       callId,
-      flag: 'missing-uc-question',
-      message: 'LM did not ask "under contract or fully sold?"',
+      metadata: { flag: 'missing-uc-question', message: 'LM did not ask "under contract or fully sold?"' },
+      receivedAt: Date.now(),
     });
   }
 
   if (!isDryRun()) {
     if (classification === 'under-contract') {
-      // UC → re-engage
-      await noteBot(contactId, {
-        body: `🏠 Property under contract (not fully sold). Re-engaging. Call: ${callId}`,
-      });
+      await noteBot(contactId, `🏠 Property under contract (not fully sold). Re-engaging. Call: ${callId}`);
       await emit({
         kind: 'lead.re-engage',
         tenantId,
         contactId,
         opportunityId,
-        reason: 'under-contract',
+        metadata: { reason: 'under-contract' },
+        receivedAt: Date.now(),
       });
     } else {
-      // Fully sold or unclear → Lost
       const lostStage = playbook?.stages?.lost ?? 'Lost';
-      await stageBot(opportunityId, { stage: lostStage });
-      await noteBot(contactId, {
-        body: `❌ Property already sold (${classification}). Moved to Lost. Call: ${callId}`,
-      });
+      await stageBot(opportunityId!, lostStage);
+      await noteBot(contactId, `❌ Property already sold (${classification}). Moved to Lost. Call: ${callId}`);
     }
 
     // Always create county records verification task
     const verifyTask = playbook?.tasks?.countyVerification ?? 'Verify county records - property sold status';
-    await taskBot(contactId, { action: 'create', taskName: verifyTask });
+    await taskBot(contactId, { title: verifyTask });
   }
 
   auditLog({
@@ -99,10 +89,9 @@ export async function runAlreadySoldAgent(event: SoldEvent): Promise<void> {
     contactId,
     opportunityId,
     action: `sold:${classification}`,
-    result: askedUcQuestion ? 'uc-question-asked' : 'uc-question-missing',
-    meta: { callId, classification, askedUcQuestion },
+    result: askedUcQuestion ? 'success' : 'error',
+    metadata: { callId, classification, askedUcQuestion },
     durationMs: Date.now() - start,
-    dryRun: isDryRun(),
   });
 }
 

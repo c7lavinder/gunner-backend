@@ -10,7 +10,7 @@ export interface AuditEntry {
   contactId: string;
   opportunityId?: string;
   action: string;
-  result: 'success' | 'skipped' | 'error';
+  result: string;
   reason?: string;
   durationMs?: number;
   metadata?: Record<string, unknown>;

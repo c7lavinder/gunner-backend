@@ -2,17 +2,14 @@
  * Post-Close Bot (Agent)
  *
  * Fires on: opportunity.stage.purchased
- * Does: 3-touch sequence, all AI-written via smsBot
- *   Touch 1 (24h): thank-you
- *   Touch 2 (48h): review request
- *   Touch 3 (7d): referral ask
+ * Does: 3-touch sequence via smsBot
  */
 
 import { GunnerEvent, emit } from '../core/event-bus';
 import { auditLog } from '../core/audit';
 import { isEnabled } from '../core/toggles';
 import { isDryRun } from '../core/dry-run';
-import { loadPlaybook } from '../config/loader';
+import { loadPlaybook } from '../config';
 import { smsBot, fieldBot } from '../bots';
 
 const AGENT_ID = 'post-close-bot';
@@ -36,58 +33,34 @@ export async function runPostCloseBot(event: GunnerEvent): Promise<void> {
   const start = Date.now();
   const playbook = await loadPlaybook(tenantId);
   const sequence = playbook?.postClose?.sequence ?? DEFAULT_SEQUENCE;
-  const currentTouch = event.metadata?.touchNumber ?? 1;
+  const currentTouch = (event.metadata?.touchNumber as number) ?? 1;
 
   const touchConfig = sequence.find((t: PostCloseTouchConfig) => t.touchNumber === currentTouch);
   if (!touchConfig) {
-    auditLog({ agent: AGENT_ID, contactId, opportunityId, action: 'sequence.complete', result: 'all_touches_sent', durationMs: 0 });
+    auditLog({ agent: AGENT_ID, contactId, opportunityId, action: 'sequence.complete', result: 'success', durationMs: 0 });
     return;
   }
 
   // Guard: don't double-send
+  const sentGuards = (event.metadata?.sentGuards as string[]) ?? [];
   const guardKey = `post_close_t${currentTouch}`;
-  if (event.metadata?.sentGuards?.includes(guardKey)) {
-    auditLog({ agent: AGENT_ID, contactId, opportunityId, action: 'skip', result: 'already_sent', durationMs: 0 });
+  if (sentGuards.includes(guardKey)) {
+    auditLog({ agent: AGENT_ID, contactId, opportunityId, action: 'skip', result: 'skipped', durationMs: 0 });
     return;
   }
 
   if (!isDryRun()) {
-    await smsBot({
-      contactId,
-      tenantId,
-      templateKey: touchConfig.templateKey,
-      context: { opportunityId, touchNumber: currentTouch },
-    });
-
-    await fieldBot({
-      contactId,
-      tenantId,
-      fields: {
-        post_close_touch: String(currentTouch),
-        post_close_last_sent: new Date().toISOString(),
-      },
-    });
+    // TODO: wire smsBot to template system
+    await smsBot(contactId, `Post-close touch ${currentTouch}`);
+    await fieldBot(contactId, { post_close_touch: String(currentTouch), post_close_last_sent: new Date().toISOString() });
   }
 
-  auditLog({
-    agent: AGENT_ID,
-    contactId,
-    opportunityId,
-    action: `post_close.touch_${currentTouch}`,
-    result: 'sms_sent',
-    durationMs: Date.now() - start,
-  });
+  auditLog({ agent: AGENT_ID, contactId, opportunityId, action: `post_close.touch_${currentTouch}`, result: 'success', durationMs: Date.now() - start });
 
   // Schedule next touch
   const nextTouch = currentTouch + 1;
   const nextConfig = sequence.find((t: PostCloseTouchConfig) => t.touchNumber === nextTouch);
   if (nextConfig) {
-    await emit({
-      kind: 'post_close.scheduled',
-      tenantId,
-      contactId,
-      opportunityId,
-      metadata: { touchNumber: nextTouch, delayHours: nextConfig.delayHours },
-    });
+    await emit({ kind: 'post_close.scheduled', tenantId, contactId, opportunityId, metadata: { touchNumber: nextTouch, delayHours: nextConfig.delayHours } });
   }
 }

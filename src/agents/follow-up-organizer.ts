@@ -9,7 +9,8 @@
 
 import { auditLog } from '../core/audit';
 import { isEnabled } from '../core/toggles';
-import { contactBot, stageBot } from '../bots';
+import { stageBot } from '../bots';
+import { ghlGet } from '../integrations/ghl/client';
 import { runFollowUpMessenger } from './follow-up-messenger';
 
 const AGENT_ID = 'follow-up-organizer';
@@ -56,11 +57,12 @@ async function processBucket(
   bucket: FollowUpBucket,
   touchField: string
 ): Promise<void> {
-  // contactBot fetches contacts in a given stage
-  const contacts = (await contactBot.listByStage(bucket.stageId)) as Array<{
+  // Fetch contacts in a given stage via GHL search
+  const res = await ghlGet<any>(`/contacts/search?pipelineStageId=${bucket.stageId}`);
+  const contacts = ((res?.contacts ?? []) as Array<{
     id: string;
     customFields: Record<string, string>;
-  }>;
+  }>);
 
   const now = Date.now();
 
