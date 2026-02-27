@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gunner V2 — Real Estate Wholesaling Playbook</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0f172a;--card:#1e293b;--border:#334155;--text:#e2e8f0;--muted:#94a3b8;--accent:#38bdf8;--green:#22c55e;--orange:#f59e0b;--red:#ef4444;--purple:#a78bfa;--pink:#f472b6}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;padding:0 1rem 4rem}
+h1{font-size:2rem;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+h2{font-size:1.4rem;font-weight:700;margin-bottom:1rem;color:var(--accent);display:flex;align-items:center;gap:.5rem}
+h2::before{content:'';width:4px;height:1.4rem;background:var(--accent);border-radius:2px;display:inline-block}
+h3{font-size:1rem;font-weight:600;margin-bottom:.5rem}
+.container{max-width:1100px;margin:0 auto}
+header{text-align:center;padding:3rem 0 1rem}
+header p{color:var(--muted);margin-top:.5rem;font-size:.95rem}
+section{margin-top:2.5rem}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.25rem;transition:border-color .2s}
+.card:hover{border-color:var(--accent)}
+
+/* PIPELINES */
+.pipeline{margin-bottom:1.5rem}
+.pipeline-label{font-weight:700;margin-bottom:.75rem;font-size:.85rem;text-transform:uppercase;letter-spacing:.05em}
+.stages{display:flex;flex-wrap:wrap;gap:.25rem;align-items:center}
+.stage{padding:.5rem 1rem;border-radius:8px;font-size:.8rem;font-weight:600;white-space:nowrap;position:relative}
+.arrow{color:var(--muted);font-size:.9rem;user-select:none}
+.acq .stage{background:#0e4429;color:#4ade80;border:1px solid #166534}
+.acq .stage.dead{background:#450a0a;color:#fca5a5;border-color:#7f1d1d}
+.dispo .stage{background:#172554;color:#93c5fd;border:1px solid #1e40af}
+.dispo .stage.inactive{background:#451a03;color:#fdba74;border-color:#7c2d12}
+
+/* ROLES */
+.roles-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1rem}
+.role-card .role-key{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.25rem}
+.role-card h3{color:var(--purple)}
+
+/* SCORING */
+.factor{margin-bottom:1rem}
+.factor-header{display:flex;justify-content:space-between;font-size:.85rem;margin-bottom:.3rem}
+.factor-header span:last-child{color:var(--accent);font-weight:700}
+.bar-bg{height:8px;background:#0f172a;border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;transition:width .6s ease}
+.factor-desc{font-size:.75rem;color:var(--muted);margin-top:.2rem}
+.tiers{display:flex;gap:1rem;margin-top:1.25rem;flex-wrap:wrap}
+.tier{padding:.6rem 1.2rem;border-radius:8px;font-weight:700;font-size:.85rem;text-align:center;min-width:130px}
+.tier.hot{background:#450a0a;color:#fca5a5;border:1px solid var(--red)}
+.tier.warm{background:#451a03;color:#fde68a;border:1px solid var(--orange)}
+.tier.cold{background:#0c4a6e;color:#7dd3fc;border:1px solid var(--accent)}
+
+/* TEMPLATES */
+.tpl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem}
+.tpl-card .tpl-name{font-size:.75rem;text-transform:uppercase;letter-spacing:.04em;color:var(--pink);font-weight:700;margin-bottom:.4rem}
+.tpl-card p{font-size:.82rem;color:var(--muted);font-style:italic}
+.send-window{margin-top:1.25rem;display:inline-flex;align-items:center;gap:.75rem;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:.75rem 1.25rem}
+.send-window .clock{font-size:1.5rem}
+.send-window .times{font-size:.9rem}
+.send-window .tz{font-size:.75rem;color:var(--muted)}
+
+/* SLA TABLE */
+table{width:100%;border-collapse:collapse;font-size:.85rem}
+th{text-align:left;padding:.6rem .75rem;background:#1a2744;color:var(--accent);font-weight:600;border-bottom:2px solid var(--border)}
+td{padding:.6rem .75rem;border-bottom:1px solid var(--border)}
+tr:hover td{background:#1e293b}
+
+/* DRIP TIMELINE */
+.timeline{position:relative;padding:1rem 0 1rem 2rem}
+.timeline::before{content:'';position:absolute;left:.65rem;top:0;bottom:0;width:2px;background:var(--border)}
+.timeline-item{position:relative;margin-bottom:1.25rem;padding-left:1.5rem}
+.timeline-item::before{content:'';position:absolute;left:-1.6rem;top:.35rem;width:12px;height:12px;border-radius:50%;border:2px solid var(--accent);background:var(--bg)}
+.timeline-item .day{font-weight:700;color:var(--accent);font-size:.85rem}
+.timeline-item .label{font-size:.8rem;color:var(--muted)}
+.drip-meta{display:flex;gap:1.5rem;margin-bottom:1rem;flex-wrap:wrap;font-size:.85rem}
+.drip-meta span{background:var(--card);border:1px solid var(--border);padding:.35rem .75rem;border-radius:6px}
+
+@media(max-width:600px){
+  h1{font-size:1.4rem}
+  .stages{gap:.15rem}
+  .stage{padding:.35rem .6rem;font-size:.7rem}
+  .tpl-grid{grid-template-columns:1fr}
+  .roles-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>Gunner V2 — Real Estate Wholesaling Playbook</h1>
+  <p>Buy properties under contract from motivated sellers, assign to cash buyers for a fee.</p>
+</header>
+
+<!-- PIPELINES -->
+<section>
+  <h2>Pipelines</h2>
+
+  <div class="pipeline acq">
+    <div class="pipeline-label" style="color:#4ade80">🏠 Acquisitions (Seller Side)</div>
+    <div class="stages">
+      <div class="stage">New Lead</div><span class="arrow">→</span>
+      <div class="stage">Contacted</div><span class="arrow">→</span>
+      <div class="stage">Qualified</div><span class="arrow">→</span>
+      <div class="stage">Appt Set</div><span class="arrow">→</span>
+      <div class="stage">Offer Made</div><span class="arrow">→</span>
+      <div class="stage">Under Contract</div><span class="arrow">→</span>
+      <div class="stage">Closed</div>
+      <span class="arrow" style="margin-left:.5rem">|</span>
+      <div class="stage dead">Dead</div>
+    </div>
+  </div>
+
+  <div class="pipeline dispo">
+    <div class="pipeline-label" style="color:#93c5fd">💰 Dispositions (Buyer Side)</div>
+    <div class="stages">
+      <div class="stage">New Buyer</div><span class="arrow">→</span>
+      <div class="stage">Vetted</div><span class="arrow">→</span>
+      <div class="stage">Matched</div><span class="arrow">→</span>
+      <div class="stage">Offer Recv'd</div><span class="arrow">→</span>
+      <div class="stage">Assigned</div><span class="arrow">→</span>
+      <div class="stage">Closed</div>
+      <span class="arrow" style="margin-left:.5rem">|</span>
+      <div class="stage inactive">Inactive</div>
+    </div>
+  </div>
+</section>
+
+<!-- ROLES -->
+<section>
+  <h2>Roles</h2>
+  <div class="roles-grid">
+    <div class="card role-card">
+      <div class="role-key">lead_generator</div>
+      <h3>🔎 Lead Generator</h3>
+      <p style="font-size:.85rem;color:var(--muted)">Sources motivated seller leads.</p>
+    </div>
+    <div class="card role-card">
+      <div class="role-key">lead_manager</div>
+      <h3>📞 Lead Manager</h3>
+      <p style="font-size:.85rem;color:var(--muted)">First contact. Qualifies and sets appointments.</p>
+    </div>
+    <div class="card role-card">
+      <div class="role-key">acquisition_manager</div>
+      <h3>🤝 Acquisition Manager</h3>
+      <p style="font-size:.85rem;color:var(--muted)">Runs appointments. Makes offers. Gets contracts signed.</p>
+    </div>
+    <div class="card role-card">
+      <div class="role-key">dispo_manager</div>
+      <h3>💼 Dispo Manager</h3>
+      <p style="font-size:.85rem;color:var(--muted)">Manages buyer list. Matches deals to buyers. Assigns contracts.</p>
+    </div>
+  </div>
+</section>
+
+<!-- SCORING -->
+<section>
+  <h2>Lead Scoring</h2>
+  <div class="card">
+    <div class="factor">
+      <div class="factor-header"><span>Motivation</span><span>25%</span></div>
+      <div class="bar-bg"><div class="bar-fill" style="width:25%;background:var(--green)"></div></div>
+      <div class="factor-desc">How motivated is the seller to sell quickly?</div>
+    </div>
+    <div class="factor">
+      <div class="factor-header"><span>Timeline</span><span>20%</span></div>
+      <div class="bar-bg"><div class="bar-fill" style="width:20%;background:var(--accent)"></div></div>
+      <div class="factor-desc">How soon do they need to sell?</div>
+    </div>
+    <div class="factor">
+      <div class="factor-header"><span>Property Condition</span><span>20%</span></div>
+      <div class="bar-bg"><div class="bar-fill" style="width:20%;background:var(--orange)"></div></div>
+      <div class="factor-desc">How distressed is the property?</div>
+    </div>
+    <div class="factor">
+      <div class="factor-header"><span>Equity Position</span><span>20%</span></div>
+      <div class="bar-bg"><div class="bar-fill" style="width:20%;background:var(--purple)"></div></div>
+      <div class="factor-desc">Is there enough margin for a deal?</div>
+    </div>
+    <div class="factor">
+      <div class="factor-header"><span>Engagement</span><span>15%</span></div>
+      <div class="bar-bg"><div class="bar-fill" style="width:15%;background:var(--pink)"></div></div>
+      <div class="factor-desc">Are they responding? Answering calls?</div>
+    </div>
+
+    <div class="tiers">
+      <div class="tier hot">🔥 Hot Lead<br><small>≥ 80%</small></div>
+      <div class="tier warm">☀️ Warm Lead<br><small>≥ 50%</small></div>
+      <div class="tier cold">❄️ Cold Lead<br><small>&lt; 50%</small></div>
+    </div>
+  </div>
+</section>
+
+<!-- COMMUNICATION -->
+<section>
+  <h2>Communication Templates</h2>
+  <div class="tpl-grid">
+    <div class="card tpl-card">
+      <div class="tpl-name">🔥 New Lead — Hot</div>
+      <p>"Hi {{first_name}}, this is {{agent_name}} with {{company_name}}. I see you have a property at {{property_address}}. We buy houses for cash and can close fast. Are you still looking to sell?"</p>
+    </div>
+    <div class="card tpl-card">
+      <div class="tpl-name">☀️ New Lead — Warm</div>
+      <p>"Hi {{first_name}}, this is {{agent_name}} with {{company_name}}. I wanted to reach out about your property at {{property_address}}. No pressure at all — just curious if selling is something you're still considering?"</p>
+    </div>
+    <div class="card tpl-card">
+      <div class="tpl-name">🌙 New Lead — After Hours</div>
+      <p>"Hi {{first_name}}, this is {{agent_name}} with {{company_name}}. I just got your info about {{property_address}}. I'll give you a call in the morning. Looking forward to chatting!"</p>
+    </div>
+    <div class="card tpl-card">
+      <div class="tpl-name">📩 Follow-Up #1</div>
+      <p>"Hey {{first_name}}, just following up on my message about {{property_address}}. Still interested in hearing an offer?"</p>
+    </div>
+    <div class="card tpl-card">
+      <div class="tpl-name">📩 Follow-Up #2</div>
+      <p>"Hi {{first_name}}, checking in one more time. If you change your mind about {{property_address}}, I'm here. No pressure."</p>
+    </div>
+  </div>
+
+  <div class="send-window">
+    <div class="clock">🕘</div>
+    <div>
+      <div class="times"><strong>9:00 AM — 6:00 PM</strong></div>
+      <div class="tz">America/Chicago · SMS, Email, Phone</div>
+    </div>
+  </div>
+</section>
+
+<!-- SLAs -->
+<section>
+  <h2>SLA Rules</h2>
+  <div class="card" style="padding:0;overflow:hidden;border-radius:12px">
+    <table>
+      <thead><tr><th>Rule</th><th>Value</th></tr></thead>
+      <tbody>
+        <tr><td>New Lead Response Time</td><td><strong style="color:var(--red)">5 minutes</strong></td></tr>
+        <tr><td>Follow-Up Interval</td><td><strong>24 hours</strong></td></tr>
+        <tr><td>Max Contact Attempts</td><td><strong>6 attempts</strong></td></tr>
+        <tr><td>Appointment Follow-Up</td><td><strong>2 hours</strong></td></tr>
+        <tr><td>Offer Follow-Up</td><td><strong>24 hours</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- DRIP -->
+<section>
+  <h2>Drip Sequence</h2>
+  <div class="drip-meta">
+    <span>📅 Total: <strong>104 days</strong></span>
+    <span>🛑 Stop on reply</span>
+    <span>🔄 Stop on stage change</span>
+  </div>
+  <div class="card">
+    <div class="timeline">
+      <div class="timeline-item"><div class="day">Day 1</div><div class="label">Initial drip — immediate follow-up</div></div>
+      <div class="timeline-item"><div class="day">Day 3</div><div class="label">Second touch — gentle nudge</div></div>
+      <div class="timeline-item"><div class="day">Day 7</div><div class="label">One week check-in</div></div>
+      <div class="timeline-item"><div class="day">Day 14</div><div class="label">Two week follow-up</div></div>
+      <div class="timeline-item"><div class="day">Day 30</div><div class="label">Monthly check-in</div></div>
+      <div class="timeline-item"><div class="day">Day 60</div><div class="label">Two month re-engagement</div></div>
+      <div class="timeline-item"><div class="day">Day 90</div><div class="label">Quarterly touch</div></div>
+      <div class="timeline-item"><div class="day">Day 104</div><div class="label">Final attempt — sequence ends</div></div>
+    </div>
+  </div>
+</section>
+
+</div>
+</body>
+</html>
