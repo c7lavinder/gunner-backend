@@ -17,8 +17,6 @@ const SCOPES = [
   'conversations.write',
   'locations.readonly',
   'users.readonly',
-  'tasks.readonly',
-  'tasks.write',
 ];
 
 // GET /setup/oauth — redirect to GHL authorization
