@@ -13,7 +13,7 @@ import { isDryRun } from '../core/dry-run';
 import { loadPlaybook } from '../config/loader';
 import { contactBot, noteBot, smsBot, stageBot, tagBot } from '../bots';
 import { aiWriterBot } from '../bots/ai-writer';
-import { intelligenceBot } from '../bots/intelligence';
+import { memoryWriterBot } from '../bots/memory-writer';
 
 const AGENT_ID = 'deal-blaster';
 
@@ -92,7 +92,7 @@ End with "Reply INTERESTED or call us"`,
       auditLog({ agent: AGENT_ID, contactId, action: 'emit:dispo.blast.sent:failed', result: 'error', reason: err?.message });
     });
 
-    await intelligenceBot.recordAction('sms-performance', { contactId, context: 'deal-blast', propertyAddress }, { message: blastMessage, buyerCount: buyerContactIds.length, sentAt: Date.now() }, tenantId);
+    await memoryWriterBot.recordAction('sms-performance', { contactId, context: 'deal-blast', propertyAddress }, { message: blastMessage, buyerCount: buyerContactIds.length, sentAt: Date.now() }, tenantId);
 
     auditLog({
       agent: AGENT_ID,

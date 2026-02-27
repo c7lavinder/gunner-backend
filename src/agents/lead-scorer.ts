@@ -12,7 +12,7 @@ import { isEnabled } from '../core/toggles';
 import { fieldBot } from '../bots/field';
 import { scorerBot } from '../bots/scorer';
 import { loadPlaybook } from '../config/loader';
-import { intelligenceBot } from '../bots/intelligence';
+import { memoryWriterBot } from '../bots/memory-writer';
 
 const AGENT_ID = 'lead-scorer';
 
@@ -49,7 +49,7 @@ export async function runLeadScorer(event: GunnerEvent): Promise<void> {
       auditLog({ agent: AGENT_ID, contactId, action: 'emit:lead.scored:failed', result: 'error', reason: err?.message });
     });
 
-    await intelligenceBot.recordAction('scoring-accuracy', { contactId, contact }, { tier: score.tier, score: score.score, factors: score.factors }, tenantId);
+    await memoryWriterBot.recordAction('scoring-accuracy', { contactId, contact }, { tier: score.tier, score: score.score, factors: score.factors }, tenantId);
 
     auditLog({
       agent: AGENT_ID,

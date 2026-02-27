@@ -11,7 +11,7 @@ import { noteBot } from '../bots/note';
 import { loadPlaybook } from '../config';
 import { classifierBot, CallScore } from '../bots/classifier';
 import { templateBot } from '../bots/template';
-import { intelligenceBot } from '../bots/intelligence';
+import { memoryWriterBot } from '../bots/memory-writer';
 
 const AGENT_ID = 'call-coaching';
 
@@ -48,7 +48,7 @@ export async function runCallCoaching(event: CallEvent): Promise<CallScore | nul
       });
     }
 
-    await intelligenceBot.recordAction('coaching-patterns', { contactId, callId, teamMember: (event as any).teamMember ?? 'unknown' }, { overall: score.overall, factors: score.factors, coachingFlags: score.coachingFlags }, event.tenantId);
+    await memoryWriterBot.recordAction('coaching-patterns', { contactId, callId, teamMember: (event as any).teamMember ?? 'unknown' }, { overall: score.overall, factors: score.factors, coachingFlags: score.coachingFlags }, event.tenantId);
 
     auditLog({ agent: AGENT_ID, contactId, opportunityId, action: 'coaching:scored', result: 'success', metadata: { callId, overall: score.overall, factors: score.factors.length, flags: score.coachingFlags }, durationMs: Date.now() - start });
 

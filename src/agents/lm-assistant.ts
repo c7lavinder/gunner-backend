@@ -34,49 +34,69 @@ interface CallEvent extends GunnerEvent {
 export async function runLmAssistant(event: CallEvent): Promise<void> {
   if (!isEnabled(AGENT_ID)) return;
 
-  const { contactId, opportunityId, tenantId, outcome, callId } = event;
-  const start = Date.now();
+  try {
+    const { contactId, opportunityId, tenantId, outcome, callId } = event;
+    const start = Date.now();
 
-  // Always run coaching on every call
-  await runCallCoaching(event);
+    // Always run coaching on every call
+    await runCallCoaching(event).catch(err => {
+      auditLog({ agent: AGENT_ID, contactId, action: 'runCallCoaching:failed', result: 'error', reason: err?.message });
+    });
 
-  // Route based on outcome
-  switch (outcome) {
-    case 'appointment':
-      await emit({ kind: 'call.appointment', tenantId, contactId, opportunityId, callId });
-      break;
+    // Route based on outcome
+    switch (outcome) {
+      case 'appointment':
+        await emit({ kind: 'call.appointment', tenantId, contactId, opportunityId, callId }).catch(err => {
+          auditLog({ agent: AGENT_ID, contactId, action: 'emit:call.appointment:failed', result: 'error', reason: err?.message });
+        });
+        break;
 
-    case 'conversation':
-      await emit({ kind: 'call.conversation', tenantId, contactId, opportunityId, callId });
-      break;
+      case 'conversation':
+        await emit({ kind: 'call.conversation', tenantId, contactId, opportunityId, callId }).catch(err => {
+          auditLog({ agent: AGENT_ID, contactId, action: 'emit:call.conversation:failed', result: 'error', reason: err?.message });
+        });
+        break;
 
-    case 'voicemail':
-      await emit({ kind: 'call.voicemail', tenantId, contactId, opportunityId, callId });
-      break;
+      case 'voicemail':
+        await emit({ kind: 'call.voicemail', tenantId, contactId, opportunityId, callId }).catch(err => {
+          auditLog({ agent: AGENT_ID, contactId, action: 'emit:call.voicemail:failed', result: 'error', reason: err?.message });
+        });
+        break;
 
-    case 'no-answer':
-      await emit({ kind: 'call.no-answer', tenantId, contactId, opportunityId, callId });
-      break;
+      case 'no-answer':
+        await emit({ kind: 'call.no-answer', tenantId, contactId, opportunityId, callId }).catch(err => {
+          auditLog({ agent: AGENT_ID, contactId, action: 'emit:call.no-answer:failed', result: 'error', reason: err?.message });
+        });
+        break;
 
-    case 'not-right-now':
-      await runBucketReeval(event);
-      break;
+      case 'not-right-now':
+        await runBucketReeval(event).catch(err => {
+          auditLog({ agent: AGENT_ID, contactId, action: 'runBucketReeval:failed', result: 'error', reason: err?.message });
+        });
+        break;
 
-    case 'sold':
-      await runAlreadySoldAgent(event);
-      break;
+      case 'sold':
+        await runAlreadySoldAgent(event).catch(err => {
+          auditLog({ agent: AGENT_ID, contactId, action: 'runAlreadySoldAgent:failed', result: 'error', reason: err?.message });
+        });
+        break;
 
-    case 'wrong-number':
-      await emit({ kind: 'call.wrong-number', tenantId, contactId, opportunityId, callId });
-      break;
+      case 'wrong-number':
+        await emit({ kind: 'call.wrong-number', tenantId, contactId, opportunityId, callId }).catch(err => {
+          auditLog({ agent: AGENT_ID, contactId, action: 'emit:call.wrong-number:failed', result: 'error', reason: err?.message });
+        });
+        break;
+    }
+
+    auditLog({
+      agent: AGENT_ID,
+      contactId,
+      opportunityId,
+      action: `call.routed:${outcome}`,
+      result: 'success',
+      durationMs: Date.now() - start,
+    });
+  } catch (err: any) {
+    auditLog({ agent: AGENT_ID, contactId: event.contactId, action: 'agent:crashed', result: 'error', reason: err?.message });
   }
-
-  auditLog({
-    agent: AGENT_ID,
-    contactId,
-    opportunityId,
-    action: `call.routed:${outcome}`,
-    result: 'success',
-    durationMs: Date.now() - start,
-  });
 }

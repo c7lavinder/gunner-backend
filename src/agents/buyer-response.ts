@@ -12,7 +12,7 @@ import { isDryRun } from '../core/dry-run';
 import { loadPlaybook } from '../config/loader';
 import { noteBot, taskBot, tagBot, stageBot } from '../bots';
 import { aiClassifierBot } from '../bots/ai-classifier';
-import { intelligenceBot } from '../bots/intelligence';
+import { memoryWriterBot } from '../bots/memory-writer';
 
 const AGENT_ID = 'buyer-response';
 const ESTEBAN_USER_ID = 'BhVAeJjAfojeX9AJdqbf';
@@ -125,7 +125,7 @@ Return JSON: {intent, confidence (0-1), summary}`,
       auditLog({ agent: AGENT_ID, contactId, action: 'emit:buyer.response:failed', result: 'error', reason: err?.message });
     });
 
-    await intelligenceBot.recordAction('classification-corrections', { contactId, message: inboundMessage, context: 'buyer-response' }, { classification: classification.intent, confidence: classification.confidence }, tenantId);
+    await memoryWriterBot.recordAction('classification-corrections', { contactId, message: inboundMessage, context: 'buyer-response' }, { classification: classification.intent, confidence: classification.confidence }, tenantId);
 
     auditLog({
       agent: AGENT_ID,

@@ -82,6 +82,12 @@ registerToggle({ id: 'bot-scheduler', kind: 'bot', label: 'Scheduler Bot', descr
 registerToggle({ id: 'bot-guard', kind: 'bot', label: 'Guard Bot', description: 'Idempotency/dedup/guard checks', enabled: true });
 registerToggle({ id: 'bot-compliance', kind: 'bot', label: 'Compliance Bot', description: 'DNC and regulatory checks', enabled: true });
 
-// === INTELLIGENCE ===
-registerToggle({ id: 'bot-intelligence', kind: 'bot', label: 'Intelligence Bot', description: 'Learning memory — records actions, outcomes, and feedback for AI improvement', enabled: true });
+// === INTELLIGENCE BOTS ===
+registerToggle({ id: 'bot-memory-writer', kind: 'bot', label: 'Memory Writer Bot', description: 'Writes actions to intelligence memory', enabled: true });
+registerToggle({ id: 'bot-memory-reader', kind: 'bot', label: 'Memory Reader Bot', description: 'Reads from intelligence memory (recent, top/worst performers, stats)', enabled: true });
+registerToggle({ id: 'bot-outcome-tracker', kind: 'bot', label: 'Outcome Tracker Bot', description: 'Matches actions to their outcomes', enabled: true });
+registerToggle({ id: 'bot-learning-builder', kind: 'bot', label: 'Learning Builder Bot', description: 'Builds learning context strings for AI prompts', enabled: true });
+registerToggle({ id: 'bot-pattern-analyzer', kind: 'bot', label: 'Pattern Analyzer Bot', description: 'Analyzes response rates and team performance patterns', enabled: true });
+registerToggle({ id: 'bot-briefing-writer', kind: 'bot', label: 'Briefing Writer Bot', description: 'Generates daily intelligence briefings', enabled: true });
+registerToggle({ id: 'bot-feedback-writer', kind: 'bot', label: 'Feedback Writer Bot', description: 'Records human feedback on actions', enabled: true });
 registerToggle({ id: 'intelligence-poller', kind: 'agent', label: 'Intelligence Poller', description: 'Daily learning cycle — matches outcomes, generates briefings, identifies trends', enabled: true });
