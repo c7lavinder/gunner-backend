@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How Gunner Works</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0f172a;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;line-height:1.6;overflow-x:hidden}
+a{color:#60a5fa;text-decoration:none}
+
+/* Utility */
+.container{max-width:1100px;margin:0 auto;padding:0 24px}
+.section{padding:80px 0}
+.section-title{font-size:2rem;font-weight:700;margin-bottom:8px;text-align:center}
+.section-subtitle{text-align:center;color:#94a3b8;font-size:1.1rem;margin-bottom:48px;max-width:600px;margin-left:auto;margin-right:auto}
+.card{background:#1e293b;border:1px solid #334155;border-radius:16px;padding:32px}
+.badge{display:inline-block;background:#3b82f620;color:#60a5fa;font-size:.75rem;font-weight:600;padding:4px 12px;border-radius:99px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px}
+
+/* Hero */
+.hero{text-align:center;padding:100px 24px 60px}
+.hero h1{font-size:3rem;font-weight:800;background:linear-gradient(135deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:16px}
+.hero p{font-size:1.25rem;color:#94a3b8;max-width:640px;margin:0 auto}
+
+/* Journey Flow */
+.journey{display:flex;align-items:flex-start;gap:0;overflow-x:auto;padding:20px 0;-webkit-overflow-scrolling:touch}
+.journey-step{display:flex;align-items:center;flex-shrink:0}
+.journey-node{text-align:center;width:100px}
+.journey-icon{font-size:2rem;margin-bottom:6px}
+.journey-label{font-size:.75rem;color:#cbd5e1;line-height:1.3}
+.journey-arrow{color:#475569;font-size:1.2rem;margin:0 4px;flex-shrink:0}
+
+/* Phase Cards */
+.phase{margin-bottom:48px}
+.phase .card{position:relative;overflow:hidden}
+.phase-number{position:absolute;top:20px;right:24px;font-size:4rem;font-weight:900;color:#1e293b;opacity:.5;line-height:1}
+.phase-icon{font-size:2.5rem;margin-bottom:12px}
+.phase h3{font-size:1.5rem;font-weight:700;margin-bottom:4px}
+.phase .tagline{color:#60a5fa;font-size:1rem;margin-bottom:16px;font-style:italic}
+.phase p,.phase ul{color:#94a3b8;font-size:1rem}
+.phase ul{list-style:none;padding:0}
+.phase ul li{padding:6px 0;padding-left:28px;position:relative}
+.phase ul li::before{content:'✓';position:absolute;left:0;color:#34d399;font-weight:700}
+
+/* Scoring Grid */
+.score-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin:24px 0}
+.score-card{background:#0f172a;border:1px solid #334155;border-radius:12px;padding:20px;text-align:center}
+.score-card .icon{font-size:2rem;margin-bottom:8px}
+.score-card h4{font-size:1rem;font-weight:600;margin-bottom:4px}
+.score-card p{font-size:.85rem;color:#94a3b8}
+.score-result{text-align:center;margin-top:24px;padding:16px;background:linear-gradient(135deg,#05966920,#10b98120);border:1px solid #10b98140;border-radius:12px;font-size:1.1rem;font-weight:600;color:#34d399}
+
+/* Drip Timeline */
+.drip-timeline{display:flex;align-items:center;gap:0;overflow-x:auto;padding:20px 0;-webkit-overflow-scrolling:touch}
+.drip-dot{flex-shrink:0;text-align:center}
+.drip-dot .circle{width:40px;height:40px;border-radius:50%;background:#3b82f6;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:#fff;margin:0 auto 6px}
+.drip-dot .day-label{font-size:.7rem;color:#94a3b8}
+.drip-line{width:40px;height:2px;background:#334155;flex-shrink:0}
+
+/* Dispo Flow */
+.dispo-flow{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;margin:20px 0}
+.dispo-step{background:#0f172a;border:1px solid #334155;border-radius:10px;padding:12px 20px;font-weight:600;font-size:.9rem}
+.dispo-arrow{color:#475569;font-size:1.2rem}
+
+/* Team Grid */
+.team-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px}
+.team-card{background:#1e293b;border:1px solid #334155;border-radius:16px;padding:28px;text-align:center}
+.team-card .icon{font-size:2.5rem;margin-bottom:12px}
+.team-card h4{font-size:1.1rem;font-weight:700;margin-bottom:8px}
+.team-card p{color:#94a3b8;font-size:.95rem}
+
+/* Rules Grid */
+.rules-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px}
+.rule-card{background:#1e293b;border:1px solid #334155;border-radius:16px;padding:28px}
+.rule-card .icon{font-size:2rem;margin-bottom:12px}
+.rule-card h4{font-size:1.05rem;font-weight:700;margin-bottom:6px}
+.rule-card p{color:#94a3b8;font-size:.9rem}
+
+/* Responsive */
+@media(max-width:768px){
+  .hero h1{font-size:2rem}
+  .hero p{font-size:1rem}
+  .section{padding:48px 0}
+  .section-title{font-size:1.5rem}
+  .phase-number{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <h1>How Gunner Works</h1>
+  <p>Every step, in plain English — what happens to a lead from the moment it enters to the moment you get paid.</p>
+</div>
+
+<!-- JOURNEY AT A GLANCE -->
+<div class="section" style="padding-top:0">
+  <div class="container">
+    <div class="section-title">The Journey at a Glance</div>
+    <div class="section-subtitle">Every lead follows this path. Gunner handles the busywork so you can focus on closing.</div>
+    <div class="journey">
+      <div class="journey-step"><div class="journey-node"><div class="journey-icon">📥</div><div class="journey-label">Lead Arrives</div></div></div>
+      <div class="journey-step"><div class="journey-arrow">→</div><div class="journey-node"><div class="journey-icon">🛡️</div><div class="journey-label">Guard Check</div></div></div>
+      <div class="journey-step"><div class="journey-arrow">→</div><div class="journey-node"><div class="journey-icon">🧹</div><div class="journey-label">Data Cleaned</div></div></div>
+      <div class="journey-step"><div class="journey-arrow">→</div><div class="journey-node"><div class="journey-icon">🎯</div><div class="journey-label">Lead Scored</div></div></div>
+      <div class="journey-step"><div class="journey-arrow">→</div><div class="journey-node"><div class="journey-icon">💬</div><div class="journey-label">Text Sent</div></div></div>
+      <div class="journey-step"><div class="journey-arrow">→</div><div class="journey-node"><div class="journey-icon">🔄</div><div class="journey-label">Follow-Up</div></div></div>
+      <div class="journey-step"><div class="journey-arrow">→</div><div class="journey-node"><div class="journey-icon">📅</div><div class="journey-label">Appointment</div></div></div>
+      <div class="journey-step"><div class="journey-arrow">→</div><div class="journey-node"><div class="journey-icon">💰</div><div class="journey-label">Offer</div></div></div>
+      <div class="journey-step"><div class="journey-arrow">→</div><div class="journey-node"><div class="journey-icon">📝</div><div class="journey-label">Under Contract</div></div></div>
+      <div class="journey-step"><div class="journey-arrow">→</div><div class="journey-node"><div class="journey-icon">🏆</div><div class="journey-label">Closed</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- PHASE 1 -->
+<div class="section" id="phase1">
+  <div class="container">
+    <div class="phase">
+      <div class="card">
+        <div class="phase-number">1</div>
+        <span class="badge">Phase 1</span>
+        <div class="phase-icon">🛡️</div>
+        <h3>Guard Check</h3>
+        <div class="tagline">"Should we even process this lead?"</div>
+        <p>Before anything happens, Gunner runs three quick checks:</p>
+        <ul>
+          <li><strong>Duplicate check</strong> — Have we already seen this person? If yes, we don't create a second record.</li>
+          <li><strong>Pipeline check</strong> — Are they already in your pipeline being worked? If yes, we skip them.</li>
+          <li><strong>Returning lead</strong> — Did they reach out before and come back? If yes, we flag them as a hot comeback.</li>
+        </ul>
+        <p style="margin-top:16px;color:#34d399">✅ Only clean, new leads make it through. No duplicates. No wasted effort.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PHASE 2 -->
+<div class="section" id="phase2" style="padding-top:0">
+  <div class="container">
+    <div class="phase">
+      <div class="card">
+        <div class="phase-number">2</div>
+        <span class="badge">Phase 2</span>
+        <div class="phase-icon">🧹</div>
+        <h3>Data Hygiene</h3>
+        <div class="tagline">"Clean it up before anything else runs."</div>
+        <p>Messy data kills deals. Gunner fixes everything automatically:</p>
+        <ul>
+          <li><strong>Name fixed</strong> — "JOHN DOE" becomes "John Doe." Nicknames handled.</li>
+          <li><strong>Phone formatted</strong> — Strips junk characters, validates it's a real number.</li>
+          <li><strong>Source identified</strong> — Which lead provider sent this? Tracked for ROI.</li>
+          <li><strong>Property data pulled</strong> — Address verified, county records checked, basic property info filled in.</li>
+        </ul>
+        <p style="margin-top:16px;color:#34d399">✅ Every lead gets the same clean treatment — no matter where it came from.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PHASE 3 -->
+<div class="section" id="phase3" style="padding-top:0">
+  <div class="container">
+    <div class="phase">
+      <div class="card">
+        <div class="phase-number">3</div>
+        <span class="badge">Phase 3</span>
+        <div class="phase-icon">🎯</div>
+        <h3>Lead Scoring</h3>
+        <div class="tagline">"Is this lead HOT or WARM?"</div>
+        <p style="margin-bottom:20px">Gunner looks at 5 signals to figure out how good this lead is:</p>
+
+        <div class="score-grid">
+          <div class="score-card">
+            <div class="icon">⏰</div>
+            <h4>Timeline</h4>
+            <p>Do they need to sell soon?</p>
+          </div>
+          <div class="score-card">
+            <div class="icon">🔥</div>
+            <h4>Motivation</h4>
+            <p>Are they distressed or desperate?</p>
+          </div>
+          <div class="score-card">
+            <div class="icon">🏚️</div>
+            <h4>Condition</h4>
+            <p>Is the property rough?</p>
+          </div>
+          <div class="score-card">
+            <div class="icon">💎</div>
+            <h4>Equity</h4>
+            <p>Is there room for a deal?</p>
+          </div>
+          <div class="score-card">
+            <div class="icon">📞</div>
+            <h4>Engagement</h4>
+            <p>Are they picking up the phone?</p>
+          </div>
+        </div>
+
+        <div class="score-result">🔥 3 or more signals pass = <strong>HOT LEAD</strong> &nbsp;|&nbsp; Fewer = WARM LEAD</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PHASE 4 -->
+<div class="section" id="phase4" style="padding-top:0">
+  <div class="container">
+    <div class="phase">
+      <div class="card">
+        <div class="phase-number">4</div>
+        <span class="badge">Phase 4</span>
+        <div class="phase-icon">💬</div>
+        <h3>First Text Out</h3>
+        <div class="tagline">"The first text goes out within minutes."</div>
+        <p>Speed kills in this business. Here's what happens:</p>
+        <ul>
+          <li><strong>Sent from YOUR Lead Manager's number</strong> — It looks like it came from a real person, because it did.</li>
+          <li><strong>Written by AI, sounds human</strong> — Personalized to the seller's name, property, and situation.</li>
+          <li><strong>Time-aware</strong> — If it's 10pm, Gunner waits until morning. No texts at 2am.</li>
+          <li><strong>Send window: 9am – 6pm</strong> — Texts only go out during business hours in the seller's time zone.</li>
+        </ul>
+        <p style="margin-top:16px;color:#34d399">✅ Every lead gets contacted within 5 minutes — even at 3am on a Saturday (it queues for morning).</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PHASE 5 -->
+<div class="section" id="phase5" style="padding-top:0">
+  <div class="container">
+    <div class="phase">
+      <div class="card">
+        <div class="phase-number">5</div>
+        <span class="badge">Phase 5</span>
+        <div class="phase-icon">🔄</div>
+        <h3>The 104-Day Drip</h3>
+        <div class="tagline">"If they don't reply, we keep going."</div>
+        <p style="margin-bottom:24px">Most leads don't respond to the first text. That's normal. Gunner follows up automatically over 104 days:</p>
+
+        <div class="drip-timeline">
+          <div class="drip-dot"><div class="circle">1</div><div class="day-label">Day 1</div></div>
+          <div class="drip-line"></div>
+          <div class="drip-dot"><div class="circle">3</div><div class="day-label">Day 3</div></div>
+          <div class="drip-line"></div>
+          <div class="drip-dot"><div class="circle">7</div><div class="day-label">Day 7</div></div>
+          <div class="drip-line"></div>
+          <div class="drip-dot"><div class="circle">14</div><div class="day-label">Day 14</div></div>
+          <div class="drip-line"></div>
+          <div class="drip-dot"><div class="circle">30</div><div class="day-label">Day 30</div></div>
+          <div class="drip-line"></div>
+          <div class="drip-dot"><div class="circle">60</div><div class="day-label">Day 60</div></div>
+          <div class="drip-line"></div>
+          <div class="drip-dot"><div class="circle">90</div><div class="day-label">Day 90</div></div>
+          <div class="drip-line"></div>
+          <div class="drip-dot"><div class="circle" style="background:#10b981">104</div><div class="day-label">Day 104</div></div>
+        </div>
+
+        <p style="margin-top:20px">Each follow-up is unique — not the same message copy-pasted. Gunner writes fresh texts every time.</p>
+        <p style="margin-top:12px;color:#f59e0b">⚡ <strong>Stops automatically</strong> if the seller replies or their status changes. No annoying a hot lead with drip texts.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PHASE 6 -->
+<div class="section" id="phase6" style="padding-top:0">
+  <div class="container">
+    <div class="phase">
+      <div class="card">
+        <div class="phase-number">6</div>
+        <span class="badge">Phase 6</span>
+        <div class="phase-icon">🤝</div>
+        <h3>Dispositions</h3>
+        <div class="tagline">"You got the deal under contract. Now sell it."</div>
+        <p style="margin-bottom:20px">Once you have a property locked up, Gunner helps you find a buyer:</p>
+
+        <div class="dispo-flow">
+          <div class="dispo-step">🆕 New Buyer</div>
+          <div class="dispo-arrow">→</div>
+          <div class="dispo-step">✅ Vetted</div>
+          <div class="dispo-arrow">→</div>
+          <div class="dispo-step">🔗 Matched to Deal</div>
+          <div class="dispo-arrow">→</div>
+          <div class="dispo-step">📋 Contract Assigned</div>
+          <div class="dispo-arrow">→</div>
+          <div class="dispo-step">🏆 Closed</div>
+        </div>
+
+        <p style="color:#94a3b8">Gunner tracks your buyer list, knows what they buy, where they buy, and how much they spend — then automatically matches them to your deals.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- THE TEAM -->
+<div class="section">
+  <div class="container">
+    <div class="section-title">Your Team + Gunner</div>
+    <div class="section-subtitle">Gunner doesn't replace your team. It makes every person 10x faster.</div>
+
+    <div class="team-grid">
+      <div class="team-card">
+        <div class="icon">📡</div>
+        <h4>Lead Generator</h4>
+        <p>Gunner tracks every lead source and shows you exactly which ones are making money — and which are burning it.</p>
+      </div>
+      <div class="team-card">
+        <div class="icon">📱</div>
+        <h4>Lead Manager</h4>
+        <p>Gunner texts first, you call second. No lead is ever forgotten. Every follow-up happens on time, every time.</p>
+      </div>
+      <div class="team-card">
+        <div class="icon">🎯</div>
+        <h4>Acquisition Manager</h4>
+        <p>Gunner chases offers, reminds you of follow-ups, and makes sure no deal slips through the cracks.</p>
+      </div>
+      <div class="team-card">
+        <div class="icon">💼</div>
+        <h4>Dispo Manager</h4>
+        <p>Gunner matches your deals to the right buyers automatically. No more blasting your whole list and hoping.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CORE RULES -->
+<div class="section">
+  <div class="container">
+    <div class="section-title">Core Rules</div>
+    <div class="section-subtitle">The principles Gunner is built on.</div>
+
+    <div class="rules-grid">
+      <div class="rule-card">
+        <div class="icon">🔀</div>
+        <h4>Nothing is hardcoded</h4>
+        <p>Swap the playbook, change the business. Gunner works for wholesale today — and whatever you need tomorrow.</p>
+      </div>
+      <div class="rule-card">
+        <div class="icon">📋</div>
+        <h4>Every action is logged</h4>
+        <p>You can see exactly what happened to any lead, when, and why. Full transparency, always.</p>
+      </div>
+      <div class="rule-card">
+        <div class="icon">🛡️</div>
+        <h4>One bad lead never breaks the system</h4>
+        <p>If something goes wrong with one lead, everything else keeps running. No single point of failure.</p>
+      </div>
+      <div class="rule-card">
+        <div class="icon">🧠</div>
+        <h4>Agents think. Bots act.</h4>
+        <p>Smart decisions are made by AI that understands context. Repetitive tasks are done by simple automations. They never cross.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Footer -->
+<div style="text-align:center;padding:60px 24px;color:#475569;font-size:.85rem">
+  <p>Gunner — Built for closers, not coders.</p>
+</div>
+
+</body>
+</html>
