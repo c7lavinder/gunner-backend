@@ -487,6 +487,139 @@
     ]
   },
 
+  "customFields": {
+    "lead_score": "lead_score",
+    "lead_tier": "lead_tier",
+    "initial_sms_sent": "initial_sms_sent",
+    "stage_entered_at": "stage_entered_at",
+    "last_activity_at": "last_activity_at",
+    "last_call_at": "last_call_at",
+    "outreach_count": "outreach_count",
+    "first_response_ms": "first_response_ms",
+    "appointment_set": "appointment_set",
+    "appointment_set_at": "appointment_set_at",
+    "drip_step": "drip_step",
+    "drip_active": "drip_active",
+    "fu_last_touch": "fu_last_touch",
+    "fu_touch_count": "fu_touch_count",
+    "fu_bucket": "fu_bucket",
+    "property_address": "property_address",
+    "motivation": "motivation",
+    "seller_name": "seller_name",
+    "contract_price": "contract_price",
+    "closing_date": "closing_date",
+    "access_instructions": "access_instructions",
+    "arv": "arv",
+    "repair_estimate": "repair_estimate",
+    "last_processed_callback": "last_processed_callback",
+    "drive_by_grade": "drive_by_grade",
+    "beds": "beds",
+    "baths": "baths",
+    "sqft": "sqft",
+    "estimated_value": "estimated_value",
+    "timezone": "timezone",
+    "market": "market",
+    "lead_source_normalized": "lead_source_normalized"
+  },
+
+  "tags": {
+    "hot": "hot-lead",
+    "warm": "warm-lead",
+    "ghosted": "ghosted",
+    "callback_appointment": "callback-appointment",
+    "offer_accepted": "offer-accepted",
+    "offer_rejected": "offer-rejected",
+    "no_show": "no-show",
+    "overdue_task": "overdue-task",
+    "ppl": "ppl",
+    "tv": "tv",
+    "direct_mail": "direct-mail",
+    "cold_call": "cold-call",
+    "website": "website",
+    "referral": "referral",
+    "nashville": "nashville",
+    "columbia": "columbia",
+    "knoxville": "knoxville",
+    "tennessee": "tennessee",
+    "returning_lead": "returning-lead",
+    "dnc": "dnc"
+  },
+
+  "tasks": {
+    "qualify_new_lead": {
+      "title": "Qualify New Lead — {{tier}} — {{name}}",
+      "assign_to": "lm",
+      "deadline_minutes": 15,
+      "body": "New {{tier}} lead. Score: {{score}}/5. Property: {{address}}. Call within 15 minutes."
+    },
+    "lm_follow_up": {
+      "title": "Follow up with {{name}}",
+      "assign_to": "lm",
+      "deadline_minutes": 30
+    },
+    "am_walkthrough_prep": {
+      "title": "Prep for walkthrough — {{name}} — {{address}}",
+      "assign_to": "am",
+      "deadline_hours_before": 2
+    },
+    "am_offer_prep": {
+      "title": "Run numbers and make offer — {{name}}",
+      "assign_to": "am",
+      "deadline_hours": 24
+    },
+    "am_uc_handoff": {
+      "title": "Get deal details to TC and Dispo — {{name}}",
+      "assign_to": "am",
+      "deadline_hours": 1
+    },
+    "tc_handoff": {
+      "title": "TC Handoff — {{name}} — {{address}}",
+      "assign_to": "tc"
+    },
+    "reschedule_no_show": {
+      "title": "Reschedule — seller no-showed — {{name}}",
+      "assign_to": "lm",
+      "deadline_hours": 24
+    },
+    "am_concern_uc": {
+      "title": "URGENT: Seller concern on UC — {{name}}",
+      "assign_to": "am",
+      "deadline_minutes": 30,
+      "urgency": "high"
+    },
+    "offer_chase_exhausted": {
+      "title": "Offer chase exhausted — renegotiate or walk — {{name}}",
+      "assign_to": "am"
+    }
+  },
+
+  "notes": {
+    "score_breakdown": "Lead Score: {{score}}/5 ({{tier}})\n{{#factors}}• {{name}}: {{passed}} — {{reason}}\n{{/factors}}",
+    "call_summary": "Call Summary ({{grade}})\n{{summary}}",
+    "initial_outreach": "Initial SMS sent ({{tone}} tone)\nMessage: {{message}}",
+    "tc_handoff": "TC Handoff Package\nSeller: {{seller_name}}\nProperty: {{address}}\nContract Price: {{price}}\nClosing Date: {{closing_date}}\nAccess: {{access_instructions}}",
+    "dispo_package": "Deal Package\nProperty: {{address}}\nARV: {{arv}}\nRepairs: {{repairs}}\nContract: {{contract_price}}\nSpread: {{spread}}"
+  },
+
+  "drip_schedule": {
+    "days": [1, 2, 3, 5, 7, 9, 12, 14, 18, 22, 27, 32, 38, 44, 51, 58, 66, 74, 82, 88, 96, 100, 104],
+    "total_touches": 24,
+    "total_days": 104,
+    "ghosted_check_day": 14,
+    "note": "Starts daily, tapers to weekly, then bi-weekly. Day 14 = ghosted trigger if no contact."
+  },
+
+  "ai": {
+    "provider": "gemini",
+    "model": "gemini-1.5-flash",
+    "prompts": {
+      "initial_outreach": "Write a first text message from {{lm_name}} to a seller named {{first_name}} about their property at {{address}}. {{tone_instruction}} {{company_instruction}} Keep it under 160 characters. Be human, not robotic.",
+      "follow_up": "Write a follow-up text to {{first_name}} about {{address}}. Tone: {{tone}}. Last contact was {{days_ago}} days ago. Their situation: {{motivation}}. Keep it natural and under 160 characters.",
+      "drip": "Write drip touch #{{touch_number}} of {{total_touches}} for {{first_name}} about {{address}}. This is day {{day}} of the sequence. Keep it short, natural, and vary the approach from previous touches.",
+      "call_coaching_summary": "Summarize this sales call transcript. Grade A-F on: rapport building, needs discovery, objection handling, closing technique, next steps, professionalism. Be specific about what was good and what to improve."
+    }
+  },
+
   "callCoaching": {
     "provider": "gunner",
     "app_url": "https://getgunner.ai",
