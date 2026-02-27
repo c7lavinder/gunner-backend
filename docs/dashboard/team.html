@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔫 Gunner — Team</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0e1a;--sidebar:#0f1322;--card:#111827;--border:#1f2937;--blue:#3b82f6;--cyan:#06b6d4;--green:#22c55e;--yellow:#eab308;--orange:#f97316;--red:#ef4444;--purple:#a855f7;--pink:#ec4899;--text:#f1f5f9;--muted:#94a3b8;--dim:#64748b}
+html,body{height:100%;overflow:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.5}
+a{color:var(--cyan);text-decoration:none}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* ── TOP BAR ── */
+.topbar{height:56px;background:var(--sidebar);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:16px;position:fixed;top:0;left:0;right:0;z-index:100}
+.topbar-logo{font-size:1.2rem;font-weight:800;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.topbar-logo span{background:linear-gradient(135deg,#fff,var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.preview-badge{background:var(--orange);color:#000;font-size:.7rem;font-weight:800;padding:4px 12px;border-radius:6px;display:flex;align-items:center;gap:4px;white-space:nowrap}
+.topbar-nav{display:flex;gap:12px;margin-left:auto;font-size:.82rem}
+.topbar-nav a{color:var(--dim);font-weight:600;padding:4px 8px;border-radius:6px;transition:all .15s}
+.topbar-nav a:hover,.topbar-nav a.active{color:var(--text);background:rgba(255,255,255,.05)}
+
+/* ── MAIN LAYOUT ── */
+.main{display:flex;flex-direction:column;position:fixed;top:56px;left:0;right:0;bottom:0;overflow-y:auto;padding:40px}
+
+.header-section{margin-bottom:40px;text-align:center}
+.header-title{font-size:2rem;font-weight:800;margin-bottom:8px}
+.header-subtitle{color:var(--muted);font-size:1.1rem}
+
+/* ── GRID LAYOUT ── */
+.team-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:24px;max-width:1400px;margin:0 auto;width:100%}
+
+/* ── TEAM CARD ── */
+.team-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:16px;transition:transform .2s,border-color .2s;position:relative;overflow:hidden}
+.team-card:hover{transform:translateY(-2px);border-color:var(--cyan);box-shadow:0 10px 30px rgba(0,0,0,.3)}
+
+/* Status Indicator */
+.status-dot{position:absolute;top:20px;right:20px;display:flex;align-items:center;gap:6px;font-size:.75rem;font-weight:700;color:var(--green);background:rgba(34,197,94,.1);padding:4px 10px;border-radius:20px;border:1px solid rgba(34,197,94,.2)}
+.status-dot::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px rgba(34,197,94,.6)}
+
+.card-header{display:flex;gap:16px;align-items:center}
+.card-emoji{font-size:3rem;background:rgba(255,255,255,.03);width:80px;height:80px;display:flex;align-items:center;justify-content:center;border-radius:12px;border:1px solid var(--border)}
+.card-info h3{font-size:1.4rem;font-weight:800;margin-bottom:4px}
+.card-role{color:var(--cyan);font-weight:700;font-size:.9rem;text-transform:uppercase;letter-spacing:1px}
+
+.card-desc{color:var(--muted);font-size:.95rem;line-height:1.6;flex:1}
+
+.card-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:auto;padding-top:16px;border-top:1px solid var(--border)}
+.meta-tag{font-size:.75rem;padding:4px 10px;border-radius:6px;background:rgba(255,255,255,.05);color:var(--dim);font-weight:600;border:1px solid rgba(255,255,255,.05)}
+
+/* Specific Card Styles based on Role */
+.card-xhaka .card-role{color:var(--purple)}
+.card-builder .card-role{color:var(--blue)}
+.card-auditor .card-role{color:var(--red)}
+.card-researcher .card-role{color:var(--cyan)}
+.card-architect .card-role{color:var(--pink)}
+.card-guide .card-role{color:var(--yellow)}
+
+/* Org Chart Connection Lines (Visual Polish) */
+.team-grid::before{content:'';position:absolute;z-index:-1;top:100px;left:50%;transform:translateX(-50%);width:2px;height:40px;background:var(--border)}
+
+@media(max-width:768px){
+  .main{padding:20px}
+  .team-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ TOP BAR ═══ -->
+<div class="topbar">
+  <div class="topbar-logo">🔫 <span>Gunner — Command Center</span></div>
+  <div class="preview-badge">✏️ PREVIEW MODE</div>
+  <div class="topbar-nav">
+    <a href="/dashboard">Dashboard</a>
+    <a href="/dashboard/controls">Controls</a>
+    <a href="/dashboard/audit">Audit</a>
+    <a href="/dashboard/team" class="active">Team</a>
+  </div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+  
+  <div class="header-section">
+    <div class="header-title">The AI Team</div>
+    <div class="header-subtitle">Autonomous agents powering the Gunner backend</div>
+  </div>
+
+  <div class="team-grid">
+    
+    <!-- XHAKA -->
+    <div class="team-card card-xhaka">
+      <div class="status-dot">Online</div>
+      <div class="card-header">
+        <div class="card-emoji">🧠</div>
+        <div class="card-info">
+          <h3>Xhaka</h3>
+          <div class="card-role">COO / CTO</div>
+        </div>
+      </div>
+      <div class="card-desc">
+        The Orchestrator. Responsible for strategy, specs, task delegation, and memory management. Holds the Master Plan and interfaces with the CEO.
+      </div>
+      <div class="card-meta">
+        <span class="meta-tag">Strategy</span>
+        <span class="meta-tag">Delegation</span>
+        <span class="meta-tag">Master Plan</span>
+      </div>
+    </div>
+
+    <!-- THE BUILDER -->
+    <div class="team-card card-builder">
+      <div class="status-dot">Online</div>
+      <div class="card-header">
+        <div class="card-emoji">👷‍♂️</div>
+        <div class="card-info">
+          <h3>The Builder</h3>
+          <div class="card-role">Engineering</div>
+        </div>
+      </div>
+      <div class="card-desc">
+        Dedicated Coding Agent. Handles core backend logic, refactoring, database schema, and API endpoints. Writes clean, modular code following strict architecture rules.
+      </div>
+      <div class="card-meta">
+        <span class="meta-tag">Claude Code</span>
+        <span class="meta-tag">Backend</span>
+        <span class="meta-tag">DB Schema</span>
+      </div>
+    </div>
+
+    <!-- THE AUDITOR -->
+    <div class="team-card card-auditor">
+      <div class="status-dot">Online</div>
+      <div class="card-header">
+        <div class="card-emoji">👮‍♂️</div>
+        <div class="card-info">
+          <h3>The Auditor</h3>
+          <div class="card-role">QA & Standards</div>
+        </div>
+      </div>
+      <div class="card-desc">
+        Compliance Officer. Performs code reviews, enforces rules (linting, circular deps), and tracks project goals. Verifies that what was built matches the spec.
+      </div>
+      <div class="card-meta">
+        <span class="meta-tag">Linting</span>
+        <span class="meta-tag">Security</span>
+        <span class="meta-tag">Compliance</span>
+      </div>
+    </div>
+
+    <!-- THE RESEARCHER -->
+    <div class="team-card card-researcher">
+      <div class="status-dot">Online</div>
+      <div class="card-header">
+        <div class="card-emoji">🔬</div>
+        <div class="card-info">
+          <h3>The Researcher</h3>
+          <div class="card-role">R&D & Intelligence</div>
+        </div>
+      </div>
+      <div class="card-desc">
+        Proactive Force Multiplier. Finds tools to make the team faster, scans for industry trends, and drives continuous improvement.
+      </div>
+      <div class="card-meta">
+        <span class="meta-tag">Innovation</span>
+        <span class="meta-tag">Market Intel</span>
+        <span class="meta-tag">Optimization</span>
+      </div>
+    </div>
+
+    <!-- THE ARCHITECT -->
+    <div class="team-card card-architect">
+      <div class="status-dot">Online</div>
+      <div class="card-header">
+        <div class="card-emoji">🎨</div>
+        <div class="card-info">
+          <h3>The Architect</h3>
+          <div class="card-role">Frontend & Visuals</div>
+        </div>
+      </div>
+      <div class="card-desc">
+        Visuals & Dashboard Lead. Builds the Status Page, Control Room UI, and makes progress visible to the human team.
+      </div>
+      <div class="card-meta">
+        <span class="meta-tag">UI/UX</span>
+        <span class="meta-tag">Dashboard</span>
+        <span class="meta-tag">Data Vis</span>
+      </div>
+    </div>
+
+    <!-- THE GUIDE -->
+    <div class="team-card card-guide">
+      <div class="status-dot">Online</div>
+      <div class="card-header">
+        <div class="card-emoji">🧭</div>
+        <div class="card-info">
+          <h3>The Guide</h3>
+          <div class="card-role">Onboarding</div>
+        </div>
+      </div>
+      <div class="card-desc">
+        Solutions Architect. Manages the Onboarding Wizard and creates industry playbooks to minimize "Time to Value" for new tenants.
+      </div>
+      <div class="card-meta">
+        <span class="meta-tag">Playbooks</span>
+        <span class="meta-tag">Wizards</span>
+        <span class="meta-tag">Education</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

@@ -46,6 +46,7 @@ async function main() {
   app.get('/dashboard', (_req, res) => res.sendFile(path.join(dashboardDir, 'index.html')));
   app.get('/dashboard/audit', (_req, res) => res.sendFile(path.join(dashboardDir, 'audit.html')));
   app.get('/dashboard/controls', (_req, res) => res.sendFile(path.join(dashboardDir, 'controls.html')));
+  app.get('/dashboard/team', (_req, res) => res.sendFile(path.join(dashboardDir, 'team.html')));
 
   app.use('/api/control', controlRouter);
   app.use('/api/audit', auditRouter);
