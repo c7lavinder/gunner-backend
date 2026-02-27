@@ -16,6 +16,7 @@ import { auditLog } from '../core/audit';
 import { isEnabled } from '../core/toggles';
 import { isDryRun } from '../core/dry-run';
 import { loadPlaybook } from '../config/loader';
+import { getSla, getSendWindow } from '../config/helpers';
 import { smsBot, taskBot, fieldBot } from '../bots';
 
 const AGENT_ID = 'offer-chase';
@@ -39,6 +40,10 @@ export async function runOfferChase(event: GunnerEvent): Promise<void> {
   const start = Date.now();
   const playbook = await loadPlaybook(tenantId);
   const cadence = playbook?.offerChase?.cadence ?? DEFAULT_CADENCE;
+  const [sla, sendWindow] = await Promise.all([
+    getSla(tenantId, 'offer_chase_escalation'),
+    getSendWindow(tenantId),
+  ]);
 
   // Guard: check current touch number from contact field
   const currentTouch = event.metadata?.touchNumber ?? 1;
@@ -53,7 +58,7 @@ export async function runOfferChase(event: GunnerEvent): Promise<void> {
         tenantId,
         title: 'Offer Chase: No reply after 3 touches — renegotiate or walk away',
         assignTo: playbook?.roles?.acquisitionManager ?? 'am',
-        dueMins: 60,
+        dueMins: sla ?? 60,
       });
 
       await fieldBot({
@@ -112,7 +117,7 @@ export async function runOfferChase(event: GunnerEvent): Promise<void> {
       tenantId,
       contactId,
       opportunityId,
-      metadata: { touchNumber: 1, delayDays: cadence[0].delayDays },
+      metadata: { touchNumber: 1, delayDays: cadence[0].delayDays, sendWindow },
     });
     return;
   }

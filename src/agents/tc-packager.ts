@@ -13,6 +13,7 @@ import { auditLog } from '../core/audit';
 import { isEnabled } from '../core/toggles';
 import { isDryRun } from '../core/dry-run';
 import { loadPlaybook } from '../config/loader';
+import { getFieldName, getNoteTemplate } from '../config/helpers';
 import { contactBot } from '../bots/contact';
 import { noteBot, taskBot } from '../bots';
 
@@ -37,6 +38,23 @@ export async function runTCPackager(event: GunnerEvent): Promise<void> {
   const tc = playbook?.roles?.transactionCoordinator ?? 'tc';
   const am = playbook?.roles?.acquisitionManager ?? 'am';
 
+  // Resolve custom field names and note template from playbook
+  const [
+    sellerNameField,
+    propertyAddressField,
+    contractPriceField,
+    closingDateField,
+    accessField,
+    tcHandoffTemplate,
+  ] = await Promise.all([
+    getFieldName(tenantId, 'seller_name'),
+    getFieldName(tenantId, 'property_address'),
+    getFieldName(tenantId, 'contract_price'),
+    getFieldName(tenantId, 'closing_date'),
+    getFieldName(tenantId, 'access_instructions'),
+    getNoteTemplate(tenantId, 'tc_handoff'),
+  ]);
+
   // Pull contact/deal data via contactBot
   const contact = await contactBot(contactId);
 
@@ -52,13 +70,13 @@ export async function runTCPackager(event: GunnerEvent): Promise<void> {
       contactId,
       opportunityId,
       tenantId,
-      templateKey: 'tc_handoff',
+      template: tcHandoffTemplate,
       context: {
-        sellerName: contact?.name ?? contact?.customFields?.seller_name ?? 'Unknown',
-        propertyAddress: contact?.customFields?.property_address ?? 'N/A',
-        contractPrice: contact?.customFields?.contract_price ?? 'N/A',
-        closingDate: contact?.customFields?.closing_date ?? 'N/A',
-        accessInstructions: contact?.customFields?.access_instructions ?? 'N/A',
+        sellerName: contact?.name ?? contact?.customFields?.[sellerNameField] ?? 'Unknown',
+        propertyAddress: contact?.customFields?.[propertyAddressField] ?? 'N/A',
+        contractPrice: contact?.customFields?.[contractPriceField] ?? 'N/A',
+        closingDate: contact?.customFields?.[closingDateField] ?? 'N/A',
+        accessInstructions: contact?.customFields?.[accessField] ?? 'N/A',
         sellerPhone: contact?.phone ?? 'N/A',
         sellerEmail: contact?.email ?? 'N/A',
       },
