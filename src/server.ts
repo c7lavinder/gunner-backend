@@ -19,6 +19,7 @@ import { startIntelligenceResearcher } from './agents/intelligence-researcher';
 import { startMorningBriefing } from './agents/morning-briefing';
 import briefingRouter from './api/briefing';
 import { setupWebSocket } from './core/ws';
+import { startAutoRefresh } from './integrations/ghl/oauth-store';
 
 async function main() {
   // 1. Load config (all env vars → typed config object)
@@ -63,7 +64,10 @@ async function main() {
   startIntelligenceResearcher();
   startMorningBriefing();
 
-  // 7. Start CRM sync (5s after boot)
+  // 7. Start OAuth auto-refresh (proactive, every 30m)
+  startAutoRefresh();
+
+  // 8. Start CRM sync (5s after boot)
   startCrmSync();
 
   console.log('[server] Gunner Backend ready');

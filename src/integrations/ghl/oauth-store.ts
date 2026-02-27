@@ -98,6 +98,38 @@ async function refreshAccessToken(refreshToken: string): Promise<OAuthTokens | n
   }
 }
 
+// ── Proactive refresh timer ──
+// Checks every 30 min and refreshes if expiring within 10 min.
+let refreshInterval: ReturnType<typeof setInterval> | null = null;
+
+export function startAutoRefresh(): void {
+  if (refreshInterval) return;
+  console.log('[oauth-store] auto-refresh started (every 30m)');
+  refreshInterval = setInterval(async () => {
+    const tokens = loadTokens();
+    if (!tokens) return;
+    const minutesLeft = (tokens.expires_at - Date.now()) / 60000;
+    if (minutesLeft < 10) {
+      console.log(`[oauth-store] proactive refresh — ${minutesLeft.toFixed(1)} min left`);
+      await refreshAccessToken(tokens.refresh_token);
+    }
+  }, 30 * 60 * 1000);
+  // Also run immediately on start
+  (async () => {
+    const tokens = loadTokens();
+    if (!tokens) return;
+    const minutesLeft = (tokens.expires_at - Date.now()) / 60000;
+    if (minutesLeft < 10) {
+      console.log(`[oauth-store] startup refresh — ${minutesLeft.toFixed(1)} min left`);
+      await refreshAccessToken(tokens.refresh_token);
+    }
+  })();
+}
+
+export function stopAutoRefresh(): void {
+  if (refreshInterval) { clearInterval(refreshInterval); refreshInterval = null; }
+}
+
 export async function exchangeCodeForTokens(code: string): Promise<OAuthTokens | null> {
   const clientId = process.env.GHL_CLIENT_ID;
   const clientSecret = process.env.GHL_CLIENT_SECRET;
