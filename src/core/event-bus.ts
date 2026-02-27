@@ -43,7 +43,12 @@ export type EventKind =
   | 'dispo.terminated'
   | 'dispo.jv.routed'
   | 'buyer.response'
-  | 'buyer.matched';
+  | 'buyer.matched'
+  | 'dispo.deal.intake'
+  | 'dispo.title.started'
+  | 'dispo.deal.closed'
+  | 'buyer.intake'
+  | 'buyer.qualified';
 
 export interface GunnerEvent {
   kind: EventKind;

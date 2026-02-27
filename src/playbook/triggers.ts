@@ -38,5 +38,39 @@ export function getTriggers(): TriggerConfig[] {
 
     // ── Calls ──────────────────────────────────────────────────────────────
     { event: 'call.completed', agentId: 'lm-assistant' },
+
+    // ── Dispo Pipeline ─────────────────────────────────────────────────────
+    { event: 'opportunity.stage_changed', agentId: 'deal-intake',
+      condition: (e) => e.stageId === config.stages.dispoNewDeal },
+    { event: 'opportunity.stage_changed', agentId: 'deal-blaster',
+      condition: (e) => e.stageId === config.stages.dispoClearToSend },
+    { event: 'opportunity.stage_changed', agentId: 'offer-collector',
+      condition: (e) => e.stageId === config.stages.dispoOffersReceived },
+    { event: 'opportunity.stage_changed', agentId: 'jv-router',
+      condition: (e) => e.stageId === config.stages.dispoWithJvPartner },
+    { event: 'opportunity.stage_changed', agentId: 'deal-terminator',
+      condition: (e) => e.stageId === config.stages.dispoNeedToTerminate },
+    { event: 'opportunity.stage_changed', agentId: 'dispo-closer',
+      condition: (e) => e.stageId === config.stages.dispoUcWithBuyer },
+    { event: 'opportunity.stage_changed', agentId: 'title-coordinator',
+      condition: (e) => e.stageId === config.stages.dispoWorkingWithTitle },
+    { event: 'opportunity.stage_changed', agentId: 'dispo-closing-agent',
+      condition: (e) => e.stageId === config.stages.dispoClosed },
+
+    // Dispo deal intake also triggers buyer matching
+    { event: 'opportunity.stage_changed', agentId: 'buyer-matcher',
+      condition: (e) => e.stageId === config.stages.dispoNewDeal },
+
+    // Contract packager
+    { event: 'contract.package.dispo', agentId: 'dispo-packager' },
+
+    // ── Buyer Pipeline ─────────────────────────────────────────────────────
+    { event: 'opportunity.stage_changed', agentId: 'buyer-intake',
+      condition: (e) => e.stageId === config.stages.buyerNewBuyer },
+    { event: 'opportunity.stage_changed', agentId: 'showing-manager',
+      condition: (e) => e.stageId === config.stages.buyerShowingScheduled },
+
+    // Buyer response fires on inbound messages from buyers
+    { event: 'buyer.response', agentId: 'buyer-qualifier' },
   ];
 }

@@ -45,6 +45,20 @@ export function loadConfig(): PlaybookConfig {
       oneMonthFU:    process.env.STAGE_1MO_FU ?? '',
       fourMonthFU:   process.env.STAGE_4MO_FU ?? '',
       oneYearFU:     process.env.STAGE_1YR_FU ?? '',
+      // Dispo pipeline stages
+      dispoNewDeal:         process.env.STAGE_DISPO_NEW_DEAL ?? '',
+      dispoClearToSend:     process.env.STAGE_DISPO_CLEAR_TO_SEND ?? '',
+      dispoSentToBuyers:    process.env.STAGE_DISPO_SENT_TO_BUYERS ?? '',
+      dispoOffersReceived:  process.env.STAGE_DISPO_OFFERS_RECEIVED ?? '',
+      dispoNeedToTerminate: process.env.STAGE_DISPO_NEED_TO_TERMINATE ?? '',
+      dispoWithJvPartner:   process.env.STAGE_DISPO_WITH_JV_PARTNER ?? '',
+      dispoUcWithBuyer:     process.env.STAGE_DISPO_UC_WITH_BUYER ?? '',
+      dispoWorkingWithTitle:process.env.STAGE_DISPO_WORKING_WITH_TITLE ?? '',
+      dispoClosed:          process.env.STAGE_DISPO_CLOSED ?? '',
+      // Buyer pipeline stages
+      buyerNewBuyer:        process.env.STAGE_BUYER_NEW_BUYER ?? '',
+      buyerInterested:      process.env.STAGE_BUYER_INTERESTED ?? '',
+      buyerShowingScheduled:process.env.STAGE_BUYER_SHOWING_SCHEDULED ?? '',
     },
     team: {
       defaultLM: process.env.DEFAULT_LM_USER_ID ?? '',

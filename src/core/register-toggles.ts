@@ -49,6 +49,11 @@ registerToggle({ id: 'dispo-closer', kind: 'agent', label: 'Dispo Closer', descr
 registerToggle({ id: 'jv-router', kind: 'agent', label: 'JV Router', description: 'Routes deals to JV partners and coordinates terms', enabled: true });
 registerToggle({ id: 'deal-terminator', kind: 'agent', label: 'Deal Terminator', description: 'Handles deal termination — logging, cleanup, re-evaluation', enabled: true });
 registerToggle({ id: 'dispo-accountability', kind: 'agent', label: 'Dispo Accountability', description: 'Audits dispo pipeline health every 4 hours, alerts on stale deals', enabled: true });
+registerToggle({ id: 'deal-intake', kind: 'agent', label: 'Deal Intake', description: 'Validates new dispo deals, assigns to Esteban, creates review task', enabled: true });
+registerToggle({ id: 'title-coordinator', kind: 'agent', label: 'Title Coordinator', description: 'Creates title work milestone tasks, monitors timeline', enabled: true });
+registerToggle({ id: 'dispo-closing-agent', kind: 'agent', label: 'Closing Agent', description: 'Calculates profit, creates closing summary, triggers post-close', enabled: true });
+registerToggle({ id: 'buyer-intake', kind: 'agent', label: 'Buyer Intake', description: 'New buyer onboarding — criteria capture, tagging', enabled: true });
+registerToggle({ id: 'buyer-qualifier', kind: 'agent', label: 'Buyer Qualifier', description: 'Scores buyers, moves to qualified/unqualified/priority', enabled: true });
 
 // === BOTS ===
 registerToggle({ id: 'bot-assign', kind: 'bot', label: 'Assign Bot', description: 'Assigns opportunities to team members in GHL', enabled: true });
