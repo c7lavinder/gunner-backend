@@ -16,29 +16,189 @@
   "crm": {
     "provider": "ghl",
     "locationId": "hmD7eWGQJE7EVFpJxj4q",
+    "apiKey": "pit-bb208405-19c3-4d34-8023-45fc1fbc5fd0",
+
     "pipelines": {
-      "acquisitions": {
+      "sales": {
         "pipelineId": "tOqQbembKlIoPiXbepP3",
+        "name": "Sales Process",
         "stages": {
-          "new_lead": "f919c1a7-17da-456f-b8f9-10c1aca62691",
-          "contacted": null,
-          "qualified": null,
-          "warm": null,
-          "appointment_set": null,
-          "offer_made": null,
-          "under_contract": null,
-          "closed": null,
-          "dead": null,
-          "follow_up_1mo": null,
-          "follow_up_4mo": null,
-          "follow_up_1yr": null,
-          "ghosted": null
+          "new_lead":           "f919c1a7-17da-456f-b8f9-10c1aca62691",
+          "warm":               "34b88324-9bb1-4110-8531-d4271c6c1567",
+          "hot":                "84c5583f-7b6b-494a-83b2-df9e54db3c8c",
+          "pending_apt":        "09016bf4-c573-4bf5-941b-2a2fb146a9af",
+          "walkthrough_apt":    "32949f8d-efe7-4675-9c54-badd4c5c9dca",
+          "offer_apt":          "3fc1356a-6861-4018-bd7d-0dd1dc0998da",
+          "made_offer":         "4ab2cfdb-4848-4e1a-b2cc-5e8fd5de0789",
+          "under_contract":     "d71ec692-9af8-44cc-bd58-5831c130ac8b",
+          "purchased":          "23c35caa-1846-403e-86c7-a1a2ab748e58",
+          "follow_up_1mo":      "0f7ddf92-ff79-44cb-97e8-61bf9b8db8fe",
+          "follow_up_4mo":      "e0fbea34-7bf8-48ad-9a47-fed2dfd60b06",
+          "follow_up_1yr":      "733adecd-0d2f-4312-a92d-8bbc02e02dc5",
+          "ghosted":            "dc8a2451-8349-4c84-8e98-2dffccd5ca9b",
+          "agreement_not_closed": "b157bae8-5e6a-4f45-94c4-02d1410a5761",
+          "sold":               "f0f33ad5-0ccb-4719-9521-772edf4845db",
+          "do_not_want":        "b8590254-6256-4a48-831e-67d808f5125f"
         }
       },
-      "dispositions": {
-        "pipelineId": null,
-        "stages": {}
+      "dispo": {
+        "pipelineId": "3hSuypWfNz2rCnu5nnal",
+        "name": "Dispo Pipeline",
+        "stages": {
+          "new_deal":           "f773a2da-2641-42a7-b630-9c028ea2bcad",
+          "clear_to_send":      "48cb9026-7242-449c-a7ea-7c195cf3d6a1",
+          "sent_to_buyers":     "752ae74a-12d8-4716-97c1-390f84089aeb",
+          "offers_received":    "54a2a405-d3d4-4222-bc19-067a8828cbdb",
+          "need_to_terminate":  "413aa43e-3ca9-4e84-ba32-d4207648e685",
+          "with_jv_partner":    "fe041520-f27a-49cf-a383-03a9d1a2c44e",
+          "uc_with_buyer":      "e725fb5e-745d-4f5c-ba87-3f28b615cbe0",
+          "working_with_title": "d8bee095-0533-4add-b23b-428bbe725ca7",
+          "closed":             "4fc48125-fc9c-4aeb-8667-33f8af7ead5b"
+        }
+      },
+      "buyer": {
+        "pipelineId": "QSUHOidatRTOi2ztGFGt",
+        "name": "Buyer Pipeline",
+        "stages": {
+          "new_buyer":          "4a4cc2b1-77fd-4dc7-88e6-7a203d916d14",
+          "interested":         "cbc10369-9c8a-4490-b814-480fe4a767c6",
+          "showing_scheduled":  "6d917d93-eaac-478e-9182-3393b530dbc2",
+          "offer_sent":         "4fb64932-826c-40e5-be34-6eeebe62290e",
+          "in_escrow":          "6bb3ee7b-321f-4f60-9705-57ba5cd6a2bb",
+          "priority_buyer":     "d2ffbe31-e780-4163-9f99-88aa67c1647e",
+          "qualified_buyer":    "7276a88d-b840-4b37-842a-08571108dcd4",
+          "jv_partner":         "e7c9598b-51b0-484e-ad40-fa0cd936606a",
+          "unqualified_buyer":  "8f8041cc-a9bf-43af-a963-c037f7e08bb0",
+          "halted_buyer":       "a50b500f-e2e7-43a4-82f3-560cdb53d964"
+        }
+      },
+      "follow_up": {
+        "pipelineId": "grDjCVlwUKx4ShCiOqGi",
+        "name": "Follow Up",
+        "stages": {
+          "new_lead":           "0a2f01d0-5190-4846-9edb-d55ef09c724b",
+          "new_offer":          "155ef12b-2d1b-4d00-b337-a1b187e9cb39",
+          "new_walkthrough":    "04e48939-91b0-4deb-bf6c-03234bdc0158",
+          "follow_up_4mo":      "031aac0e-829d-474e-a776-3d17d1d8a207",
+          "follow_up_1yr":      "1d227639-ac25-45f6-bbcb-3447e366c475",
+          "purchased":          "01bf2c52-fcd5-4e0e-b43b-467080a28ff9",
+          "agreement_not_closed": "a54953c3-53be-4da5-96ee-d58542650241",
+          "sold":               "d07f1db3-46cd-4481-9777-5bcbc11af408",
+          "ghosted":            "b1bcd2bd-c158-4c69-b57a-966ee3608a5b",
+          "trash":              "7a6ded25-e978-4599-b289-6ab66371c871"
+        }
+      },
+      "jv_deals": {
+        "pipelineId": "DzEnEOgJDh6H1icU8WGy",
+        "name": "JV Deals",
+        "stages": {
+          "new_lead":           "3ceb0114-c128-483f-9c5b-caaf4d678f80",
+          "stage_2":            "b1879275-7eef-4bf6-b8e7-4b9d0e8153a2",
+          "stage_3":            "56af384e-2e1c-4d23-b829-6c982e458722",
+          "stage_4":            "e62056b1-205a-413b-b9b9-5b7aa083e134",
+          "under_contract":     "929282d3-cb7f-491e-9816-31dac5be0794",
+          "closed":             "9ac12e40-b46b-4a0d-8e87-bb357427a98b",
+          "warm_partner":       "1c52e1f7-665f-4003-a980-e40e1ac9909b",
+          "cold_partner":       "e9abf7ad-b1d1-40a8-8a2a-1e03186dec76"
+        }
+      },
+      "lead_mining": {
+        "pipelineId": "rn7dtQ1jUlKfNUygJWZi",
+        "name": "Lead Mining",
+        "stages": {
+          "lead_list":          "129eb4f2-2878-4f5d-b203-86efb4c17312",
+          "response_received":  "0b86dff9-5625-4f3a-beee-ad99825323f9",
+          "lead":               "893ab36b-3d95-4d1f-9485-c9c380fc417c"
+        }
       }
+    },
+
+    "triggers": {
+      "new_lead_enters_sales": {
+        "type": "opportunity_stage_change",
+        "pipelineId": "tOqQbembKlIoPiXbepP3",
+        "stageId": "f919c1a7-17da-456f-b8f9-10c1aca62691",
+        "fires": ["new-lead-pipeline"]
+      },
+      "lead_moves_to_warm": {
+        "type": "opportunity_stage_change",
+        "pipelineId": "tOqQbembKlIoPiXbepP3",
+        "stageId": "34b88324-9bb1-4110-8531-d4271c6c1567",
+        "fires": ["lm-assistant"]
+      },
+      "lead_moves_to_under_contract": {
+        "type": "opportunity_stage_change",
+        "pipelineId": "tOqQbembKlIoPiXbepP3",
+        "stageId": "d71ec692-9af8-44cc-bd58-5831c130ac8b",
+        "fires": ["contract-bot"]
+      },
+      "lead_moves_to_purchased": {
+        "type": "opportunity_stage_change",
+        "pipelineId": "tOqQbembKlIoPiXbepP3",
+        "stageId": "23c35caa-1846-403e-86c7-a1a2ab748e58",
+        "fires": ["post-close-bot"]
+      },
+      "lead_moves_to_ghosted": {
+        "type": "opportunity_stage_change",
+        "pipelineId": "tOqQbembKlIoPiXbepP3",
+        "stageId": "dc8a2451-8349-4c84-8e98-2dffccd5ca9b",
+        "fires": ["ghosted-agent"]
+      },
+      "lead_moves_to_made_offer": {
+        "type": "opportunity_stage_change",
+        "pipelineId": "tOqQbembKlIoPiXbepP3",
+        "stageId": "4ab2cfdb-4848-4e1a-b2cc-5e8fd5de0789",
+        "fires": ["offer-chase"]
+      },
+      "lead_moves_to_follow_up_1mo": {
+        "type": "opportunity_stage_change",
+        "pipelineId": "tOqQbembKlIoPiXbepP3",
+        "stageId": "0f7ddf92-ff79-44cb-97e8-61bf9b8db8fe",
+        "fires": ["follow-up-organizer"]
+      },
+      "lead_moves_to_follow_up_4mo": {
+        "type": "opportunity_stage_change",
+        "pipelineId": "tOqQbembKlIoPiXbepP3",
+        "stageId": "e0fbea34-7bf8-48ad-9a47-fed2dfd60b06",
+        "fires": ["follow-up-organizer"]
+      },
+      "lead_moves_to_follow_up_1yr": {
+        "type": "opportunity_stage_change",
+        "pipelineId": "tOqQbembKlIoPiXbepP3",
+        "stageId": "733adecd-0d2f-4312-a92d-8bbc02e02dc5",
+        "fires": ["follow-up-organizer"]
+      },
+      "lead_moves_to_walkthrough_apt": {
+        "type": "opportunity_stage_change",
+        "pipelineId": "tOqQbembKlIoPiXbepP3",
+        "stageId": "32949f8d-efe7-4675-9c54-badd4c5c9dca",
+        "fires": ["apt-prep"]
+      },
+      "lead_moves_to_offer_apt": {
+        "type": "opportunity_stage_change",
+        "pipelineId": "tOqQbembKlIoPiXbepP3",
+        "stageId": "3fc1356a-6861-4018-bd7d-0dd1dc0998da",
+        "fires": ["apt-prep"]
+      },
+      "inbound_sms": {
+        "type": "inbound_message",
+        "channel": "sms",
+        "fires": ["response-agent"]
+      },
+      "inbound_call": {
+        "type": "inbound_call",
+        "fires": ["callback-capture"]
+      }
+    },
+
+    "webhooks": {
+      "subscribe_to": [
+        "OpportunityCreate",
+        "OpportunityStageUpdate",
+        "InboundMessage",
+        "ContactCreate",
+        "TaskComplete"
+      ]
     }
   },
 
@@ -46,45 +206,58 @@
     "owner": {
       "name": "Corey Lavinder",
       "role": "ceo",
-      "ghlUserId": null
+      "ghlUserId": "i4SkusEsfpLEb62YirUD",
+      "email": "corey@newagainhouses.com"
     },
     "members": [
       {
-        "name": "Kyle",
-        "role": "acquisition_manager",
+        "name": "Kyle Barks",
         "shortName": "Kyle",
-        "ghlUserId": null,
+        "role": "acquisition_manager",
+        "ghlUserId": "InPGvGL7iu5TCnYJLMEx",
+        "email": "kbarks@newagainhouses.com",
         "markets": ["Nashville", "Columbia", "Knoxville"]
       },
       {
-        "name": "Chris",
-        "role": "lead_manager",
+        "name": "Chris Segura",
         "shortName": "Chris",
-        "ghlUserId": null,
+        "role": "lead_manager",
+        "ghlUserId": "nJVGO9byJSmD8O32UF9Z",
+        "email": "c.segura9393@gmail.com",
         "markets": ["Nashville"]
       },
       {
-        "name": "Daniel",
-        "role": "lead_manager",
+        "name": "Daniel Lozano",
         "shortName": "Daniel",
-        "ghlUserId": null,
+        "role": "lead_manager",
+        "ghlUserId": "G1hAG3KNhzMerkEIvMr5",
+        "email": "Alvarez.lozano@hotmail.com",
         "markets": ["Columbia", "Knoxville"]
       },
       {
-        "name": "Esteban",
-        "role": "dispo_manager",
+        "name": "Esteban Leiva",
         "shortName": "Esteban",
-        "ghlUserId": null,
+        "role": "dispo_manager",
+        "ghlUserId": "BhVAeJjAfojeX9AJdqbf",
+        "email": "estebanldv1999@gmail.com",
         "markets": ["Nashville", "Columbia", "Knoxville"]
       },
       {
-        "name": "Jessica",
-        "role": "data_manager",
+        "name": "Jessica Guzman",
         "shortName": "Jessica",
-        "ghlUserId": null,
+        "role": "data_manager",
+        "ghlUserId": "QnWrqDFrNA64Rlmi3ZeG",
+        "email": "yamicead15@gmail.com",
         "description": "KPI entry, channel routing, escalation contact"
       }
-    ]
+    ],
+    "routing": {
+      "lm_ids": ["G1hAG3KNhzMerkEIvMr5", "nJVGO9byJSmD8O32UF9Z"],
+      "am_ids": ["InPGvGL7iu5TCnYJLMEx"],
+      "default_assignee": "G1hAG3KNhzMerkEIvMr5",
+      "routing_mode": "fixed",
+      "note": "Currently fixed to Daniel. Future: round-robin by market."
+    }
   },
 
   "leadSources": {
@@ -92,32 +265,38 @@
       "name": "Pay Per Lead",
       "type": "outbound",
       "providers": ["Leadzolo", "PropertyLeads", "MotivatedSellers"],
-      "includeCompanyName": false
+      "includeCompanyName": false,
+      "tags": ["ppl"]
     },
     "tv": {
       "name": "TV Marketing",
       "type": "inbound",
-      "includeCompanyName": true
+      "includeCompanyName": true,
+      "tags": ["tv"]
     },
     "directMail": {
       "name": "Direct Mail",
       "type": "outbound",
-      "includeCompanyName": false
+      "includeCompanyName": false,
+      "tags": ["direct-mail"]
     },
     "coldCall": {
       "name": "Cold Call",
       "type": "outbound",
-      "includeCompanyName": false
+      "includeCompanyName": false,
+      "tags": ["cold-call"]
     },
     "website": {
       "name": "Website",
       "type": "inbound",
-      "includeCompanyName": true
+      "includeCompanyName": true,
+      "tags": ["website"]
     },
     "referral": {
       "name": "Referral",
       "type": "inbound",
-      "includeCompanyName": true
+      "includeCompanyName": true,
+      "tags": ["referral"]
     }
   },
 
@@ -218,6 +397,7 @@
       "1mo": {
         "name": "1-Month Bucket",
         "label": "Hot Follow-Up",
+        "stageId": "0f7ddf92-ff79-44cb-97e8-61bf9b8db8fe",
         "criteria": "Selling in ~30 days",
         "touches": 6,
         "span_days": 90,
@@ -226,6 +406,7 @@
       "4mo": {
         "name": "4-Month Bucket",
         "label": "Warm Follow-Up",
+        "stageId": "e0fbea34-7bf8-48ad-9a47-fed2dfd60b06",
         "criteria": "Selling within 6 months",
         "touches": 6,
         "span_days": 360,
@@ -234,6 +415,7 @@
       "1yr": {
         "name": "1-Year Bucket",
         "label": "Someday Seller",
+        "stageId": "733adecd-0d2f-4312-a92d-8bbc02e02dc5",
         "criteria": "Wants to sell eventually",
         "touches": 6,
         "span_months": 36,
@@ -241,7 +423,11 @@
       }
     },
     "tones": ["check-in", "time-sensitive", "empathetic", "rekindle", "final-touch"],
-    "on_interest_detected": "Move to Warm, LM task within 30 min"
+    "on_interest_detected": {
+      "move_to_stage": "34b88324-9bb1-4110-8531-d4271c6c1567",
+      "create_task_for": "lm",
+      "task_deadline_minutes": 30
+    }
   },
 
   "appointments": {
@@ -252,27 +438,44 @@
     },
     "am_prep_task_hours_before": 2,
     "outcomes": {
-      "accepted": "Move to Under Contract → Contract Bot fires",
-      "rejected": "AI places in follow-up bucket",
-      "negotiating": "Move to Offer stage → Offer Chase fires",
-      "no_show": "Pending + LM reschedule task",
-      "no_same_day_offer": "AM task: run numbers, 24h deadline"
+      "accepted": {
+        "move_to": "d71ec692-9af8-44cc-bd58-5831c130ac8b",
+        "fires": ["contract-bot"]
+      },
+      "rejected": {
+        "fires": ["bucket-reeval"]
+      },
+      "negotiating": {
+        "move_to": "4ab2cfdb-4848-4e1a-b2cc-5e8fd5de0789",
+        "fires": ["offer-chase"]
+      },
+      "no_show": {
+        "move_to": "09016bf4-c573-4bf5-941b-2a2fb146a9af",
+        "create_task": "Reschedule — seller no-showed"
+      },
+      "no_same_day_offer": {
+        "create_task_for": "am",
+        "task": "Run numbers and make offer",
+        "deadline_hours": 24
+      }
     }
   },
 
   "underContract": {
-    "contract_bot_actions": [
-      "AI confirmation text to seller",
-      "AM task: deal details to TC and Dispo (1h deadline)",
-      "TC Packager fires",
-      "Dispo Packager fires"
-    ],
-    "uc_monitor_interval_minutes": 30,
-    "uc_monitor_rules": {
-      "general_checkin": "AI auto-replies",
-      "closing_questions": "TC gets a task",
-      "concern_backing_out": "AM task within 30 min (high urgency)",
-      "seller_quiet_days": 5
+    "contract_bot_actions": {
+      "send_confirmation_sms": true,
+      "create_am_task": { "title": "Get deal details to TC and Dispo", "deadline_hours": 1 },
+      "fire_tc_packager": true,
+      "fire_dispo_packager": true
+    },
+    "uc_monitor": {
+      "interval_minutes": 30,
+      "rules": {
+        "general_checkin": { "action": "auto_reply" },
+        "closing_questions": { "action": "create_task", "assign_to": "tc" },
+        "concern_backing_out": { "action": "create_task", "assign_to": "am", "urgency": "high", "deadline_minutes": 30 },
+        "seller_quiet_days": { "threshold": 5, "action": "proactive_checkin_sms" }
+      }
     }
   },
 
@@ -286,16 +489,17 @@
 
   "callCoaching": {
     "provider": "gunner",
+    "app_url": "https://getgunner.ai",
     "grading_scale": "A-F",
     "factors": 6,
-    "note": "Scores stored in Gunner app (getgunner.ai), summary note written to GHL"
+    "note": "Scores stored in Gunner app, summary note written to GHL via noteBot"
   },
 
   "accountability": {
     "tiers": [
       { "level": "yellow", "overdue_minutes": 15, "action": "Flag in system" },
-      { "level": "orange", "overdue_minutes": 30, "action": "Alert to Jessica" },
-      { "level": "red", "overdue_minutes": 60, "action": "Escalate to Corey" }
+      { "level": "orange", "overdue_minutes": 30, "action": "Alert Jessica", "notify_user": "QnWrqDFrNA64Rlmi3ZeG" },
+      { "level": "red", "overdue_minutes": 60, "action": "Escalate to Corey", "notify_user": "i4SkusEsfpLEb62YirUD" }
     ],
     "cooldown_minutes": 30
   },
@@ -319,6 +523,7 @@
       "lead-task-creator": true,
       "initial-outreach": false,
       "working-drip": false,
+      "outbound-manager": false,
       "lm-assistant": false,
       "call-coaching": false,
       "response-agent": false,
@@ -337,7 +542,6 @@
       "callback-capture": false,
       "uc-monitor": false,
       "accountability-agent": false,
-      "outbound-manager": false,
       "contract-bot": false,
       "tc-packager": false,
       "dispo-packager": false,
@@ -345,7 +549,7 @@
       "reality-check": false,
       "reality-check-poller": false
     },
-    "note": "Only intake agents enabled initially. Everything else OFF until dry run is verified. Corey turns them on."
+    "note": "Only intake agents ON initially. Everything else OFF until dry run verified. Corey flips the switches."
   },
 
   "flags": {
