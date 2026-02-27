@@ -11,7 +11,7 @@ import { isEnabled } from '../core/toggles';
 import { isDryRun } from '../core/dry-run';
 import { loadPlaybook } from '../config/loader';
 import { contactBot, noteBot, tagBot } from '../bots';
-import { generateJSON } from '../integrations/ai/gemini';
+import { aiClassifierBot } from '../bots/ai-classifier';
 
 const AGENT_ID = 'buyer-matcher';
 
@@ -58,7 +58,7 @@ export async function runBuyerMatcher(event: GunnerEvent): Promise<void> {
   }
 
   // AI-score buyers against deal
-  const scoredBuyers = await generateJSON<BuyerScore[]>(
+  const scoredBuyers = await aiClassifierBot.classifyJSON<BuyerScore[]>(
     `Score these buyers against this deal. Return JSON array of {buyerId, name, score (0-100), reasons: string[]}.
 Deal: ${propertyAddress}, ARV: ${arv}, Price: ${contractPrice}, Type: ${propertyType}, Area: ${area}
 Buyers: ${JSON.stringify(buyers.map(b => ({ id: b.id, name: b.name, tier: b.tier, buyBox: b.buyBox })))}

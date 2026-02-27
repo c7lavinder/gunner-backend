@@ -12,7 +12,7 @@ import { isEnabled } from '../core/toggles';
 import { isDryRun } from '../core/dry-run';
 import { loadPlaybook } from '../config/loader';
 import { contactBot, noteBot, smsBot, stageBot, tagBot } from '../bots';
-import { generateText } from '../integrations/ai/gemini';
+import { aiWriterBot } from '../bots/ai-writer';
 
 const AGENT_ID = 'deal-blaster';
 
@@ -35,7 +35,7 @@ export async function runDealBlaster(event: GunnerEvent): Promise<void> {
   const photosLink = cf.photos_link ?? '';
 
   // AI-generate the blast message
-  const blastMessage = await generateText(
+  const blastMessage = await aiWriterBot.writeText(
     `Write a short, punchy deal blast SMS for real estate investors. Keep it under 300 chars.
 Property: ${propertyAddress}
 ARV: ${arv} | Price: ${contractPrice} | Repairs: ${repairs}

@@ -22,7 +22,7 @@ import { contactBot } from '../bots/contact';
 import { fieldBot } from '../bots/field';
 import { noteBot } from '../bots/note';
 import { loadPlaybook } from '../config/loader';
-import { generateText } from '../integrations/ai/gemini';
+import { aiWriterBot } from '../bots/ai-writer';
 
 const AGENT_ID = 'initial-outreach';
 
@@ -120,7 +120,7 @@ const SMS_FALLBACK = `Hey, saw you might be interested in selling — happy to c
 
 async function generateSMS(prompt: string): Promise<string> {
   try {
-    const text = await generateText(prompt, SMS_SYSTEM_PROMPT);
+    const text = await aiWriterBot.writeText(prompt, SMS_SYSTEM_PROMPT);
     const cleaned = text.trim().replace(/^["']|["']$/g, '');
     return cleaned || SMS_FALLBACK;
   } catch (err) {

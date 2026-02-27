@@ -1,9 +1,10 @@
 /**
- * Bots — the ONLY layer allowed to write to GHL.
+ * Bots — the ONLY layer allowed to talk to integrations.
  * Each bot does exactly one thing.
- * All bots check isDryRun() before writing.
+ * All write bots check isDryRun() before writing.
  */
 
+// === WRITE BOTS ===
 export { contactBot } from './contact';
 export { scorerBot } from './scorer';
 export { stageBot } from './stage';
@@ -13,3 +14,17 @@ export { tagBot } from './tag';
 export { fieldBot } from './field';
 export { smsBot } from './sms';
 export { assignBot } from './assign';
+
+// === READ BOTS ===
+export { searchBot } from './contact-search';
+export { taskReaderBot } from './task-reader';
+export { noteReaderBot } from './note-reader';
+export { opportunityBot } from './opportunity';
+export { pipelineReaderBot } from './pipeline-reader';
+
+// === AI BOTS ===
+export { aiWriterBot } from './ai-writer';
+export { aiClassifierBot } from './ai-classifier';
+
+// === COMMUNICATION BOTS ===
+export { emailBot } from './email';

@@ -11,7 +11,7 @@ import { isEnabled } from '../core/toggles';
 import { isDryRun } from '../core/dry-run';
 import { loadPlaybook } from '../config/loader';
 import { noteBot, taskBot, tagBot, stageBot } from '../bots';
-import { generateJSON } from '../integrations/ai/gemini';
+import { aiClassifierBot } from '../bots/ai-classifier';
 
 const AGENT_ID = 'buyer-response';
 const ESTEBAN_USER_ID = 'BhVAeJjAfojeX9AJdqbf';
@@ -34,7 +34,7 @@ export async function runBuyerResponse(event: GunnerEvent): Promise<void> {
   if (!inboundMessage) return;
 
   // AI-classify the response
-  const classification = await generateJSON<Classification>(
+  const classification = await aiClassifierBot.classifyJSON<Classification>(
     `Classify this buyer's response to a real estate deal blast.
 Message: "${inboundMessage}"
 Categories: interested, pass, question, lowball, schedule_showing

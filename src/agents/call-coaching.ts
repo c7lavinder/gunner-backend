@@ -11,7 +11,7 @@ import { isEnabled } from '../core/toggles';
 import { isDryRun } from '../core/dry-run';
 import { noteBot } from '../bots/note';
 import { loadPlaybook } from '../config';
-import { generateJSON } from '../integrations/ai/gemini';
+import { aiClassifierBot } from '../bots/ai-classifier';
 
 const AGENT_ID = 'call-coaching';
 
@@ -119,10 +119,11 @@ async function evaluateFactor(
   const systemPrompt = `You grade real estate sales calls. Grade this call on the factor "${name}" from A to F. ${criteria ? `Criteria: ${JSON.stringify(criteria)}` : ''} Return JSON only: {"grade": "A"|"B"|"C"|"D"|"F", "notes": "brief explanation"}`;
 
   try {
-    const result = await generateJSON<{ grade: Grade; notes: string }>(
+    const result = await aiClassifierBot.classifyJSON<{ grade: Grade; notes: string }>(
       `Grade this call transcript on "${name}":\n\n${transcript.slice(0, 4000)}`,
       systemPrompt,
     );
+    if (!result) return { name, grade: 'B', notes: 'AI unavailable — default grade' };
     const grade = (['A', 'B', 'C', 'D', 'F'] as Grade[]).includes(result.grade) ? result.grade : 'B';
     return { name, grade, notes: result.notes || '' };
   } catch (err) {

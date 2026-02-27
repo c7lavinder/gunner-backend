@@ -60,3 +60,17 @@ registerToggle({ id: 'bot-sms', kind: 'bot', label: 'SMS Bot', description: 'Sen
 registerToggle({ id: 'bot-stage', kind: 'bot', label: 'Stage Bot', description: 'Moves opportunities between pipeline stages in GHL', enabled: true });
 registerToggle({ id: 'bot-tag', kind: 'bot', label: 'Tag Bot', description: 'Applies tags to contacts in GHL', enabled: true });
 registerToggle({ id: 'bot-task', kind: 'bot', label: 'Task Bot', description: 'Creates tasks on contacts in GHL', enabled: true });
+
+// === READ BOTS ===
+registerToggle({ id: 'bot-contact-search', kind: 'bot', label: 'Contact Search Bot', description: 'Searches and filters contacts in GHL (read-only)', enabled: true });
+registerToggle({ id: 'bot-task-reader', kind: 'bot', label: 'Task Reader Bot', description: 'Reads tasks from GHL (read-only)', enabled: true });
+registerToggle({ id: 'bot-note-reader', kind: 'bot', label: 'Note Reader Bot', description: 'Reads notes from GHL (read-only)', enabled: true });
+registerToggle({ id: 'bot-opportunity', kind: 'bot', label: 'Opportunity Bot', description: 'Reads and creates opportunities in GHL', enabled: true });
+registerToggle({ id: 'bot-pipeline-reader', kind: 'bot', label: 'Pipeline Reader Bot', description: 'Reads contacts by pipeline stage (read-only)', enabled: true });
+
+// === AI BOTS ===
+registerToggle({ id: 'bot-ai-writer', kind: 'bot', label: 'AI Writer Bot', description: 'Generates text via Gemini AI', enabled: true });
+registerToggle({ id: 'bot-ai-classifier', kind: 'bot', label: 'AI Classifier Bot', description: 'Classifies/parses JSON via Gemini AI', enabled: true });
+
+// === COMMUNICATION BOTS ===
+registerToggle({ id: 'bot-email', kind: 'bot', label: 'Email Bot', description: 'Sends emails via GHL (stub)', enabled: true });

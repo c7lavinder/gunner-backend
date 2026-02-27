@@ -5,7 +5,9 @@
  * Uses GHL API directly for read operations (auditing only).
  */
 
-import { ghlGet } from '../../integrations/ghl/client';
+import { searchBot } from '../../bots/contact-search';
+import { taskReaderBot } from '../../bots/task-reader';
+import { noteReaderBot } from '../../bots/note-reader';
 import type { SystemIssue } from './types';
 
 function hoursAgo(ms: number): string {
@@ -23,8 +25,7 @@ export async function runSystemAudit(
   const now = Date.now();
 
   // Fetch recent leads via GHL search
-  const res = await ghlGet<any>(`/contacts/search?query=&dateAdded_gte=${new Date(windowStart).toISOString()}`).catch(() => ({ contacts: [] }));
-  const recentLeads: any[] = res?.contacts ?? [];
+  const recentLeads = await searchBot.searchByDateRange(new Date(windowStart).toISOString(), new Date().toISOString());
 
   for (const lead of recentLeads) {
     const contactId: string = lead.id;
@@ -63,8 +64,7 @@ export async function runSystemAudit(
     }
 
     // 4. Duplicate tasks
-    const tasksRes = await ghlGet<any>(`/contacts/${contactId}/tasks`).catch(() => ({ tasks: [] }));
-    const tasks: any[] = tasksRes?.tasks ?? [];
+    const tasks = await taskReaderBot.getTasksByContact(contactId);
     const titleCounts = new Map<string, number>();
     for (const t of tasks) {
       titleCounts.set(t.title, (titleCounts.get(t.title) ?? 0) + 1);
@@ -81,8 +81,7 @@ export async function runSystemAudit(
     }
 
     // 5. Stage moved but no notes
-    const notesRes = await ghlGet<any>(`/contacts/${contactId}/notes`).catch(() => ({ notes: [] }));
-    const notes: any[] = notesRes?.notes ?? [];
+    const notes = await noteReaderBot.getNotesByContact(contactId);
     if (stageEnteredAt && notes.length === 0) {
       issues.push({
         contactId,

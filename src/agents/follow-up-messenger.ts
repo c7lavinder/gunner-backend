@@ -11,7 +11,7 @@ import { auditLog } from '../core/audit';
 import { isEnabled } from '../core/toggles';
 import { smsBot, contactBot, fieldBot } from '../bots';
 import { getFieldName } from '../config';
-import { generateText } from '../integrations/ai/gemini';
+import { aiWriterBot } from '../bots/ai-writer';
 
 const AGENT_ID = 'follow-up-messenger';
 
@@ -76,7 +76,7 @@ const FU_FALLBACK = `Hey, just checking in — still thinking about selling? Let
 
 async function generateSMS(prompt: string): Promise<string> {
   try {
-    const text = await generateText(prompt, FU_SYSTEM_PROMPT);
+    const text = await aiWriterBot.writeText(prompt, FU_SYSTEM_PROMPT);
     const cleaned = text.trim().replace(/^["']|["']$/g, '');
     return cleaned || FU_FALLBACK;
   } catch (err) {

@@ -5,7 +5,8 @@
  * Uses GHL API directly for read operations (auditing only).
  */
 
-import { ghlGet } from '../../integrations/ghl/client';
+import { searchBot } from '../../bots/contact-search';
+import { taskReaderBot } from '../../bots/task-reader';
 import type { TeamIssue } from './types';
 
 function hoursAgo(ms: number): string {
@@ -25,8 +26,8 @@ export async function runTeamAudit(
   const warmCallSlaMins = playbook?.sla?.warmCallMins ?? 30;
 
   // 1. Warm leads with no call logged within SLA
-  const warmRes = await ghlGet<any>(`/contacts/search?pipelineStageId=warm&dateAdded_gte=${new Date(windowStart).toISOString()}`).catch(() => ({ contacts: [] }));
-  const warmLeads: any[] = warmRes?.contacts ?? [];
+  // Search for warm leads — using searchBot with stage filter
+  const warmLeads = await searchBot.searchContacts('', { pipelineStageId: 'warm', startAfter: new Date(windowStart).toISOString() });
 
   for (const lead of warmLeads) {
     const contactId: string = lead.id;
@@ -77,8 +78,7 @@ export async function runTeamAudit(
   }
 
   // 3. Overdue tasks
-  const tasksRes = await ghlGet<any>(`/contacts/tasks/search?status=overdue`).catch(() => ({ tasks: [] }));
-  const overdueTasks: any[] = tasksRes?.tasks ?? [];
+  const overdueTasks = await taskReaderBot.getOverdueTasks();
 
   for (const task of overdueTasks) {
     issues.push({
