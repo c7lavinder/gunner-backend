@@ -8,6 +8,8 @@ export type EventKind =
   | 'opportunity.created'
   | 'opportunity.stage_changed'
   | 'inbound.message'
+  | 'contact.created'
+  | 'task.completed'
   | 'call.completed'
   | 'call.inbound'
   | 'lead.new'

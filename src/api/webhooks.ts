@@ -6,6 +6,7 @@
 
 import { Router } from 'express';
 import { emit, GunnerEvent } from '../core/event-bus';
+import { auditLog } from '../core/audit';
 
 const router = Router();
 
@@ -13,9 +14,22 @@ router.post('/ghl', async (req, res) => {
   res.sendStatus(200); // always ack immediately
 
   const body = req.body;
-  const event = normalize(body);
-  if (!event) return;
 
+  auditLog({
+    agent: 'webhook-receiver',
+    contactId: body.contactId ?? body.contact_id ?? 'unknown',
+    action: 'webhook_received',
+    result: body.type ?? 'unknown_type',
+    metadata: { type: body.type, keys: Object.keys(body) },
+  });
+
+  const event = normalize(body);
+  if (!event) {
+    console.log(`[webhook] unhandled GHL event type: ${body.type}`);
+    return;
+  }
+
+  console.log(`[webhook] ${event.kind} contact=${event.contactId} opp=${event.opportunityId ?? 'n/a'}`);
   await emit(event);
 });
 
@@ -51,13 +65,35 @@ function normalize(body: any): GunnerEvent | null {
     };
   }
 
-  // Inbound message
+  // Inbound message (SMS, email, etc.)
   if (body.type === 'InboundMessage') {
     return {
       kind: 'inbound.message',
       tenantId: 'default',
       contactId,
       messageId: body.messageId,
+      raw: body,
+      receivedAt: Date.now(),
+    };
+  }
+
+  // Contact created
+  if (body.type === 'ContactCreate') {
+    return {
+      kind: 'contact.created',
+      tenantId: 'default',
+      contactId,
+      raw: body,
+      receivedAt: Date.now(),
+    };
+  }
+
+  // Task completed
+  if (body.type === 'TaskComplete') {
+    return {
+      kind: 'task.completed',
+      tenantId: 'default',
+      contactId,
       raw: body,
       receivedAt: Date.now(),
     };
