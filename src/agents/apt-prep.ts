@@ -8,6 +8,7 @@
 import { auditLog } from '../core/audit';
 import { isEnabled } from '../core/toggles';
 import { taskBot, noteBot, fieldBot } from '../bots';
+import { getFieldName } from '../config';
 
 const AGENT_ID = 'apt-prep';
 
@@ -21,6 +22,7 @@ export interface AppointmentEvent {
 }
 
 export interface ReminderSchedule {
+  tenantId: string;
   appointmentId: string;
   contactId: string;
   confirmAt: string;
@@ -29,8 +31,9 @@ export interface ReminderSchedule {
   cancelled: boolean;
 }
 
-function buildSchedule(contactId: string, aptId: string, aptTime: Date, bookedAt: Date): ReminderSchedule {
+function buildSchedule(tenantId: string, contactId: string, aptId: string, aptTime: Date, bookedAt: Date): ReminderSchedule {
   return {
+    tenantId,
     appointmentId: aptId,
     contactId,
     confirmAt: new Date(bookedAt.getTime() + 18 * 60 * 1000).toISOString(),
@@ -105,13 +108,19 @@ export async function runAptPrep(event: AppointmentEvent): Promise<void> {
     assignedTo: 'am',
   });
 
-  const schedule = buildSchedule(contactId, appointmentId, aptTime, now);
+  const schedule = buildSchedule(event.tenantId, contactId, appointmentId, aptTime, now);
   schedules.set(appointmentId, schedule);
 
+  const [fAptId, fAptTime, fAptType] = await Promise.all([
+    getFieldName(event.tenantId, 'active_appointment_id'),
+    getFieldName(event.tenantId, 'active_appointment_time'),
+    getFieldName(event.tenantId, 'active_appointment_type'),
+  ]);
+
   await fieldBot(contactId, {
-    active_appointment_id: appointmentId,
-    active_appointment_time: appointmentTime,
-    active_appointment_type: type,
+    [fAptId]: appointmentId,
+    [fAptTime]: appointmentTime,
+    [fAptType]: type,
   });
 
   await noteBot(contactId, [

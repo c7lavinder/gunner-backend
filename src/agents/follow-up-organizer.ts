@@ -12,6 +12,7 @@ import { isEnabled } from '../core/toggles';
 import { stageBot } from '../bots';
 import { ghlGet } from '../integrations/ghl/client';
 import { runFollowUpMessenger } from './follow-up-messenger';
+import { getFieldName } from '../config';
 
 const AGENT_ID = 'follow-up-organizer';
 
@@ -38,8 +39,10 @@ export async function runFollowUpOrganizer(
 
   const start = Date.now();
 
+  const touchField = await getFieldName(tenantId, playbook.touchField);
+
   for (const bucket of playbook.buckets) {
-    await processBucket(tenantId, bucket, playbook.touchField);
+    await processBucket(tenantId, bucket, touchField);
   }
 
   auditLog({
@@ -74,7 +77,8 @@ async function processBucket(
     if (lastTouch > 0 && daysSinceTouch < bucket.cadenceDays) continue;
 
     // Determine if contact has exhausted touches in this bucket
-    const touchCount = Number(contact.customFields?.['fu_touch_count'] || 0);
+    const fTouchCount = await getFieldName(tenantId, 'fu_touch_count');
+    const touchCount = Number(contact.customFields?.[fTouchCount] || 0);
     const maxTouches = Math.ceil(bucket.cadenceDays / 7); // ~1 touch per week within cadence
 
     if (touchCount >= maxTouches && bucket.nextBucketStageId) {

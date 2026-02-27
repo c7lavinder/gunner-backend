@@ -10,6 +10,7 @@
 import { auditLog } from '../core/audit';
 import { isEnabled } from '../core/toggles';
 import { smsBot, contactBot, fieldBot } from '../bots';
+import { getFieldName } from '../config';
 
 const AGENT_ID = 'follow-up-messenger';
 
@@ -46,11 +47,14 @@ function buildPrompt(
   contact: Record<string, unknown>,
   tone: Tone,
   bucketName: string,
-  daysSinceLastTouch: number
+  daysSinceLastTouch: number,
+  motivationField: string,
+  propertyAddressField: string,
 ): string {
   const name = (contact.firstName as string) || 'there';
-  const motivation = (contact.customFields as Record<string, string>)?.motivation || 'unknown';
-  const propertyAddress = (contact.customFields as Record<string, string>)?.property_address || '';
+  const customFields = (contact.customFields as Record<string, string>) ?? {};
+  const motivation = customFields[motivationField] || 'unknown';
+  const propertyAddress = customFields[propertyAddressField] || '';
 
   return [
     `Write a short re-engagement SMS (under 160 chars) for a real estate seller lead.`,
@@ -82,7 +86,8 @@ export async function runFollowUpMessenger(req: FollowUpMessageRequest): Promise
 
   // Guard: check if already touched today (idempotency)
   const contact = await contactBot(contactId);
-  const lastTouch = Number((contact as any).customFields?.fu_last_touch || 0);
+  const fLastTouch = await getFieldName(tenantId, 'fu_last_touch');
+  const lastTouch = Number((contact as any).customFields?.[fLastTouch] || 0);
   const hoursSinceTouch = (Date.now() - lastTouch) / (1000 * 60 * 60);
   if (hoursSinceTouch < 20) {
     auditLog({
@@ -96,16 +101,21 @@ export async function runFollowUpMessenger(req: FollowUpMessageRequest): Promise
   }
 
   const tone = selectTone(bucketName, touchNumber, daysSinceLastTouch);
-  const prompt = buildPrompt(contact as Record<string, unknown>, tone, bucketName, daysSinceLastTouch);
+  const [fMotivation, fPropertyAddress] = await Promise.all([
+    getFieldName(tenantId, 'motivation'),
+    getFieldName(tenantId, 'property_address'),
+  ]);
+  const prompt = buildPrompt(contact as Record<string, unknown>, tone, bucketName, daysSinceLastTouch, fMotivation, fPropertyAddress);
   const message = await generateSMS(prompt);
 
   // Send via smsBot (bot handles DRY_RUN internally)
   await smsBot(contactId, message);
 
   // Update touch tracking fields
+  const fTouchCount = await getFieldName(tenantId, 'fu_touch_count');
   await fieldBot(contactId, {
-    fu_last_touch: String(Date.now()),
-    fu_touch_count: String(touchNumber),
+    [fLastTouch]: String(Date.now()),
+    [fTouchCount]: String(touchNumber),
   });
 
   auditLog({

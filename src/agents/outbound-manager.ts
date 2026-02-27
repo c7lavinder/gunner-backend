@@ -22,7 +22,7 @@ import { isEnabled } from '../core/toggles';
 import { isDryRun } from '../core/dry-run';
 import { smsBot } from '../bots/sms';
 import { contactBot } from '../bots/contact';
-import { getConfig } from '../playbook/config';
+import { getSendWindow } from '../config';
 
 const AGENT_ID = 'outbound-manager';
 
@@ -69,6 +69,7 @@ function getLeadLocalHour(contact: Record<string, unknown>): number {
 }
 
 export interface OutboundRequest {
+  tenantId: string;
   contactId: string;
   opportunityId?: string;
   message: string;
@@ -82,7 +83,7 @@ export interface OutboundResult {
 }
 
 export async function sendOutbound(req: OutboundRequest): Promise<OutboundResult> {
-  const { contactId, opportunityId, message, fromAgent } = req;
+  const { tenantId, contactId, opportunityId, message, fromAgent } = req;
   const start = Date.now();
 
   if (!isEnabled(AGENT_ID)) {
@@ -115,16 +116,18 @@ export async function sendOutbound(req: OutboundRequest): Promise<OutboundResult
   // Fetch contact for timezone — needed before send window check
   const contact = await contactBot(contactId);
   const localHour = getLeadLocalHour(contact);
-  const config = getConfig();
+  const sendWindow = await getSendWindow(tenantId);
+  const startHour = parseInt(sendWindow.start.split(':')[0], 10);
+  const endHour = parseInt(sendWindow.end.split(':')[0], 10);
 
-  if (localHour < config.sendWindow.startHour || localHour >= config.sendWindow.endHour) {
+  if (localHour < startHour || localHour >= endHour) {
     auditLog({
       agent: AGENT_ID,
       contactId,
       opportunityId,
       action: 'outbound:blocked',
       result: 'skipped',
-      reason: `outside-send-window (lead local hour: ${localHour}, window: ${config.sendWindow.startHour}–${config.sendWindow.endHour}, requested by ${fromAgent})`,
+      reason: `outside-send-window (lead local hour: ${localHour}, window: ${startHour}–${endHour}, requested by ${fromAgent})`,
       durationMs: Date.now() - start,
     });
     return { result: 'outside-window', reason: `lead local hour ${localHour} is outside send window` };

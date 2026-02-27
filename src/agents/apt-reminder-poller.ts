@@ -10,6 +10,7 @@ import { auditLog } from '../core/audit';
 import { isEnabled } from '../core/toggles';
 import { smsBot, contactBot } from '../bots';
 import { getAllPendingSchedules, ReminderSchedule } from './apt-prep';
+import { getFieldName } from '../config';
 
 const AGENT_ID = 'apt-reminder-poller';
 
@@ -75,8 +76,12 @@ async function processSchedule(schedule: ReminderSchedule): Promise<void> {
 
     // Fetch contact to determine appointment type
     const contact = await contactBot(contactId) as Record<string, any>;
-    const aptType = contact.customFields?.active_appointment_type || 'appointment';
-    const aptTime = contact.customFields?.active_appointment_time || dueAt;
+    const [fAptType, fAptTime] = await Promise.all([
+      getFieldName(schedule.tenantId, 'active_appointment_type'),
+      getFieldName(schedule.tenantId, 'active_appointment_time'),
+    ]);
+    const aptType = contact.customFields?.[fAptType] || 'appointment';
+    const aptTime = contact.customFields?.[fAptTime] || dueAt;
 
     const message = generateReminderSMS(stage, aptTime, aptType);
 
