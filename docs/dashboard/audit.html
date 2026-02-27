@@ -820,6 +820,72 @@ renderAll();
 // Init
 renderTriggerMap();
 renderAll();
+
+// ── WEBSOCKET LIVE FEED ──
+(function initWebSocket() {
+  const liveBadge = document.querySelector('.live-badge');
+  const liveDot = document.querySelector('.live-dot');
+  let ws;
+  let reconnectTimer;
+
+  function setConnected(connected) {
+    if (connected) {
+      liveDot.style.background = 'var(--green)';
+      liveBadge.style.borderColor = 'rgba(34,197,94,.3)';
+      liveBadge.style.color = 'var(--green)';
+      liveBadge.style.background = 'rgba(34,197,94,.15)';
+      liveBadge.innerHTML = '<span class="live-dot" style="width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 2s infinite"></span> LIVE';
+    } else {
+      liveBadge.innerHTML = '<span class="live-dot" style="width:8px;height:8px;border-radius:50%;background:var(--red)"></span> DISCONNECTED';
+      liveBadge.style.borderColor = 'rgba(239,68,68,.3)';
+      liveBadge.style.color = 'var(--red)';
+      liveBadge.style.background = 'rgba(239,68,68,.15)';
+    }
+  }
+
+  function connect() {
+    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    ws = new WebSocket(proto + '//' + location.host + '/ws/audit');
+
+    ws.onopen = () => {
+      console.log('[ws] connected');
+      setConnected(true);
+      clearTimeout(reconnectTimer);
+    };
+
+    ws.onmessage = (evt) => {
+      try {
+        const entry = JSON.parse(evt.data);
+        const mapped = {
+          id: entry.id,
+          timestamp: entry.timestamp || Date.now(),
+          agent: entry.agent || 'unknown',
+          action: entry.action || JSON.stringify(entry),
+          result: entry.result || 'success',
+          duration: entry.durationMs ? entry.durationMs / 1000 : null,
+          contact: entry.contactId || '',
+          assignedTo: null,
+          steps: [],
+          raw: entry
+        };
+        allEntries.unshift(mapped);
+        renderAll();
+      } catch (e) { console.error('[ws] parse error:', e); }
+    };
+
+    ws.onclose = () => {
+      console.log('[ws] disconnected, reconnecting in 3s...');
+      setConnected(false);
+      reconnectTimer = setTimeout(connect, 3000);
+    };
+
+    ws.onerror = () => {
+      ws.close();
+    };
+  }
+
+  connect();
+})();
 </script>
 </body>
 </html>

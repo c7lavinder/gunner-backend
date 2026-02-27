@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import http from 'http';
 import express from 'express';
 import path from 'path';
 import { loadConfig } from './playbook/config';
@@ -15,6 +16,7 @@ import intelligenceRouter from './api/intelligence';
 import setupRouter from './api/setup';
 import { startIntelligencePoller } from './agents/intelligence-poller';
 import { startIntelligenceResearcher } from './agents/intelligence-researcher';
+import { setupWebSocket } from './core/ws';
 
 async function main() {
   // 1. Load config (all env vars → typed config object)
@@ -49,7 +51,9 @@ async function main() {
   app.use('/setup', setupRouter);
 
   const port = Number(process.env.PORT ?? 3000);
-  app.listen(port, () => console.log(`[server] listening on port ${port}`));
+  const server = http.createServer(app);
+  setupWebSocket(server);
+  server.listen(port, () => console.log(`[server] listening on port ${port}`));
 
   // 6. Start intelligence agents
   startIntelligencePoller();
