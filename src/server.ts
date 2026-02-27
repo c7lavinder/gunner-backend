@@ -3,6 +3,7 @@ import express from 'express';
 import { loadConfig } from './playbook/config';
 import { configureGHL } from './integrations/ghl/client';
 import { configureAI } from './integrations/ai/client';
+import './core/register-toggles';
 import { registerAll } from './core/registry';
 import { wireTriggers } from './core/triggers';
 import { startCrmSync } from './core/crm-sync';

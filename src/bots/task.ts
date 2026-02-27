@@ -4,7 +4,10 @@
  */
 
 import { isDryRun } from '../core/dry-run';
+import { isEnabled } from '../core/toggles';
 import { ghlPost } from '../integrations/ghl/client';
+
+const BOT_ID = 'bot-task';
 
 export interface TaskInput {
   title: string;
@@ -13,7 +16,11 @@ export interface TaskInput {
   assignedTo?: string;
 }
 
-export async function taskBot(contactId: string, input: TaskInput): Promise<{ result: 'success' | 'dry-run' }> {
+export async function taskBot(contactId: string, input: TaskInput): Promise<{ result: 'success' | 'dry-run' | 'disabled' }> {
+  if (!isEnabled(BOT_ID)) {
+    console.log(`[bot-task] DISABLED — skipping`);
+    return { result: 'disabled' };
+  }
   if (isDryRun()) {
     console.log(`[task-bot] DRY RUN — would create task for ${contactId}: ${input.title}`);
     return { result: 'dry-run' };

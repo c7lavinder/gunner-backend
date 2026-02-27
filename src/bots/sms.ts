@@ -1,6 +1,9 @@
 import { isDryRun } from '../core/dry-run';
+import { isEnabled } from '../core/toggles';
 import { ghlPost, getLocationId } from '../integrations/ghl/client';
 import { getConfig } from '../playbook/config';
+
+const BOT_ID = 'bot-sms';
 
 function isInSendWindow(): boolean {
   const config = getConfig();
@@ -8,7 +11,11 @@ function isInSendWindow(): boolean {
   return hour >= config.sendWindow.startHour && hour < config.sendWindow.endHour;
 }
 
-export async function smsBot(contactId: string, message: string): Promise<{ result: 'success' | 'dry-run' | 'outside-window' }> {
+export async function smsBot(contactId: string, message: string): Promise<{ result: 'success' | 'dry-run' | 'outside-window' | 'disabled' }> {
+  if (!isEnabled(BOT_ID)) {
+    console.log(`[bot-sms] DISABLED — skipping`);
+    return { result: 'disabled' };
+  }
   if (!isInSendWindow()) {
     console.log(`[sms-bot] outside send window — queued for ${contactId}`);
     return { result: 'outside-window' };
