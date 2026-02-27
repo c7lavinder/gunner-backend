@@ -5,10 +5,13 @@
  * Uses GHL API directly for read operations (auditing only).
  */
 
+import { auditLog } from '../../core/audit';
 import { searchBot } from '../../bots/contact-search';
 import { taskReaderBot } from '../../bots/task-reader';
 import { noteReaderBot } from '../../bots/note-reader';
 import type { SystemIssue } from './types';
+
+const AGENT_ID = 'reality-check:system-audit';
 
 function hoursAgo(ms: number): string {
   const h = Math.round((ms / 3_600_000) * 10) / 10;
@@ -25,7 +28,10 @@ export async function runSystemAudit(
   const now = Date.now();
 
   // Fetch recent leads via GHL search
-  const recentLeads = await searchBot.searchByDateRange(new Date(windowStart).toISOString(), new Date().toISOString());
+  const recentLeads = await searchBot.searchByDateRange(new Date(windowStart).toISOString(), new Date().toISOString()).catch(err => {
+    auditLog({ agent: AGENT_ID, contactId: '*', action: 'searchBot.searchByDateRange:failed', result: 'error', reason: err?.message });
+    return [];
+  });
 
   for (const lead of recentLeads) {
     const contactId: string = lead.id;
@@ -64,7 +70,10 @@ export async function runSystemAudit(
     }
 
     // 4. Duplicate tasks
-    const tasks = await taskReaderBot.getTasksByContact(contactId);
+    const tasks = await taskReaderBot.getTasksByContact(contactId).catch(err => {
+      auditLog({ agent: AGENT_ID, contactId, action: 'taskReaderBot.getTasksByContact:failed', result: 'error', reason: err?.message });
+      return [];
+    });
     const titleCounts = new Map<string, number>();
     for (const t of tasks) {
       titleCounts.set(t.title, (titleCounts.get(t.title) ?? 0) + 1);
@@ -81,7 +90,10 @@ export async function runSystemAudit(
     }
 
     // 5. Stage moved but no notes
-    const notes = await noteReaderBot.getNotesByContact(contactId);
+    const notes = await noteReaderBot.getNotesByContact(contactId).catch(err => {
+      auditLog({ agent: AGENT_ID, contactId, action: 'noteReaderBot.getNotesByContact:failed', result: 'error', reason: err?.message });
+      return [];
+    });
     if (stageEnteredAt && notes.length === 0) {
       issues.push({
         contactId,

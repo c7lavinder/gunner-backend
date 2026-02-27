@@ -62,83 +62,102 @@ export async function runRealityCheck(
 
   const start = Date.now();
 
-  auditLog({
-    agent: AGENT_ID,
-    contactId: '*',
-    action: 'audit:start',
-    result: 'success',
-  });
-
-  const playbook = await loadPlaybook(tenantId);
-  const auditWindowMs =
-    (playbook?.realityCheck?.windowHours ?? 6) * 3_600_000;
-
-  const windowEnd = Date.now();
-  const windowStart = lastAuditEnd ?? windowEnd - auditWindowMs;
-
-  // Run both audits
-  const { issues: systemIssues, leadsChecked } = await runSystemAudit(
-    tenantId,
-    playbook,
-    windowStart,
-    windowEnd,
-  );
-  const teamIssues = await runTeamAudit(
-    tenantId,
-    playbook,
-    windowStart,
-    windowEnd,
-  );
-
-  const report: RealityCheckReport = {
-    systemIssues,
-    teamIssues,
-    stats: {
-      leadsChecked,
-      systemIssuesFound: systemIssues.length,
-      teamIssuesFound: teamIssues.length,
-    },
-    auditWindowStart: windowStart,
-    auditWindowEnd: windowEnd,
-    timestamp: Date.now(),
-  };
-
-  // Advance the window
-  setLastAuditEnd(windowEnd);
-
-  auditLog({
-    agent: AGENT_ID,
-    contactId: '*',
-    action: 'audit:complete',
-    result: 'success',
-    durationMs: Date.now() - start,
-    metadata: {
-      leadsChecked: report.stats.leadsChecked,
-      systemIssues: report.stats.systemIssuesFound,
-      teamIssues: report.stats.teamIssuesFound,
-    },
-  });
-
-  // Log individual issues
-  for (const issue of report.systemIssues) {
+  try {
     auditLog({
       agent: AGENT_ID,
-      contactId: issue.contactId,
-      action: `system-issue:${issue.issueType}`,
-      result: 'error',
-      metadata: { details: issue.details },
+      contactId: '*',
+      action: 'audit:start',
+      result: 'success',
     });
-  }
 
-  for (const issue of report.teamIssues) {
+    const playbook = await loadPlaybook(tenantId);
+    const auditWindowMs =
+      (playbook?.realityCheck?.windowHours ?? 6) * 3_600_000;
+
+    const windowEnd = Date.now();
+    const windowStart = lastAuditEnd ?? windowEnd - auditWindowMs;
+
+    // Run both audits with fault tolerance
+    const { issues: systemIssues, leadsChecked } = await runSystemAudit(
+      tenantId,
+      playbook,
+      windowStart,
+      windowEnd,
+    ).catch(err => {
+      auditLog({ agent: AGENT_ID, contactId: '*', action: 'runSystemAudit:failed', result: 'error', reason: err?.message });
+      return { issues: [], leadsChecked: 0 };
+    });
+
+    const teamIssues = await runTeamAudit(
+      tenantId,
+      playbook,
+      windowStart,
+      windowEnd,
+    ).catch(err => {
+      auditLog({ agent: AGENT_ID, contactId: '*', action: 'runTeamAudit:failed', result: 'error', reason: err?.message });
+      return [];
+    });
+
+    const report: RealityCheckReport = {
+      systemIssues,
+      teamIssues,
+      stats: {
+        leadsChecked,
+        systemIssuesFound: systemIssues.length,
+        teamIssuesFound: teamIssues.length,
+      },
+      auditWindowStart: windowStart,
+      auditWindowEnd: windowEnd,
+      timestamp: Date.now(),
+    };
+
+    // Advance the window
+    setLastAuditEnd(windowEnd);
+
     auditLog({
       agent: AGENT_ID,
-      contactId: issue.contactId,
-      action: `team-issue:${issue.issueType}`,
-      result: 'error',
-      metadata: { details: issue.details, assignee: issue.assignee },
+      contactId: '*',
+      action: 'audit:complete',
+      result: 'success',
+      durationMs: Date.now() - start,
+      metadata: {
+        leadsChecked: report.stats.leadsChecked,
+        systemIssues: report.stats.systemIssuesFound,
+        teamIssues: report.stats.teamIssuesFound,
+      },
     });
-  }
 
-  return report;
+    // Log individual issues
+    for (const issue of report.systemIssues) {
+      auditLog({
+        agent: AGENT_ID,
+        contactId: issue.contactId,
+        action: `system-issue:${issue.issueType}`,
+        result: 'error',
+        metadata: { details: issue.details },
+      });
+    }
+
+    for (const issue of report.teamIssues) {
+      auditLog({
+        agent: AGENT_ID,
+        contactId: issue.contactId,
+        action: `team-issue:${issue.issueType}`,
+        result: 'error',
+        metadata: { details: issue.details, assignee: issue.assignee },
+      });
+    }
+
+    return report;
+  } catch (err: any) {
+    auditLog({ agent: AGENT_ID, contactId: '*', action: 'agent:crashed', result: 'error', reason: err?.message, durationMs: Date.now() - start });
+    return {
+      systemIssues: [],
+      teamIssues: [],
+      stats: { leadsChecked: 0, systemIssuesFound: 0, teamIssuesFound: 0 },
+      auditWindowStart: 0,
+      auditWindowEnd: 0,
+      timestamp: Date.now(),
+    };
+  }
 }

@@ -5,9 +5,12 @@
  * Uses GHL API directly for read operations (auditing only).
  */
 
+import { auditLog } from '../../core/audit';
 import { searchBot } from '../../bots/contact-search';
 import { taskReaderBot } from '../../bots/task-reader';
 import type { TeamIssue } from './types';
+
+const AGENT_ID = 'reality-check:team-audit';
 
 function hoursAgo(ms: number): string {
   const h = Math.round((ms / 3_600_000) * 10) / 10;
@@ -26,8 +29,10 @@ export async function runTeamAudit(
   const warmCallSlaMins = playbook?.sla?.warmCallMins ?? 30;
 
   // 1. Warm leads with no call logged within SLA
-  // Search for warm leads — using searchBot with stage filter
-  const warmLeads = await searchBot.searchContacts('', { pipelineStageId: 'warm', startAfter: new Date(windowStart).toISOString() });
+  const warmLeads = await searchBot.searchContacts('', { pipelineStageId: 'warm', startAfter: new Date(windowStart).toISOString() }).catch(err => {
+    auditLog({ agent: AGENT_ID, contactId: '*', action: 'searchBot.searchContacts:failed', result: 'error', reason: err?.message });
+    return [];
+  });
 
   for (const lead of warmLeads) {
     const contactId: string = lead.id;
@@ -78,7 +83,10 @@ export async function runTeamAudit(
   }
 
   // 3. Overdue tasks
-  const overdueTasks = await taskReaderBot.getOverdueTasks();
+  const overdueTasks = await taskReaderBot.getOverdueTasks().catch(err => {
+    auditLog({ agent: AGENT_ID, contactId: '*', action: 'taskReaderBot.getOverdueTasks:failed', result: 'error', reason: err?.message });
+    return [];
+  });
 
   for (const task of overdueTasks) {
     issues.push({
