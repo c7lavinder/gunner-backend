@@ -26,7 +26,7 @@ export interface LeadState {
   updatedAt: Date;
 }
 
-export const updateState = async (event: GunnerEvent) => {
+export const updateState = async (event: GunnerEvent): Promise<LeadState | undefined> => {
   const tenantId = event.tenantId || 'nah';
   const contactId = event.contactId;
 
@@ -113,6 +113,7 @@ export const updateState = async (event: GunnerEvent) => {
       WHERE contact_id = $${idx}
       RETURNING *
     `;
-    await query(sql, values);
+    const res = await query(sql, values);
+    return res.rows[0] as LeadState;
   }
 };

@@ -25,6 +25,20 @@ import { runTitleCoordinator } from '../agents/dispo/title-coordinator';
 import { runClosingAgent } from '../agents/dispo/closing-agent';
 import { runBuyerIntake } from '../agents/dispo/buyer-intake';
 import { runBuyerQualifier } from '../agents/dispo/buyer-qualifier';
+import { runWorkingDrip } from '../agents/working-drip';
+import { runContractBot } from '../agents/contract-bot';
+import { runUCMonitor } from '../agents/uc-monitor';
+import { runPostCloseBot } from '../agents/post-close-bot';
+import { runGhostedAgent } from '../agents/ghosted-agent';
+import { runOfferChase } from '../agents/offer-chase';
+import { runFollowUpOrganizer } from '../agents/follow-up-organizer';
+import { runResponseAgent } from '../agents/response-agent';
+import { runCallbackCapture } from '../agents/callback-capture';
+import { runInitialOutreach } from '../agents/initial-outreach';
+import { runTCPackager } from '../agents/tc-packager';
+import { runAccountabilityAgent } from '../agents/accountability-agent';
+import { runOfferReply } from '../agents/offer-reply';
+import { runBucketReeval } from '../agents/bucket-reeval';
 
 export function registerAll() {
   // ── Agents ────────────────────────────────────────────────────────────────
@@ -34,6 +48,22 @@ export function registerAll() {
   registerAgent('lead-noter',          runLeadNoter);          // writes score note
   registerAgent('lead-task-creator',   runLeadTaskCreator);    // creates LM call task
   registerAgent('stage-change-router', runStageChangeRouter);  // routes on stage changes
+
+  // ── Sales Pipeline Agents ───────────────────────────────────────────────────
+  registerAgent('working-drip',        runWorkingDrip as any);       // 104-day drip sequence
+  registerAgent('contract-bot',        runContractBot);              // UC confirmation + TC/dispo handoff
+  registerAgent('uc-monitor',          runUCMonitor);                // monitors under-contract communications
+  registerAgent('post-close-bot',      runPostCloseBot);             // thank you, review, referral sequence
+  registerAgent('ghosted-agent',       runGhostedAgent as any);      // handles ghosted leads
+  registerAgent('offer-chase',         runOfferChase);               // follows up on pending offers
+  registerAgent('follow-up-organizer', runFollowUpOrganizer as any); // routes to follow-up buckets
+  registerAgent('response-agent',      runResponseAgent as any);     // handles inbound SMS replies
+  registerAgent('callback-capture',    runCallbackCapture as any);   // captures callback requests
+  registerAgent('initial-outreach',    runInitialOutreach);          // first SMS to new lead
+  registerAgent('tc-packager',         runTCPackager);               // packages deal for TC
+  registerAgent('accountability-agent', runAccountabilityAgent);     // task overdue escalation
+  registerAgent('offer-reply',         runOfferReply);               // handles offer responses
+  registerAgent('bucket-reeval',       runBucketReeval as any);      // re-evaluates follow-up bucket
 
   // ── Dispo Pipeline Agents ──────────────────────────────────────────────────
   registerAgent('deal-intake',         runDealIntake);         // validates new dispo deal, assigns Esteban
