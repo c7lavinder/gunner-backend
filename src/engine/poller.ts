@@ -4,13 +4,23 @@ import { loadPlaybook } from '../config/loader';
 import { auditLog } from '../core/audit';
 
 const POLLER_INTERVAL_MS = 60000; // 60s
+let _running = false;
+let _lastTickAt: Date | null = null;
 
 export function startPoller() {
   console.log('[poller] Starting state engine poller...');
+  _running = true;
   setInterval(runTick, POLLER_INTERVAL_MS);
+  // First tick after 10s
+  setTimeout(runTick, 10_000);
+}
+
+export function getPollerStatus(): { running: boolean; lastTickAt: Date | null } {
+  return { running: _running, lastTickAt: _lastTickAt };
 }
 
 async function runTick() {
+  _lastTickAt = new Date();
   try {
     const playbook = await loadPlaybook('nah'); // defaulting to 'nah' for now
     if (!playbook) return;

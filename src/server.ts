@@ -18,6 +18,7 @@ import { startIntelligencePoller } from './agents/intelligence-poller';
 import { startIntelligenceResearcher } from './agents/intelligence-researcher';
 import { startMorningBriefing } from './agents/morning-briefing';
 import briefingRouter from './api/briefing';
+import engineRouter from './api/engine';
 import { setupWebSocket } from './core/ws';
 import { startAutoRefresh } from './integrations/ghl/oauth-store';
 import { initDB } from './engine/db';
@@ -56,6 +57,7 @@ async function main() {
   app.use('/api/intelligence', intelligenceRouter);
   app.use('/api/briefing', briefingRouter);
   app.use('/setup', setupRouter);
+  app.use('/api/engine', engineRouter);
 
   const port = Number(process.env.PORT ?? 3000);
   const server = http.createServer(app);
