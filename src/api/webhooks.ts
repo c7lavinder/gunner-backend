@@ -53,8 +53,13 @@ router.post('/ghl', async (req, res) => {
   const engineEvent = { ...event, tenantId: 'nah' as const, raw: body };
 
   storeEvent(engineEvent).catch((err: any) => console.error('[webhook] storeEvent failed:', err));
-  await updateState(engineEvent).catch((err: any) => console.error('[webhook] updateState failed:', err));
-  evaluateEventTriggers(engineEvent).catch((err: any) => console.error('[webhook] evaluateEventTriggers failed:', err));
+  
+  try {
+    const newState = await updateState(engineEvent);
+    await evaluateEventTriggers(engineEvent, newState);
+  } catch (err) {
+    console.error('[webhook] state engine failed:', err);
+  }
 });
 
 function normalize(body: any): GunnerEvent | null {

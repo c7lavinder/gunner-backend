@@ -77,9 +77,6 @@ export const updateState = async (event: GunnerEvent): Promise<LeadState | undef
     const raw = event.raw as any;
     if (raw?.firstName || raw?.lastName) {
       // Assuming we might want to store name in custom_data or future columns
-      // For now, spec doesn't have name columns in lead_state, but mentions 'update contact info'.
-      // Lead State table has: lead_score, lead_tier, assigned_to, tags, custom_data.
-      // So I should update custom_data or assigned_to if present.
     }
     if (raw?.assignedTo) {
       addUpdate('assigned_to', raw.assignedTo);
@@ -99,10 +96,6 @@ export const updateState = async (event: GunnerEvent): Promise<LeadState | undef
     addUpdate('last_activity_at', new Date());
   }
 
-  // Note: 'outbound.message' isn't explicitly in GunnerEvent types in event-bus.ts but might be inferred or added later.
-  // The spec mentions 'message.outbound'. I will assume it might come as a custom event or handled if added.
-  // For now I stick to what is in GunnerEvent or spec.
-
   // Apply updates if any
   if (updates.length > 0) {
     // Add contact_id to values for WHERE clause
@@ -114,6 +107,34 @@ export const updateState = async (event: GunnerEvent): Promise<LeadState | undef
       RETURNING *
     `;
     const res = await query(sql, values);
-    return res.rows[0] as LeadState;
+    const row = res.rows[0];
+    
+    if (!row) return undefined;
+
+    return {
+      id: row.id,
+      tenantId: row.tenant_id,
+      contactId: row.contact_id,
+      opportunityId: row.opportunity_id,
+      pipelineId: row.pipeline_id,
+      currentStage: row.current_stage,
+      stageEnteredAt: row.stage_entered_at,
+      leadScore: row.lead_score,
+      leadTier: row.lead_tier,
+      assignedTo: row.assigned_to,
+      lastOutboundAt: row.last_outbound_at,
+      lastInboundAt: row.last_inbound_at,
+      lastCallAt: row.last_call_at,
+      lastActivityAt: row.last_activity_at,
+      outreachCount: row.outreach_count,
+      dripStep: row.drip_step,
+      dripActive: row.drip_active,
+      tags: row.tags,
+      customData: row.custom_data,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    };
   }
+  
+  return undefined;
 };
