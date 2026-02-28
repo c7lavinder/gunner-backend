@@ -1,6 +1,5 @@
 import { query } from './db';
 import { GunnerEvent } from '../core/event-bus';
-import { StoredEvent } from './events';
 
 export interface LeadState {
   id: string;
@@ -87,12 +86,30 @@ export const updateState = async (event: GunnerEvent): Promise<LeadState | undef
   }
 
   if (event.kind === 'inbound.message') {
-    addUpdate('last_inbound_at', new Date());
+    if ((event.raw as any)?.direction === 'outbound') {
+      // Outbound message — critical for speed-to-lead poller
+      addUpdate('last_outbound_at', new Date());
+      addUpdate('last_activity_at', new Date());
+    } else {
+      addUpdate('last_inbound_at', new Date());
+      addUpdate('last_activity_at', new Date());
+    }
+  }
+
+  if (event.kind === 'call.completed' || event.kind === 'call.inbound') {
+    addUpdate('last_call_at', new Date());
     addUpdate('last_activity_at', new Date());
   }
 
-  if (event.kind === 'call.completed') {
-    addUpdate('last_call_at', new Date());
+  if (event.kind === 'call.appointment') {
+    addUpdate('last_activity_at', new Date());
+  }
+
+  if (event.kind === 'task.completed') {
+    addUpdate('last_activity_at', new Date());
+  }
+
+  if (event.kind === 'lead.dnc') {
     addUpdate('last_activity_at', new Date());
   }
 

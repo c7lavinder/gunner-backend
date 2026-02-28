@@ -128,6 +128,137 @@ function normalize(body: any): GunnerEvent | null {
     };
   }
 
+  // Outbound message — tracks last_outbound_at for speed-to-lead
+  if (body.type === 'OutboundMessage') {
+    return {
+      kind: 'inbound.message', // reuse for state tracking; raw.direction distinguishes
+      tenantId: 'default',
+      contactId,
+      messageId: body.messageId,
+      raw: { ...body, direction: 'outbound' },
+      receivedAt: Date.now(),
+    };
+  }
+
+  // Inbound call
+  if (body.type === 'InboundCall') {
+    return {
+      kind: 'call.inbound',
+      tenantId: 'default',
+      contactId,
+      callId: body.callId ?? body.id,
+      raw: body,
+      receivedAt: Date.now(),
+    };
+  }
+
+  // Outbound call
+  if (body.type === 'OutboundCall') {
+    return {
+      kind: 'call.completed',
+      tenantId: 'default',
+      contactId,
+      callId: body.callId ?? body.id,
+      raw: { ...body, direction: 'outbound' },
+      receivedAt: Date.now(),
+    };
+  }
+
+  // Call completed (post-call with recording/duration)
+  if (body.type === 'CallCompleted') {
+    return {
+      kind: 'call.completed',
+      tenantId: 'default',
+      contactId,
+      callId: body.callId ?? body.id,
+      raw: body,
+      receivedAt: Date.now(),
+    };
+  }
+
+  // Opportunity monetary value update
+  if (body.type === 'OpportunityMonetaryValueUpdate') {
+    return {
+      kind: 'opportunity.stage_changed', // reuse — triggers check stageId anyway
+      tenantId: 'default',
+      contactId,
+      opportunityId,
+      stageId: body.pipelineStageId,
+      raw: body,
+      receivedAt: Date.now(),
+    };
+  }
+
+  // Appointment events
+  if (body.type === 'AppointmentCreate' || body.type === 'AppointmentUpdate') {
+    return {
+      kind: 'call.appointment',
+      tenantId: 'default',
+      contactId,
+      raw: body,
+      receivedAt: Date.now(),
+    };
+  }
+
+  // Contact tag update (DNC detection)
+  if (body.type === 'ContactTagUpdate') {
+    const tags: string[] = body.tags ?? [];
+    const kind = tags.some((t: string) => t.toLowerCase().includes('dnc')) ? 'lead.dnc' as const : 'contact.created' as const;
+    return {
+      kind,
+      tenantId: 'default',
+      contactId,
+      raw: body,
+      receivedAt: Date.now(),
+    };
+  }
+
+  // Contact DND update
+  if (body.type === 'ContactDndUpdate') {
+    return {
+      kind: 'lead.dnc',
+      tenantId: 'default',
+      contactId,
+      raw: body,
+      receivedAt: Date.now(),
+    };
+  }
+
+  // Note create
+  if (body.type === 'NoteCreate' || body.type === 'NoteUpdate') {
+    return {
+      kind: 'task.completed', // generic activity — state engine tracks last_activity_at
+      tenantId: 'default',
+      contactId,
+      raw: body,
+      receivedAt: Date.now(),
+    };
+  }
+
+  // Opportunity assigned to update
+  if (body.type === 'OpportunityAssignedToUpdate') {
+    return {
+      kind: 'opportunity.stage_changed',
+      tenantId: 'default',
+      contactId,
+      opportunityId,
+      stageId: body.pipelineStageId,
+      raw: body,
+      receivedAt: Date.now(),
+    };
+  }
+
+  // Task create/update
+  if (body.type === 'TaskCreate' || body.type === 'TaskUpdate') {
+    return {
+      kind: 'task.completed',
+      tenantId: 'default',
+      contactId,
+      raw: body,
+      receivedAt: Date.now(),
+    };
+  }
+
   return null;
 }
 
