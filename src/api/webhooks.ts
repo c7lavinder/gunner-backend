@@ -7,6 +7,9 @@
 import { Router } from 'express';
 import { emit, GunnerEvent } from '../core/event-bus';
 import { auditLog } from '../core/audit';
+import { storeEvent } from '../engine/events';
+import { updateState } from '../engine/state-updater';
+import { evaluateEventTriggers } from '../engine/event-triggers';
 
 const router = Router();
 
@@ -25,12 +28,33 @@ router.post('/ghl', async (req, res) => {
 
   const event = normalize(body);
   if (!event) {
-    console.log(`[webhook] unhandled GHL event type: ${body.type}`);
+    // Even unhandled events should go to state engine for tracking
+    const cid = body.contactId ?? body.contact_id;
+    if (cid) {
+      const fallbackEvent = {
+        kind: (body.type ?? 'unknown') as any,
+        tenantId: 'nah',
+        contactId: cid,
+        opportunityId: body.id ?? body.opportunityId,
+        stageId: body.pipelineStageId,
+        raw: body,
+        receivedAt: Date.now(),
+      };
+      storeEvent(fallbackEvent).catch(() => {});
+      updateState(fallbackEvent).catch(() => {});
+    }
     return;
   }
 
   console.log(`[webhook] ${event.kind} contact=${event.contactId} opp=${event.opportunityId ?? 'n/a'}`);
   await emit(event);
+
+  // State Engine: store event → update state → evaluate triggers
+  const engineEvent = { ...event, tenantId: 'nah' as const, raw: body };
+
+  storeEvent(engineEvent).catch((err: any) => console.error('[webhook] storeEvent failed:', err));
+  await updateState(engineEvent).catch((err: any) => console.error('[webhook] updateState failed:', err));
+  evaluateEventTriggers(engineEvent).catch((err: any) => console.error('[webhook] evaluateEventTriggers failed:', err));
 });
 
 function normalize(body: any): GunnerEvent | null {

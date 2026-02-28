@@ -48,7 +48,8 @@ export type EventKind =
   | 'dispo.title.started'
   | 'dispo.deal.closed'
   | 'buyer.intake'
-  | 'buyer.qualified';
+  | 'buyer.qualified'
+  | `trigger:${string}`;
 
 export interface GunnerEvent {
   kind: EventKind;

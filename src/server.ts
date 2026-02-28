@@ -20,6 +20,8 @@ import { startMorningBriefing } from './agents/morning-briefing';
 import briefingRouter from './api/briefing';
 import { setupWebSocket } from './core/ws';
 import { startAutoRefresh } from './integrations/ghl/oauth-store';
+import { initDB } from './engine/db';
+import { startPoller } from './engine/poller';
 
 async function main() {
   // 1. Load config (all env vars → typed config object)
@@ -67,6 +69,14 @@ async function main() {
 
   // 7. Start OAuth auto-refresh (proactive, every 30m)
   startAutoRefresh();
+
+  // 8. Initialize State Engine (DB tables + poller)
+  initDB().then(() => {
+    console.log('[server] State Engine DB initialized');
+    startPoller(); // check time-based triggers every 60s
+  }).catch(err => {
+    console.error('[server] State Engine DB init failed:', err.message);
+  });
 
   // 8. Start CRM sync (5s after boot)
   startCrmSync();
